@@ -58,5 +58,5 @@ Tone: calm, confident, never pushy. About 290 spoken words, which is about 2 min
 ## Backup lines (if a judge asks)
 - **"How accurate is it?"** On unseen 2023–26 data it gets direction right 65 % of the time and gives an honest range. It flags about 7 in 10 big price rises (above 15 %), and we publish every method we tried on the Track record page, including the ones that lost.
 - **"What's Jev doing that an LLM can't?"** Typed, calibrated judgments at about 2,500 per second for fractions of a cent. Code decides using real probabilities, not generated text.
-- **"Why Modal?"** Sentinel-2 processing on up to 100 CPU containers, TimesFM on L4 GPUs, a daily scan, and the whole app is served from Modal.
+- **"Why Modal?"** Sentinel-2 processing on up to 100 CPU containers, TimesFM on L4 GPUs, 50-container news scans, and the whole app is served from Modal.
 - **"Where is it real, and where is it synthetic?"** Satellite, news, commodity prices and Jev are real. The GPU street-price series is curated from public sources. Rents are modelled. Everything is in `docs/MODEL.md`.
