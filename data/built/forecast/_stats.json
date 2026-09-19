@@ -1,8 +1,8 @@
 {
  "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
- "gpu_type": "CPU x8 (TimesFM on Modal CPU)",
- "gpu_seconds": 5.1,
- "seconds": 21.0,
+ "gpu_type": "NVIDIA L4",
+ "gpu_seconds": 7.5,
+ "seconds": 27.2,
  "series": 13,
  "items": [
   {
@@ -115,5 +115,5 @@
    "bt": null
   }
  ],
- "generated_at": "2026-09-19T11:08:24Z"
+ "generated_at": "2026-09-19T12:03:21Z"
 }

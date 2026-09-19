@@ -3,7 +3,7 @@ r"""orbit-forecast: price history -> GPU time-series foundation model -> 12-mont
     .\.venv\Scripts\modal run modal_app/forecast.py            # uses cache if present
     .\.venv\Scripts\modal run modal_app/forecast.py --force
     .\.venv\Scripts\modal deploy modal_app/forecast.py
-    $env:ORBIT_GPU="L4"; ...   # run TimesFM on a GPU (needs a payment method on the Modal workspace)
+    $env:ORBIT_GPU="L4"; ...   # default L4 GPU; set "cpu" to run without GPU
 
 Writes /data/built/forecast/{item_id}.json + _stats.json (see CLAUDE.md contracts).
 Model: Google TimesFM 3.0 (fallback TimesFM 2.5) on an L4 GPU; weights cached in Volume "orbit-models".
@@ -25,7 +25,7 @@ import os  # noqa: E402
 
 # GPU is opt-in: the Modal workspace currently rejects GPU functions ("add a payment method"),
 # and TimesFM (200M params) on 13 short series runs in seconds on 8 CPUs anyway.
-GPU_TYPE = os.environ.get("ORBIT_GPU", "cpu")
+GPU_TYPE = os.environ.get("ORBIT_GPU", "L4")
 USE_GPU = GPU_TYPE.lower() != "cpu"
 HIST_MONTHS = 84          # ~7 years shown in the UI
 FRED_START = "2000-01-01"  # longer context for the model

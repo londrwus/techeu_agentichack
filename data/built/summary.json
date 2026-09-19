@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-19T11:36:29+00:00",
+ "generated_at": "2026-09-19T12:03:34+00:00",
  "modules": [
   {
    "module_id": "groceries",
@@ -63,6 +63,6 @@
   "modal_containers_peak": 101,
   "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
   "gemini_calls": 42,
-  "gpu_type": "CPU x8 (TimesFM on Modal CPU)"
+  "gpu_type": "NVIDIA L4"
  }
 }
