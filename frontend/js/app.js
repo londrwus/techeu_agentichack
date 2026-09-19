@@ -1,5 +1,5 @@
 // Orbit SPA: hash router + shared shell.
-// Routes: #/earth (default) #/overview #/groceries #/latte #/beer_wine #/gpu #/rent #/mission #/ask #/track
+// Routes: #/earth (default) #/overview #/groceries #/latte #/beer_wine #/gpu #/rent #/mission #/ask #/news #/track
 // Legacy #/module/{id} links map onto the per-module views.
 import { icons, $$, api, hideTip } from './lib.js';
 import * as earth from './views/earth.js';
@@ -11,11 +11,12 @@ import * as gpu from './views/gpu.js';
 import * as rent from './views/rent.js';
 import * as mission from './views/mission.js';
 import * as ask from './views/ask.js';
+import * as news from './views/news.js';
 import * as track from './views/track_record.js';
 import { watchIcons } from './components/icons.js';
 import { installLightbox } from './components/lightbox.js';
 
-const VIEWS = { earth, overview, groceries, latte, beer_wine, gpu, rent, mission, ask, track };
+const VIEWS = { earth, overview, groceries, latte, beer_wine, gpu, rent, mission, ask, news, track };
 // Views whose content fills the whole content area edge-to-edge (the sidebar stays identical on every page).
 const FULL_BLEED = new Set(['earth']);
 

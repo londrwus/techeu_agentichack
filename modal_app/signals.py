@@ -214,6 +214,10 @@ def _dist(ans, labels):
               retries=modal.Retries(max_retries=2, initial_delay=2.0))
 def judge_headlines(batch: list[dict], module_id: str) -> dict:
     """One Jev system_one call per batch: 4 typed questions per headline."""
+    return _judge(batch, module_id)
+
+
+def _judge(batch: list[dict], module_id: str) -> dict:
     from typesafe_sdk import RetryPolicy, TypeSafeClient
 
     items = [it for it in ITEMS if it["module"] == module_id]
@@ -237,6 +241,35 @@ def judge_headlines(batch: list[dict], module_id: str) -> dict:
                     "confidence": round(min(float(eff.confidence), float(sev.confidence), float(it.confidence)), 3)})
     return {"rows": out, "n_judgments": len(qs), "input_tokens": r.usage.input_tokens,
             "output_tokens": r.usage.output_tokens, "task_id": os.environ.get("MODAL_TASK_ID", "local")}
+
+
+# ---------------------------------------------------------------- News hub live scan (backend/news.py)
+@app.function(image=image, timeout=60, max_containers=10)
+@modal.concurrent(max_inputs=4)
+def fetch_news(queries: list[str], module_id: str, when: str = "30d") -> dict:
+    """Google News RSS for several queries in parallel threads -> deduped rows tagged with module_id."""
+    import httpx
+    from concurrent.futures import ThreadPoolExecutor
+
+    with httpx.Client(timeout=12, follow_redirects=True) as c, ThreadPoolExecutor(12) as ex:
+        def one(q):
+            try:
+                return _rss(f"{q} when:{when}" if when else q, c)
+            except Exception as e:  # noqa: BLE001
+                print("rss error", q, e)
+                return []
+        rows = [dict(r, module_id=module_id) for part in ex.map(one, queries) for r in part]
+    rows = _dedupe(rows)
+    rows.sort(key=lambda r: r.get("date") or "", reverse=True)
+    return {"module_id": module_id, "rows": rows, "task_id": os.environ.get("MODAL_TASK_ID", "local")}
+
+
+@app.function(image=image, secrets=secrets, timeout=120, max_containers=40,
+              retries=modal.Retries(max_retries=1, initial_delay=1.0))
+@modal.concurrent(max_inputs=2)
+def judge_news(batch: list[dict], module_id: str) -> dict:
+    """Same Jev judgments as judge_headlines, sized for the News hub fan-out (40 containers, I/O-concurrent)."""
+    return _judge(batch, module_id)
 
 
 def _write(path: Path, obj):

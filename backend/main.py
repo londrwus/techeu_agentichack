@@ -179,3 +179,5 @@ from backend.extra_mission import router as _mission_router  # noqa: E402
 app.include_router(_mission_router)
 from backend.extra_landing import router as _landing_router  # noqa: E402
 app.include_router(_landing_router)
+from backend.extra_news import router as _news_router  # noqa: E402
+app.include_router(_news_router)
