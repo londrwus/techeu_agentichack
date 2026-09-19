@@ -167,7 +167,7 @@ function statCards(t, imp) {
     },
   ].filter(Boolean);
   return cards.map((c, i) => `<div class="card tr-stat" style="animation-delay:${i * 60}ms">
-    <div class="tr-stat-top"><span class="tr-stat-ic">${icon(c.ic, { size: 18 })}</span><span class="tr-stat-label">${esc(c.label)}</span></div>
+    <div class="tr-stat-top"><span class="tr-stat-ic">${icon(c.ic, { size: 15 })}</span><span class="tr-stat-label">${esc(c.label)}</span></div>
     <div class="tr-stat-v"><span data-count="${c.v.toFixed(c.digits || 0)}" data-digits="${c.digits || 0}" data-prefix="${c.pre || ''}" data-suffix="${c.suf}">0${c.suf}</span>${c.was ? `<span class="tr-was${c.was.up ? ' better' : ''}">${c.was.up ? icon('arrow-up-right', { size: 13, stroke: 2.25 }) : ''}v1 was ${esc(c.was.t)}</span>` : ''}</div>
     ${isNum(c.bar) ? `<div class="tr-meter"><i style="width:${Math.max(0, Math.min(1, c.bar)) * 100}%"></i>${isNum(c.mark) ? `<b style="left:${c.mark * 100}%" title="${esc(c.markLab)}"></b><em style="left:${c.mark * 100}%">${esc(c.markLab)}</em>` : ''}</div>` : `<div class="tr-meter zero"><i style="width:${Math.min(100, Math.abs(c.v) * 10)}%;left:50%"></i><b style="left:50%"></b><em style="left:50%">no-change guess</em></div>`}
     <div class="tr-stat-sub">${esc(c.sub)}</div>

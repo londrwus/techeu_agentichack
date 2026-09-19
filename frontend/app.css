@@ -402,6 +402,9 @@ body.full-bleed .main { padding: 0; gap: 0; }
 .sig-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .sig-chart { flex: 1; min-height: 0; }
 .sig-note { font-size: 11px; font-weight: 500; color: var(--text-3); padding-top: 4px; }
+.sig-note b { font-weight: 700; }
+.sig-names { display: flex; gap: 2px; margin-top: -18px; }
+.sig-names span { flex: 1; min-width: 0; text-align: center; font-size: 11px; font-weight: 500; color: #78716C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sig-legend { display: flex; gap: 14px; font-size: 11px; font-weight: 500; color: var(--text-2); padding-top: 6px; flex-wrap: wrap; }
 .sig-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sig-legend i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }

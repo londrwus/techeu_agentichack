@@ -80,7 +80,7 @@ function heatCard(hd) {
       g += `<div class="bw-cell${now}" data-col="${ci}" data-r="${ri}" data-y="${y}" data-sat-region="${esc(r.region_id)}" data-sat-month="${esc(c.month)}" style="background:${bg};color:${fg}">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}</div>`;
     });
   });
-  const sub = `Sentinel-2 NDVI, Jun–Aug mean vs ${hd.years.length}-year average, % · click a cell for the satellite image`;
+  const sub = `Sentinel-2 NDVI, Jun–Aug mean vs the ${hd.years[0]}–${String(hd.years.at(-1)).slice(2)} summer average, % · click a cell for the satellite image`;
   return `<section class="bw-card bw-heat">
     <div class="bw-head"><div><div class="bw-title">Crop health by region</div><div class="bw-sub">${sub}</div></div>${legend}</div>
     <div class="bw-grid" style="${cols}">${g}</div>
@@ -153,18 +153,19 @@ export async function render(el) {
     let fc = null;
     const show = id => {
       const it = items.find(i => i.item_id === id) || items[0];
-      const h = it.history, f = it.forecast;
+      // One horizon on the whole card: 6 months (same as Overview); the chart stops at that point.
+      const h = it.history, f = it.forecast.slice(0, 6);
       const now = h.at(-1).price, end = f.at(-1).p50, short = ITEM_META[it.item_id]?.short || it.name;
       card.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.item === it.item_id));
       card.querySelector('.lbl').textContent = `${it.name}${PLACE[it.item_id] ? ', ' + PLACE[it.item_id] : ''}`;
       countUp(card.querySelector('.bw-big'), end, { digits: 2, prefix: '£', dur: 700 });
       card.querySelector('.bw-from').textContent = `from ${fmtGBP(now)} today`;
-      const chg12 = now > 0 ? (end / now - 1) * 100 : null;
-      const f6 = f[Math.min(5, f.length - 1)];
+      const chg6 = now > 0 ? (end / now - 1) * 100 : null;
+      const f6 = f.at(-1);
       const stats = [
-        isNum(it.prob_up_6m) && `<div><div class="v">${Math.round(it.prob_up_6m * 100)}%</div><div class="l">chance it rises, 6 mo</div></div>`,
-        isNum(chg12) && `<div><div class="v" style="color:${chg12 > 0 ? 'var(--up)' : 'var(--down)'}">${pct(chg12, 1)}</div><div class="l">by ${monLong(f.at(-1).month)}</div></div>`,
-        isNum(f6?.p10) && isNum(f6?.p90) && `<div><div class="v">${fmtGBP(f6.p10)} – ${fmtGBP(f6.p90)}</div><div class="l">likely range, 6 mo</div></div>`,
+        isNum(it.prob_up_6m) && `<div><div class="v">${Math.round(it.prob_up_6m * 100)}%</div><div class="l">chance it rises in 6 mo</div></div>`,
+        isNum(chg6) && `<div><div class="v" style="color:${chg6 > 0 ? 'var(--up)' : 'var(--down)'}">${pct(chg6, 1)}</div><div class="l">in 6 mo (by ${monLong(f6.month)})</div></div>`,
+        isNum(f6?.p10) && isNum(f6?.p90) && `<div><div class="v">${fmtGBP(f6.p10)} – ${fmtGBP(f6.p90)}</div><div class="l">likely range in 6 mo</div></div>`,
       ].filter(Boolean);
       const strip = card.querySelector('.stat-strip');
       strip.innerHTML = stats.join('');
@@ -184,7 +185,7 @@ export async function render(el) {
   }
 
   const sc = signalCards(el.querySelector('.bw-sig'), data, {
-    accent, priceItem: items.find(i => i.item_id === 'wine') || items[1] || items[0], priceTitle: 'Wine, bottle',
+    accent, priceItem: items[0],
   });
   disposers.push(() => sc.dispose());
   return () => disposers.forEach(d => d());

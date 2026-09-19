@@ -12,9 +12,9 @@ const FALLBACK_STYLE = {
   layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#0B0F14' } }, { id: 'r', type: 'raster', source: 'r' }],
 };
 const FONT = ['Montserrat Medium', 'Open Sans Bold', 'Noto Sans Regular'];
-const LONDON = [[-0.51, 51.286], [0.334, 51.692]];
+const LONDON = [[-0.53, 51.28], [0.345, 51.695]];
 const HOME = { pitch: 45, bearing: -12 };
-const PAD = { top: 64, bottom: 24, left: 24, right: 64 };
+const PAD = { top: 72, bottom: 36, left: 36, right: 72 };
 const HEX_Z = 11; // neighbourhood hexagons from this zoom
 
 const SEQ = ['#FDE68A', '#FB923C', '#EA580C', '#991B1B'];
@@ -49,13 +49,48 @@ const pts = (v, d = 1) => (isNum(v) ? `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math
 const short = n => String(n || '').replace(' and ', ' & ').replace(' upon Thames', '');
 const mean = a => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : null);
 
+/** Fill single-cell holes in the hexagon grid (cells with no satellite result, e.g. at Canary Wharf):
+ *  copy a neighbour's hexagon into the gap and give it the neighbours' average values. */
+function fillHexGaps(hexes) {
+  if (hexes.length < 20) return;
+  const K = Math.cos(51.5 * Math.PI / 180);
+  const pt = f => [f.properties.centroid[0] * K, f.properties.centroid[1]];
+  const P = hexes.map(pt);
+  const mid = P[Math.floor(P.length / 2)];
+  const near = P.map(q => [q, Math.hypot(q[0] - mid[0], q[1] - mid[1])]).filter(x => x[1] > 0).sort((a, b) => a[1] - b[1]).slice(0, 6);
+  if (near.length < 6) return;
+  const r = near[5][1], offs = near.map(([q]) => [q[0] - mid[0], q[1] - mid[1]]);
+  const cellOf = q => `${Math.round(q[0] / (r * 0.5))},${Math.round(q[1] / (r * 0.5))}`;
+  const grid = new Map();
+  P.forEach((q, i) => grid.set(cellOf(q), i));
+  const find = q => { const [cx, cy] = cellOf(q).split(',').map(Number);
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const i = grid.get(`${cx + dx},${cy + dy}`); if (i != null && Math.hypot(P[i][0] - q[0], P[i][1] - q[1]) < r * 0.4) return i; }
+    return null; };
+  const seen = new Set(), add = [];
+  P.forEach(q => offs.forEach(([ox, oy]) => {
+    const g = [q[0] + ox, q[1] + oy], k = cellOf(g);
+    if (seen.has(k)) return; seen.add(k);
+    if (find(g) != null) return;
+    const nb = offs.map(([a, b]) => find([g[0] + a, g[1] + b])).filter(i => i != null);
+    if (nb.length < 5) return;
+    const src = hexes[nb[0]], [sx, sy] = [(P[nb[0]][0] - g[0]) / K, P[nb[0]][1] - g[1]];
+    const props = { ...src.properties, id: `fill-${k}`, centroid: [g[0] / K, g[1]] };
+    for (const key of ['rent_now', 'rent_12m', 'change_pct', 'built_change_pct', 'pressure', 'built_share_2019', 'built_share_latest']) props[key] = mean(nb.map(i => hexes[i].properties[key]).filter(isNum));
+    const names = {}; nb.forEach(i => (names[hexes[i].properties.name] = (names[hexes[i].properties.name] || 0) + 1));
+    props.name = Object.entries(names).sort((a, b) => b[1] - a[1])[0][0];
+    const shift = c => (typeof c[0] === 'number' ? [c[0] - sx, c[1] - sy] : c.map(shift));
+    add.push({ type: 'Feature', geometry: { type: src.geometry.type, coordinates: shift(src.geometry.coordinates) }, properties: props });
+  }));
+  hexes.push(...add);
+}
+
 export async function render(page) {
   css();
   const meta = MODULE_META.rent;
   page.innerHTML = topbar({
     crumb: 'Modules  /  Rent Radar', title: 'Rent Radar',
     iconSq: `<div class="icon-sq lg" style="background:${tint(meta.color)}">${icon('building-2', { size: 22 })}</div>`,
-    subtitle: 'London · new building seen from orbit × rents',
+    tagline: 'London · new building seen from orbit × rents',
     right: `<div class="seg dark" id="metric" role="tablist">${Object.entries(METRICS).map(([k, m]) => `<button class="${k === 'pressure' ? 'on' : ''}" data-m="${k}">${m.label}</button>`).join('')}</div>`,
   }) + `
   <section class="rent-row rr">
@@ -94,7 +129,8 @@ export async function render(page) {
   const card0 = mod?.insights?.cards?.[0];
   $('#rent-ins').textContent = plainAI(card0?.text) || mod?.insights?.headline || 'East London is adding rooftops fastest, yet rents still lead the city. New supply is not keeping up.';
   const boros = (geo?.features || []).filter(f => f?.geometry && f.properties?.name);
-  const hexes = (hexGeo?.features || []).filter(f => f?.geometry && f.properties?.id);
+  const hexes = (hexGeo?.features || []).filter(f => f?.geometry && f.properties?.id && f.properties.centroid);
+  fillHexGaps(hexes);
   if (!boros.length) {
     $('#mapc').innerHTML = `<div class="empty" style="height:100%;background:transparent;color:rgba(255,255,255,.6)">Borough data is being built on Modal…</div>`;
     $('#detail').innerHTML = `<div class="empty">Pending</div>`; $('#rank').innerHTML = '';
@@ -151,9 +187,9 @@ export async function render(page) {
   // ---------- side: detail card ----------
   const statRow = (label, v, ref, f, max, hint) => {
     const w = isNum(v) && max ? Math.min(100, Math.abs(v) / max * 100) : 0, rw = isNum(ref) && max ? Math.min(100, Math.abs(ref) / max * 100) : 0;
-    return `<div class="rr-stat"><div class="rr-stat-l"><span>${esc(label)}</span><b>${isNum(v) ? f(v) : '–'}</b></div>
+    return `<div class="rr-stat"${hint ? ` title="${esc(String(hint).replace(/<[^>]+>/g, ''))}"` : ''}><div class="rr-stat-l"><span>${esc(label)}${hint ? `<span class="rr-d-i">${icon('info', { size: 12 })}</span>` : ''}</span><b>${isNum(v) ? f(v) : '–'}</b></div>
       <div class="rr-stat-bar"><i style="width:${w}%" class="${isNum(v) && v < 0 ? 'neg' : ''}"></i>${isNum(ref) ? `<em style="left:${rw}%" title="London median ${f(ref)}"></em>` : ''}</div>
-      ${hint ? `<div class="rr-stat-h">${hint}</div>` : ''}</div>`;
+      </div>`;
   };
   function renderDetail() {
     const d = $('#detail');
@@ -168,13 +204,12 @@ export async function render(page) {
     const p = sel.p, kind = p._kind;
     const sub = kind === 'b' ? 'London borough' : kind === 'h' ? `One hexagon (~0.7 km²) · ${esc(short(p.borough))}` : `Neighbourhood average · ${esc(short(p.borough))}`;
     const area = kind === 'h' ? hoodList.find(h => h.key === p.name) : null;
-    const areaLine = area && area.n > 1 ? `<div class="rr-d-area">${icon('hexagon', { size: 13 })}<span>Whole ${esc(area.name)} area avg (${area.n} hexagons, as ranked): <b>${money(area.rent_now)}</b> · <b>${pct(area.change_pct, 1)}</b> · pressure <b>${fmt(area.pressure)}/100</b></span></div>` : '';
+    const areaTip = area && area.n > 1 ? `Whole ${area.name} area (${area.n} hexagons, as ranked): ${money(area.rent_now)} · ${pct(area.change_pct, 1)} · pressure ${fmt(area.pressure)}/100` : '';
     const bs = isNum(p.built_share_2019) && isNum(p.built_share_latest) ? `Built-up share of land ${Math.round(p.built_share_2019)}% → ${Math.round(p.built_share_latest)}% (Sentinel-2, 2019 → ${hexMeta.latest?.year || 'now'})` : (p.why ? esc(p.why) : '');
-    d.innerHTML = `<div class="rr-d-top"><div><div class="rr-d-k">${sub}</div><div class="rr-d-n">${esc(p.name)}</div></div>
+    d.innerHTML = `<div class="rr-d-top"><div><div class="rr-d-k">${sub}</div><div class="rr-d-n"${areaTip ? ` title="${esc(areaTip)}"` : ''}>${esc(p.name)}${areaTip ? `<span class="rr-d-i">${icon('info', { size: 13 })}</span>` : ''}</div></div>
         <button class="rr-x" id="rr-x" title="Back to London">${icon('x', { size: 16 })}</button></div>
       <div class="avg-line"><span class="a">${money(p.rent_now)}</span>${icon('arrow-right', { size: 18, cls: 'rr-arrow' })}<span class="b">${money(p.rent_12m)}</span></div>
       <div class="rr-d-chg">${pct(p.change_pct, 1)} in 12 months <span>· London ${pct(Lmed.change_pct, 1)}</span></div>
-      ${areaLine}
       <div class="rr-stats">
         ${statRow('Rent pressure', p.pressure, Lmed.pressure, v => `${fmt(v)}/100`, 100)}
         ${kind === 'b' ? statRow('New building since 2019', p.built_change_pct, Lmed.built_change_pct, v => pct(v, 1), 30, bs)
@@ -208,7 +243,8 @@ export async function render(page) {
       const p = list.find(x => (x.key || x.name) === r.dataset.k);
       if (p) { select(p); flyTo(p); }
     }));
-    $('#rank .rr-row.on')?.scrollIntoView({ block: 'nearest' });
+    const on = $('#rank .rr-row.on'), box = $('#rank');
+    if (on) { const t = on.offsetTop - box.offsetTop; if (t < box.scrollTop || t + on.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = t - box.clientHeight / 2 + on.offsetHeight / 2; }
   }
 
   // ---------- legend ----------
@@ -247,14 +283,14 @@ export async function render(page) {
     map.addSource('hex', { type: 'geojson', data: fcH() });
     map.addSource('boro-pts', { type: 'geojson', data: ptsB });
     map.addSource('hex-pts', { type: 'geojson', data: ptsH });
-    const fillOpacity = ['interpolate', ['linear'], ['zoom'], 9, 0.86, 11, 0.74, 13, 0.55, 15, 0.4, 17, 0.3];
+    const fillOpacity = ['interpolate', ['linear'], ['zoom'], 9, 0.84, 10, 0.75, 12, 0.55, 13, 0.45, 14, 0.35, 17, 0.28];
     map.addLayer({ id: 'b-fill', type: 'fill', source: 'boro', maxzoom: HEX_Z, paint: { 'fill-color': ['get', '_c'], 'fill-opacity': fillOpacity } }, top);
     map.addLayer({ id: 'h-fill', type: 'fill', source: 'hex', minzoom: HEX_Z, paint: { 'fill-color': ['get', '_c'], 'fill-opacity': fillOpacity } }, top);
     map.addLayer({ id: 'b-ext', type: 'fill-extrusion', source: 'boro', maxzoom: HEX_Z, paint: { 'fill-extrusion-color': ['get', '_c'], 'fill-extrusion-height': ['get', '_h'], 'fill-extrusion-opacity': 0.9, 'fill-extrusion-vertical-gradient': true } }, top);
     // Street level: flatten + fade the hexagons so streets and names stay readable.
     map.addLayer({ id: 'h-ext', type: 'fill-extrusion', source: 'hex', minzoom: HEX_Z, paint: { 'fill-extrusion-color': ['get', '_c'],
       'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 12, ['get', '_h'], 14, ['*', ['get', '_h'], 0.35], 16, ['*', ['get', '_h'], 0.1]],
-      'fill-extrusion-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 0.65, 16, 0.45] } }, top);
+      'fill-extrusion-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.85, 12, 0.7, 13, 0.5, 14, 0.36, 16, 0.3] } }, top);
     map.addLayer({ id: 'h-line', type: 'line', source: 'hex', minzoom: HEX_Z, paint: { 'line-color': '#0B0F14', 'line-opacity': 0.35, 'line-width': 0.6 } }, top);
     map.addLayer({ id: 'b-line', type: 'line', source: 'boro', paint: { 'line-color': '#FFFFFF', 'line-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0.35, 12, 0.6], 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.6, 13, 1.6] } }, top);
     map.addLayer({ id: 'hover-b', type: 'line', source: 'boro', filter: ['==', ['get', 'name'], ''], paint: { 'line-color': '#FFFFFF', 'line-width': 2 } });
@@ -267,6 +303,10 @@ export async function render(page) {
     map.addLayer({ id: 'h-lbl', type: 'symbol', source: 'hex-pts', minzoom: HEX_Z + 0.4, maxzoom: 14.5, layout: { ...lbl, 'text-field': ['get', 't'], 'text-size': 12 }, paint: lp });
     // Basemap place labels clash with ours at city zoom.
     for (const l of layers) if (/^place_(suburbs|villages|town|hamlet)/.test(l.id)) map.setLayoutProperty(l.id, 'visibility', 'none');
+    // Street / place names stay readable over the colour: light text with a dark halo.
+    for (const l of layers) if (l.type === 'symbol' && /road|street|place|poi|water/.test(l.id) && map.getLayoutProperty(l.id, 'visibility') !== 'none') {
+      try { map.setPaintProperty(l.id, 'text-color', '#F5F5F4'); map.setPaintProperty(l.id, 'text-halo-color', 'rgba(8,10,14,.9)'); map.setPaintProperty(l.id, 'text-halo-width', 1.6); } catch {}
+    }
     applyDim(false);
   }
   map.on('style.load', () => { styleOk = true; clearTimeout(fb); addLayers(); });
@@ -354,7 +394,9 @@ export async function render(page) {
   map.on('zoomend', syncLevel); map.on('moveend', syncLevel);
   page.querySelectorAll('#lvl button').forEach(b => b.addEventListener('click', () => {
     if (b.dataset.l === 'h' && !hexes.length) return;
+    map.stop();
     if (b.dataset.l === 'b') goHome(); else map.easeTo({ zoom: Math.max(12, map.getZoom()), duration: 1000 });
+    map.once('moveend', () => { setData(); applyDim(false); map.triggerRepaint(); });
   }));
   if (!hexes.length) $('#lvl [data-l="h"]').disabled = true;
   page.querySelectorAll('#dim button').forEach(b => b.addEventListener('click', () => { dim = b.dataset.d; applyDim(); }));

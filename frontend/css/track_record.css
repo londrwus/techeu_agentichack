@@ -12,15 +12,16 @@ body[data-view="track"] .page > * { flex-shrink: 0; }
 
 /* 1. stat cards */
 .tr-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.tr-stat { padding: 20px 22px; gap: 10px; animation: tr-in .5s cubic-bezier(.2,.7,.2,1) both; }
-.tr-stat-top { display: flex; align-items: center; gap: 10px; min-height: 36px; }
-.tr-stat-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); flex: none; }
-.tr-stat-label { font-size: 14px; font-weight: 600; color: var(--text-2); line-height: 1.25; }
-.tr-stat-v { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.tr-stat-v > span:first-child { font-size: 44px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-1); }
-.tr-was { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; color: var(--text-3); background: var(--bg); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
-.tr-was.better { color: var(--down-ink); background: var(--down-soft); }
-.tr-meter { position: relative; height: 8px; border-radius: 999px; background: var(--bg); margin: 6px 0 12px; }
+.tr-stat { padding: 18px 20px 16px; gap: 8px; animation: tr-in .5s cubic-bezier(.2,.7,.2,1) both; }
+.tr-stat-top { display: flex; align-items: center; gap: 7px; min-height: 20px; }
+.tr-stat-ic { display: inline-flex; color: var(--text-3); flex: none; }
+.tr-stat-ic svg { width: 15px; height: 15px; }
+.tr-stat-label { font-size: 13px; font-weight: 500; color: var(--text-2); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr-stat-v { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.tr-stat-v > span:first-child { font-size: 34px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-1); }
+.tr-was { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 500; color: var(--text-3); white-space: nowrap; }
+.tr-was.better { color: var(--down-ink); }
+.tr-meter { position: relative; height: 6px; border-radius: 999px; background: var(--bg); margin: 6px 0 12px; }
 .tr-meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--accent); animation: tr-grow .9s .2s cubic-bezier(.2,.7,.2,1) both; transform-origin: left; }
 .tr-meter b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text-1); border-radius: 1px; }
 .tr-meter em { position: absolute; top: 12px; transform: translateX(-50%); font-style: normal; font-size: 10px; font-weight: 600; color: var(--text-3); white-space: nowrap; }

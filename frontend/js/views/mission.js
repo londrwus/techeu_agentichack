@@ -31,10 +31,10 @@ export async function render(page, arg) {
     <div class="actions" id="mc-actions"></div>
   </header>
   <section class="counter-row">
-    ${counter('c1', 'box', 'var(--p-modal)', 'Modal containers', 'Modal')}
-    ${counter('c2', 'image', 'var(--accent)', 'Tiles processed', 'Sentinel-2')}
-    ${counter('c3', 'gavel', 'var(--m-gpu)', 'Jev judgments / sec', 'TypeSafe Jev')}
-    ${counter('c4', 'cpu', 'var(--ink)', 'Forecast model', 'on Modal')}
+    ${counter('c1', 'boxes', '', 'Modal containers', 'Parallel containers on Modal')}
+    ${counter('c2', 'image', '', 'Tiles processed', 'Sentinel-2 satellite tiles')}
+    ${counter('c3', 'gavel', '', 'Jev judgments / sec', 'Typed judgments by TypeSafe Jev')}
+    ${counter('c4', 'cpu', '', 'Forecast model', 'on Modal')}
   </section>
   <section class="mc-row">
     <div class="card">
@@ -48,13 +48,13 @@ export async function render(page, arg) {
     <div class="side">
       <div class="card" style="padding:20px">
         <div class="prov-title">Gemini sees · Jev judges · Modal scales</div>
-        <div class="prov"><div class="lg" style="background:var(--p-modal)"><i data-lucide="server"></i></div><div><div class="nm">Modal</div><div class="rl" id="pv-modal-r">CPU fan-out + GPU forecast</div></div><div class="st" style="color:var(--p-modal)" id="pv-modal">–</div></div>
-        <div class="prov"><div class="lg" style="background:var(--p-gemini)"><i data-lucide="eye"></i></div><div><div class="nm">Google Gemini</div><div class="rl">3.8-flash · vision + TTS</div></div><div class="st" style="color:var(--p-gemini)" id="pv-gem">–</div></div>
-        <div class="prov"><div class="lg" style="background:var(--p-jev)"><i data-lucide="scale"></i></div><div><div class="nm">TypeSafe Jev</div><div class="rl">jev-latest · typed judgments</div></div><div class="st" style="color:var(--p-jev)" id="pv-jev">–</div></div>
+        <div class="prov"><div class="lg"><i data-lucide="server"></i></div><div><div class="nm">Modal</div><div class="rl" id="pv-modal-r">CPU fan-out + GPU forecast</div></div><div class="st" id="pv-modal">–</div></div>
+        <div class="prov"><div class="lg"><i data-lucide="eye"></i></div><div><div class="nm">Google Gemini</div><div class="rl">3.8-flash · vision + TTS</div></div><div class="st" id="pv-gem">–</div></div>
+        <div class="prov"><div class="lg"><i data-lucide="scale"></i></div><div><div class="nm">TypeSafe Jev</div><div class="rl">jev-latest · typed judgments</div></div><div class="st" id="pv-jev">–</div></div>
       </div>
       <div class="card" style="padding:20px;flex:1">
         <div class="card-head"><div style="font-size:15px;font-weight:700">Jev judgments / sec</div><div style="font-size:13px;color:var(--text-3)" id="peak">peak –</div></div>
-        <div class="tput-wrap"><div class="tput" id="tput">${Array.from({ length: 30 }, () => '<i></i>').join('')}</div><div class="tput-empty" id="tput-empty">Live throughput appears here during a scan</div></div>
+        <div class="tput-sum" id="tput-sum"></div><div class="tput-wrap"><div class="tput" id="tput">${Array.from({ length: 30 }, () => '<i></i>').join('')}</div><div class="tput-empty" id="tput-empty">Live throughput appears here during a scan</div></div>
       </div>
     </div>
   </section>`;
@@ -64,7 +64,8 @@ export async function render(page, arg) {
   const mods = await allModules();
   // Last recorded scan: shown before any live scan so the throughput card never looks empty.
   const lastScan = await api('/api/scan/last').catch(() => null);
-  const ghost = (() => { const j = lastScan?.jps || []; const a = j.findIndex(v => v > 0); if (a < 0) return []; const w = j.slice(Math.max(0, a - 3), Math.max(0, a - 3) + 30); return Array(30 - w.length).fill(0).concat(w); })();
+  // Tight window around the burst (2 s either side) so the bars read as a chart, not three hairlines.
+  const ghost = (() => { const j = lastScan?.jps || []; const a = j.findIndex(v => v > 0); if (a < 0) return []; let b = j.length - 1; while (b > a && !(j[b] > 0)) b--; return j.slice(Math.max(0, a - 2), Math.min(j.length, b + 3)).slice(0, 30); })();
   const regionName = {}, regionMod = {};
   const idleTiles = [];
   mods.forEach(m => (m.regions || []).forEach(r => {
@@ -143,7 +144,7 @@ export async function render(page, arg) {
     }
     setCounter('c4', gpuShort(gpu), '');
     const gt = stats.gpu_type ? String(stats.gpu_type).replace(/\s*\(.*\)/, '') : null;
-    page.querySelector('#c4 .src').lastChild.textContent = /timesfm/i.test(gpu || '') ? `TimesFM 3.0 · ${gt || 'GPU'} on Modal` : `${gpuFamily(gpu)} on Modal`;
+    page.querySelector('#c4 .cap').textContent = /timesfm/i.test(gpu || '') ? `TimesFM 3.0 · ${(gt || 'GPU').replace(/^NVIDIA\s+/i, '')} GPU on Modal` : `${gpuFamily(gpu)} on Modal`;
 
     // progress + grid
     const total = live || scan.finished ? (l.tiles_total || 0) : idleTiles.length;
@@ -183,10 +184,20 @@ export async function render(page, arg) {
     const pad = useGhost ? ghost : Array(30 - hist.length).fill(0).concat(hist);
     const max = Math.max(10, ...pad);
     page.querySelector('#tput').classList.toggle('ghost', !!useGhost);
-    page.querySelectorAll('#tput i').forEach((b, i) => (b.style.height = Math.max(2, (pad[i] / max) * 100) + '%'));
+    page.querySelectorAll('#tput i').forEach((b, i) => {
+      b.hidden = i >= pad.length;
+      b.style.height = Math.max(2, ((pad[i] || 0) / max) * 100) + '%';
+      b.dataset.v = useGhost && pad[i] > 0 ? fmt(pad[i]) : '';
+      b.dataset.t = useGhost ? `${i + 1}s` : '';
+    });
+    const sum = page.querySelector('#tput-sum');
+    const nowJ = hist.length ? hist[hist.length - 1] : 0;
+    sum.innerHTML = useGhost
+      ? `<b>${fmt(lastScan.peak_jps)}</b><span>/s peak · ${fmt(lastScan.jev_judgments)} judgments on ${fmt(lastScan.tiles)} tiles in ${Math.round(lastScan.elapsed_s || 0)} s</span>`
+      : live || scan.finished ? `<b>${fmt(live ? nowJ : scan.peakJps)}</b><span>/s ${live ? 'now' : 'peak'} · peak ${fmt(scan.peakJps)}/s</span>` : '';
     page.querySelector('#peak').textContent = useGhost ? `last scan · peak ${fmt(lastScan.peak_jps)}/s` : `peak ${fmt(scan.peakJps)}/s`;
     const empty = page.querySelector('#tput-empty');
-    empty.hidden = hist.some(v => v > 0);
+    empty.hidden = hist.some(v => v > 0) || !!useGhost;
     empty.textContent = useGhost ? 'Last scan shown · press Scan now to stream live' : 'Live throughput appears here during a scan';
     empty.classList.toggle('ghost', !!useGhost);
   };
@@ -220,7 +231,7 @@ export async function render(page, arg) {
 
 function counter(id, icon, color, label, src) {
   return `<div class="card counter" id="${id}">
-    <div class="counter-head"><div class="icon-sq" style="background:${color === 'var(--ink)' ? 'var(--bg)' : `color-mix(in srgb, ${color} 14%, transparent)`};color:${color}"><i data-lucide="${icon}"></i></div>${label}</div>
+    <div class="counter-head"><i data-lucide="${icon}"></i>${label}</div>
     <div class="v"><span class="cv">–</span><small></small></div>
-    <span class="src" style="--c:${color}">${src}</span></div>`;
+    <div class="cap">${src}</div></div>`;
 }

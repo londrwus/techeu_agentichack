@@ -77,15 +77,16 @@
 .gs-x svg { width: 16px; height: 16px; }
 .gs-dbody { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; flex: 1; min-height: 0; }
 .gs-dbody.solo { grid-template-columns: 1fr; }
-.gs-chartwrap { position: relative; min-height: 220px; min-width: 0; }
-.gs-chart { position: absolute; inset: 0; }
-.gs-detail.hovering .gs-call { opacity: 0 !important; transition: opacity .15s; }
-.gs-call { position: absolute; left: 56px; top: 6px; z-index: 3; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,.10); white-space: nowrap; pointer-events: none; opacity: 0; transform: translateY(4px); }
+.gs-chartwrap { position: relative; min-height: 220px; min-width: 0; display: flex; flex-direction: column; }
+.gs-chart { position: relative; flex: 1; min-height: 160px; order: 2; }
+
+/* Forecast readout docked above the plot (never over the Today marker or the lines). */
+.gs-call { order: 1; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 12px; padding: 0 4px 6px 8px; white-space: nowrap; pointer-events: none; opacity: 0; }
 .gs-call.on { animation: gsUp .3s 1.2s ease-out forwards; }
 .gs-call .t { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.gs-call .v { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.gs-call .v { display: flex; align-items: baseline; gap: 8px; }
 .gs-call .v b { font-size: 22px; font-weight: 700; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
-.gs-call .l3 { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.gs-call .l3 { font-size: 11px; color: var(--text-3); }
 .gs-ev { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; overflow: hidden; }
 .gs-farm { display: flex; gap: 12px; background: #FAFAF9; border-radius: 12px; padding: 8px; align-items: center; }
 .gs-farm .sat-img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex: none; transition: transform .15s, box-shadow .15s; }

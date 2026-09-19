@@ -1,6 +1,10 @@
 /* Rent Radar (views/rent.js) */
-.rr { min-height: 600px; }
-.rr .map3d { min-height: 560px; container-type: inline-size; }
+.rr { height: calc(100vh - 150px); min-height: 560px; max-height: 900px; flex: none; }
+.rr .map3d { min-height: 0; container-type: inline-size; }
+.rr .rr-side { min-height: 0; overflow: hidden; }
+.rr .rr-list { max-height: none; }
+.rr-d-i { display: inline-flex; margin-left: 6px; color: var(--text-3); vertical-align: middle; cursor: help; }
+.rr-stat[title] { cursor: help; }
 .page > .topbar:has(+ .rr) { flex: none; }
 @container (max-width: 860px) { .rr-hint { display: none; } }
 .glass-s { position: absolute; z-index: 5; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff; }

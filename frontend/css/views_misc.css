@@ -16,6 +16,28 @@
 .tput-empty { position: absolute; inset: 16px 0 0; display: grid; place-items: center; font-size: 13px; color: var(--text-3); pointer-events: none; }
 
 /* Mission: last-scan ghost curve before a live scan */
-.tput.ghost i { background: #E0E7FF; }
-.tput.ghost i:last-child { background: #E0E7FF; }
+.tput.ghost { gap: 6px; }
+.tput.ghost i { background: #C7D2FE; position: relative; }
+.tput.ghost i:last-child { background: #C7D2FE; }
+.tput.ghost i::before { content: attr(data-v); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; font-size: 11px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.tput.ghost i::after { content: attr(data-t); position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; font-size: 10px; color: var(--text-3); }
+.tput.ghost { margin-bottom: 16px; margin-top: 22px; }
 .tput-empty.ghost { place-items: start center; font-size: 12px; }
+
+/* Mission: restrained counters (same language as the Overview KPI cards) */
+.counter-row .counter { padding: 18px 20px 16px; gap: 0; }
+.counter-row .counter-head { gap: 7px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+.counter-row .counter-head svg.lucide { width: 15px; height: 15px; color: var(--text-3); flex: none; }
+.counter-row .counter .v { margin-top: 14px; font-size: 38px; font-weight: 600; letter-spacing: -0.03em; }
+.counter-row .counter .v small { font-size: 13px; }
+.counter-row .cap { margin-top: 8px; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Providers: neutral outline icons */
+.prov { background: none; border: 1px solid var(--border); }
+.prov .lg { background: var(--bg); color: var(--text-2); border: 1px solid var(--border); width: 36px; height: 36px; }
+.prov .lg svg.lucide { width: 17px; height: 17px; }
+.prov .st { color: var(--text-1); font-weight: 600; }
+/* Sentinel tile names: dark scrim so they read on bright / cloudy tiles */
+.tile .lab { left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; background: linear-gradient(to top, rgba(12,10,9,.78), rgba(12,10,9,0)); text-shadow: none; }
+.tput-sum { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; min-height: 30px; }
+.tput-sum b { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tput-sum span { font-size: 12px; color: var(--text-3); }

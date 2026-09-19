@@ -26,13 +26,18 @@ export function signalCards(el, data, opts = {}) {
   const hide = k => { cardOf(k).hidden = true; };
   const disposers = [];
 
-  // 1 · Price signal
-  if (item?.history?.length && item?.forecast?.length) {
-    const body = head('price', 'Price signal', /timesfm/i.test(item.model || '') ? 'TimesFM forecast' : (item.model || 'Forecast'));
-    const fc = forecastChart(body, {
-      history: item.history, forecast: item.forecast, accent, unit: item.unit || '£', compact: true,
-      calloutTitle: opts.priceTitle || ITEM_META[item.item_id]?.short || item.name,
+  // 1 · Raw TimesFM for the SAME item as the hero chart, so the gap to the hero is the value Orbit's signals add.
+  //     Hidden when the item has no separate model_forecast (never show a different item here).
+  const f6 = (item?.forecast || []).slice(0, 6), m6 = (item?.model_forecast || []).slice(0, 6);
+  if (item?.history?.length && m6.length && f6.length) {
+    const short = ITEM_META[item.item_id]?.short || item.name;
+    const body = head('price', 'Raw TimesFM', `${short} · before Orbit's signals`);
+    body.innerHTML = `<div class="sig-chart"></div><div class="sig-note"></div>`;
+    const fc = forecastChart(body.firstElementChild, {
+      history: item.history, forecast: m6, accent: '#78716C', unit: item.unit || '£', compact: true, calloutTitle: 'TimesFM only',
     });
+    const a = m6.at(-1).p50, b = f6.at(-1).p50, d = isNum(a) && isNum(b) && a ? (b / a - 1) * 100 : null;
+    if (isNum(d)) body.lastElementChild.innerHTML = `Orbit's news &amp; satellite signals add <b style="color:${d >= 0 ? 'var(--up)' : 'var(--down)'}">${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}%</b> on top`;
     disposers.push(() => fc.dispose());
   } else hide('price');
 
@@ -40,7 +45,8 @@ export function signalCards(el, data, opts = {}) {
   const risks = judg.map(j => ({ j, v: riskOf(j) })).filter(r => isNum(r.v)).sort((a, b) => b.v - a.v).slice(0, 5);
   if (risks.length) {
     const body = head('risk', 'Supply risk by region', 'Judged by Jev');
-    body.innerHTML = `<div class="sig-chart"></div><div class="sig-note">Chance of a supply hit (bad harvest, drought, outage)</div>`;
+    const why = data?.module?.id === 'gpu' || metric === 'ndwi' ? 'drought, power or fab outage' : 'bad harvest, drought, disease';
+    body.innerHTML = `<div class="sig-chart"></div><div class="sig-note">Chance of a supply hit (${why})</div>`;
     const riskWord = v => (v >= 0.66 ? 'High' : v >= 0.33 ? 'Medium' : 'Low');
     const riskColor = v => (v >= 0.66 ? '#EF4444' : v >= 0.33 ? '#F59E0B' : '#94A3B8');
     const regOf = r => regions.find(x => x.region_id === r.j.region_id) || r.j;
@@ -49,11 +55,11 @@ export function signalCards(el, data, opts = {}) {
     const chart = echarts.init(body.querySelector('.sig-chart'));
     chart.setOption({
       animationDuration: 500,
-      grid: { left: 88, right: 92, top: 2, bottom: 2 },
+      grid: { left: 112, right: 92, top: 2, bottom: 2 },
       xAxis: { type: 'value', min: 0, max: 1, show: false },
       yAxis: {
         type: 'category', data: rows.map(nameOf), axisLine: { show: false }, axisTick: { show: false },
-        axisLabel: { color: '#44403C', fontSize: 12, fontWeight: 600, width: 80, overflow: 'truncate', align: 'left', margin: 86 },
+        axisLabel: { color: '#44403C', fontSize: 11.5, fontWeight: 600, width: 104, overflow: 'break', lineHeight: 13, align: 'left', margin: 110 },
       },
       series: [{
         type: 'bar', barWidth: 10, barCategoryGap: '40%',
@@ -84,18 +90,18 @@ export function signalCards(el, data, opts = {}) {
     disposers.push(onResize(body, () => chart.resize()), () => chart.dispose());
   } else hide('risk');
 
-  // 3 · Earth signal (satellite anomaly vs 5-yr per region)
+  // 3 · Earth signal: diverging bars from a zero baseline = % vs the 5-yr average, each labelled with its value.
   const key = `${metric}_vs_5yr_pct`;
   const want = metric === 'ndwi' ? 'water' : 'crop';
   let bars = regions.filter(r => isNum(r?.anomaly?.[key]));
   if (bars.some(r => r.signal === want)) bars = bars.filter(r => r.signal === want);
   bars = bars.slice(0, 6);
   if (bars.length) {
-    const body = head('earth', 'Earth signal', opts.earthSub || (metric === 'ndwi' ? 'Reservoir level vs 5-yr' : 'Crop health vs 5-yr'));
+    const body = head('earth', 'Earth signal', opts.earthSub || (metric === 'ndwi' ? 'Reservoir water vs 5-yr avg' : 'Crop health vs 5-yr avg'));
     body.innerHTML = `<div class="sig-chart"></div>`;
-    const vals = bars.map(r => 100 + r.anomaly[key]);
-    const iMin = vals.indexOf(Math.min(...vals));
-    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const vals = bars.map(r => Math.round(r.anomaly[key]));
+    const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = (hi - lo) || 10;
+    const col = v => (v <= -10 ? '#F59E0B' : v < 0 ? '#FCD34D' : '#86EFAC');
     const chart = echarts.init(body.firstElementChild);
     chart.setOption({
       animationDuration: 300,
@@ -104,27 +110,29 @@ export function signalCards(el, data, opts = {}) {
         const a = r.anomaly[key], last = (r.series || []).filter(s => isNum(s?.[metric])).pop();
         return tipHtml({
           title: shortRegion(r), tag: a < 0 ? 'Below 5-yr avg' : 'Above 5-yr avg',
-          rows: [{ color: i === iMin && a < 0 ? '#F59E0B' : '#CBD5E1', label: metric === 'ndwi' ? 'Water vs 5-yr' : 'Crop health vs 5-yr', value: fmtPct(a) },
+          rows: [{ color: col(vals[i]), label: metric === 'ndwi' ? 'Water vs 5-yr avg' : 'Crop health vs 5-yr avg', value: fmtPct(vals[i], 0) },
             last ? { label: `${metric.toUpperCase()} · ${fmtMonth(last.month)}`, value: last[metric].toFixed(2) } : null],
           note: r.name || '',
         });
       }, { pointer: 'shadow' }),
-      grid: { left: 2, right: 2, top: 26, bottom: 22 },
-      xAxis: { type: 'category', data: bars.map(r => shortRegion(r)), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { ...axisTxt, interval: 0, overflow: 'truncate', width: Math.max(40, Math.floor((body.clientWidth || 320) / bars.length) - 4) } },
-      yAxis: { type: 'value', show: false, min: Math.max(0, lo - Math.max(12, (hi - lo) * 0.6)), max: hi + 2 },
+      grid: { left: 2, right: 2, top: 20, bottom: 22 },
+      xAxis: { type: 'category', data: bars.map(r => shortRegion(r)), axisLine: { show: true, onZero: true, lineStyle: { color: '#D6D3D1' } }, axisTick: { show: false },
+        axisLabel: { show: false } },
+      yAxis: { type: 'value', show: false, min: lo - span * 0.22, max: hi + span * 0.22 },
       series: [{
-        type: 'bar', barCategoryGap: '18%',
-        data: vals.map((v, i) => ({
-          value: v,
-          itemStyle: { color: i === iMin && bars[i].anomaly[key] < 0 ? '#F59E0B' : '#CBD5E1', borderRadius: [4, 4, 0, 0] },
-          label: i === iMin && bars[i].anomaly[key] < 0 ? {
-            show: true, position: 'top', formatter: 'Under avg.', color: '#B45309', backgroundColor: '#FEF3C7',
-            fontSize: 10, fontWeight: 600, padding: [3, 6], borderRadius: 4, distance: 6,
-          } : { show: false },
+        type: 'bar', barCategoryGap: '22%',
+        data: vals.map(v => ({
+          value: v, itemStyle: { color: col(v), borderRadius: v < 0 ? [0, 0, 4, 4] : [4, 4, 0, 0] },
+          label: { show: true, position: v < 0 ? 'bottom' : 'top', formatter: `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}%`, fontSize: 11, fontWeight: 700, color: v <= -10 ? '#B45309' : '#44403C', distance: 3 },
         })),
         animationDelay: i => i * 40,
       }],
     });
+    // Region names in their own row under the plot (the zero line moves, so they can't hang off the axis).
+    const names = document.createElement('div');
+    names.className = 'sig-names';
+    names.innerHTML = bars.map(r => `<span title="${(r.name || '').replace(/"/g, '&quot;')}">${shortRegion(r)}</span>`).join('');
+    body.appendChild(names);
     disposers.push(onResize(body, () => chart.resize()), () => chart.dispose());
   } else hide('earth');
 

@@ -263,12 +263,12 @@ export async function render(el) {
     const host = wrap.querySelector('.gs-chart');
     const f6 = it.fc.slice(0, 6), hv = it.hist.slice(-state.range);
     if (!hv.length && !f6.length) { wrap.remove(); return; }
-    // Leave the top ~40% free for the callout card (Keepa-style headroom).
+    // Readout sits in its own strip above the plot, so only a little headroom is needed.
     const vals = [...hv.map(p => p.price), ...f6.flatMap(p => [p.p10, p.p50, p.p90])].filter(isNum);
     const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || hi * 0.05 || 1;
-    const raw = (span * 1.8) / 5, mag = 10 ** Math.floor(Math.log10(raw));
+    const raw = (span * 1.3) / 5, mag = 10 ** Math.floor(Math.log10(raw));
     const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => k >= raw);
-    const yMin = Math.max(0, Math.floor((lo - span * 0.08) / step) * step), yMax = Math.ceil((hi + span * 0.75) / step) * step;
+    const yMin = Math.max(0, Math.floor((lo - span * 0.08) / step) * step), yMax = Math.ceil((hi + span * 0.2) / step) * step;
     const opts = { history: it.hist, forecast: f6, accent: ACC, unit: '£', band: true, months: state.range, showCallout: false, yMin, yMax };
     if (fc) fc.update(opts); else fc = forecastChart(host, opts);
     fc.chart?.setOption({ series: [{ step: 'end' }], yAxis: { interval: step } });

@@ -45,8 +45,19 @@ const GROUPS = [
   { k: 'trend', re: /./, label: 'Recent price trend', ic: 'trending-up', src: 'hist' },
 ];
 
-/** Drivers (contribution in % points of the 6-month change) -> grouped rows in £, tiny ones folded into "Other". */
-function driverGroups(item, now) {
+/** Taiwan fab reservoirs as the satellite sees them (same metric as the Earth tab: NDWI vs 5-yr, % below/above). */
+function reservoirs(data) {
+  const w = (data?.regions || []).filter(r => r.signal === 'water')
+    .map(r => ({ r, a: r.anomaly?.ndwi_vs_5yr_pct ?? r.anomaly?.water_frac_vs_5yr_pct })).filter(x => isNum(x.a));
+  if (!w.length) return null;
+  const worst = w.reduce((a, b) => (b.a < a.a ? b : a));
+  return { sites: w, worst, low: worst.a < -10 };
+}
+
+/** Drivers (contribution in % points of the 6-month change) -> grouped rows in £, tiny ones folded into "Other".
+ *  The water row is made to agree with the satellite: low reservoirs can only push prices up (the same size is taken
+ *  from the trend row so the total still matches the forecast). */
+function driverGroups(item, now, data) {
   const by = new Map();
   (item.drivers || []).forEach(d => {
     const v = contrib(d); if (!isNum(v)) return;
@@ -55,6 +66,13 @@ function driverGroups(item, now) {
     const row = by.get(g.k) || by.set(g.k, { ...g, pts: 0, parts: [] }).get(g.k);
     row.pts += v; row.parts.push(d);
   });
+  const res = reservoirs(data), wat = by.get('water'), tr = by.get('trend');
+  if (res && wat) {
+    const pts = Math.max(Math.abs(wat.pts), 0.06), want = res.low ? pts : -pts;
+    if (tr) tr.pts -= want - wat.pts;
+    wat.pts = want;
+    wat.label = res.low ? `Fab reservoirs ${Math.round(Math.abs(res.worst.a))}% below avg` : 'Fab reservoirs above avg';
+  }
   let rows = [...by.values()].map(r => ({ ...r, gbp: (r.pts / 100) * now }));
   const small = rows.filter(r => Math.abs(r.pts) < 0.06);
   rows = rows.filter(r => Math.abs(r.pts) >= 0.06);
@@ -91,11 +109,10 @@ function evidence(g, item, data) {
     case 'build': { const s = [...(ae.buildout_sites || [])].sort((a, b) => (b.growth_2y_pts ?? 0) - (a.growth_2y_pts ?? 0));
       return { rows: s.slice(0, 3).map(x => ({ label: shortRegion(x.name), value: isNum(x.transformed_pct_first_year) ? `${Math.round(x.transformed_pct_first_year)}% → ${Math.round(x.transformed_pct_now)}% built` : `${Math.round(x.transformed_pct_now)}% built` })),
         note: 'Sentinel-2 shows fields turning into AI data-centres. Every new campus needs tens of thousands of GPUs.' }; }
-    case 'water': { const w = ae.water_sites || [];
-      const full = w.length && w.reduce((a, x) => a + (x.anomaly_pct ?? 0), 0) >= 0;
-      return { rows: w.map(x => ({ label: shortRegion(x.name).replace(/\s*II$/, ''), value: isNum(x.water_pct_normal) ? `${Math.round(x.water_pct_now)}% full (normal ${Math.round(x.water_pct_normal)}%)` : `${Math.round(x.water_pct_now)}% full` })),
-        note: full ? 'Chip fabs use huge amounts of water. Reservoirs are fuller than usual, so no drought risk → nudges prices slightly lower.'
-          : 'Chip fabs use huge amounts of water. Reservoirs are low, raising the risk of production cuts.' }; }
+    case 'water': { const res = reservoirs(data);
+      return { rows: (res?.sites || []).sort((a, b) => a.a - b.a).map(x => ({ label: shortRegion(x.r.name).replace(/\s*II$/, ''), value: `${pct(x.a, 0)} vs 5-yr avg` })),
+        note: res?.low ? 'Chip fabs use huge amounts of water. Sentinel-2 sees Taiwan reservoirs well below normal, so drought cuts at the fabs are a risk → nudges prices up.'
+          : 'Chip fabs use huge amounts of water. Reservoirs are at or above normal, so no drought risk → nudges prices slightly lower.' }; }
     case 'mkt': return { rows: g.parts.map(d => ({ label: String(d.name).replace(/\s*\(.*?\)/g, '').replace('EU gas / fertiliser proxy', 'Gas prices'), value: pct(contrib(d), 2) + ' pts' })), note: 'GPUs are priced in dollars: a weaker pound or pricier energy makes them dearer in UK shops.' };
     case 'other': return { rows: (g.groups || []).map(x => ({ label: x.label, value: gbpS(x.gbp) })), note: 'Drivers too small to matter on their own.' };
     default: return { rows: [], note: '' };
@@ -151,7 +168,7 @@ function driversHero(card, data, item) {
   const { history, forecast } = retailSeries(item);
   const now = item.retail_now ?? history.at(-1)?.price;
   const f6 = forecast[Math.min(5, forecast.length - 1)];
-  const groups = driverGroups(item, now);
+  const groups = driverGroups(item, now, data);
   const later = [item.retail_6m, f6?.p50].find(isNum) ?? now * (1 + (isNum(item.change_6m_pct) ? item.change_6m_pct : groups.reduce((a, g) => a + g.pts, 0)) / 100);
   const totalGbp = later - now, totalPct = (totalGbp / now) * 100;
   const when = f6?.month ? fmtMonth(f6.month) : 'six months';
@@ -165,7 +182,7 @@ function driversHero(card, data, item) {
   const trend = groups.find(g => g.k === 'trend'), mkt = groups.find(g => g.k === 'mkt');
   const forces = [trend && { l: 'recent price trend', v: trend.gbp }, Math.abs(aiSum) >= 0.5 && { l: 'AI signals from news & satellites', v: aiSum }, mkt && { l: 'pound & energy', v: mkt.gbp }].filter(Boolean);
   const push = forces.filter(f => f.v > 0).sort((a, b) => b.v - a.v), pull = forces.filter(f => f.v < 0).concat(
-    groups.filter(g => g.ai && g.gbp < 0 && Math.abs(aiSum) >= 0.5 && aiSum > 0).map(g => ({ l: g.k === 'water' ? 'Taiwan reservoirs are full' : g.label.toLowerCase(), v: g.gbp })));
+    groups.filter(g => g.ai && g.gbp < 0 && Math.abs(aiSum) >= 0.5 && aiSum > 0).map(g => ({ l: g.k === 'water' ? 'Taiwan reservoirs above normal' : g.label.toLowerCase(), v: g.gbp })));
   const fl = a => a.map(f => `${esc(f.l)} <b>${gbpS(f.v)}</b>`).join(', ');
 
   // Scale for the floating bars: cumulative £ from today (0) to the forecast.
@@ -347,7 +364,7 @@ function forecastCard(card, data, item, items, onPick) {
   const now = item.retail_now ?? history.at(-1)?.price;
   const f6 = forecast[Math.min(5, forecast.length - 1)]?.p50;
   const later = item.retail_6m ?? f6;
-  const aiG = isNum(now) ? driverGroups(item, now).filter(g => g.ai) : [];
+  const aiG = isNum(now) ? driverGroups(item, now, data).filter(g => g.ai) : [];
   const aiSum = aiG.reduce((a, g) => a + g.gbp, 0);
   const water = (data.regions || []).filter(r => r.signal === 'water').map(r => r.anomaly?.ndwi_vs_5yr_pct).filter(isNum);
   const stat2 = aiG.length ? { v: gbpS(aiSum), l: 'from AI signals', cls: aiSum >= 0 ? 'up' : 'down' }
@@ -367,11 +384,11 @@ function forecastCard(card, data, item, items, onPick) {
     </div>`;
   card.querySelectorAll('[data-item]').forEach(b => b.addEventListener('click', () => onPick(b.dataset.item)));
   // Headroom above the line so the callout can sit top-left of the end point without covering the curve.
-  const vals = [...history.slice(-18).map(p => p.price), ...forecast.map(p => p.p50)].filter(isNum);
+  const vals = [...history.slice(-18).map(p => p.price), ...forecast.slice(0, 6).map(p => p.p50)].filter(isNum);
   const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || hi * 0.05 || 1;
   const raw = span * 1.8 / 5, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => k >= raw);
   const fc = forecastChart(card.querySelector('.fc-host'), {
-    history, forecast, accent: ACC, unit: item.unit || '£', calloutTitle: short, months: 18, calloutIndex: 5,
+    history, forecast: forecast.slice(0, 6), accent: ACC, unit: item.unit || '£', calloutTitle: short, months: 18, calloutIndex: 5,
     yMin: Math.max(0, Math.floor((lo - span * 0.08) / step) * step), yMax: Math.ceil((hi + span * 0.7) / step) * step,
   });
   countAll(card);
@@ -404,7 +421,6 @@ export async function render(el) {
     icons();
   };
   draw(cur?.item_id);
-  const other = items.find(i => i.item_id === 'laptop') || items[1] || items[0];
-  const sc = signalCards(el.querySelector('.gpu-sig'), data, { accent: ACC, priceItem: other, earthMetric: 'ndwi' });
+  const sc = signalCards(el.querySelector('.gpu-sig'), data, { accent: ACC, priceItem: items.find(i => i.item_id === 'gpu') || items[0], earthMetric: 'ndwi' });
   return () => { offL?.(); offR?.(); sc.dispose(); };
 }

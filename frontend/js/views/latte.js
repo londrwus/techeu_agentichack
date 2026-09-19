@@ -104,7 +104,7 @@ export async function render(el) {
   const disposers = [];
   const host = el.querySelector('.lt-chart');
   if (host) {
-    const c = forecastChart(host, { history: hist, forecast: fc, accent, unit: item.unit || '£', calloutTitle: 'Latte', months: 12, calloutIndex: i6 });
+    const c = forecastChart(host, { history: hist, forecast: fc.slice(0, i6 + 1), accent, unit: item.unit || '£', calloutTitle: 'Latte', months: 12, calloutIndex: i6 });
     disposers.push(() => c.dispose());
   }
 
@@ -125,9 +125,8 @@ export async function render(el) {
     cmp.addEventListener('pointercancel', () => (drag = false));
   }
 
-  // Signal row. Price card = the pure TimesFM baseline (hero shows TimesFM + Orbit signal), so it isn't a duplicate.
-  const base = item?.model_forecast?.length ? { ...item, forecast: item.model_forecast, model: 'TimesFM baseline' } : item;
-  const sc = signalCards(el.querySelector('.lt-page > section:last-child'), data, { accent, priceItem: base, priceTitle: 'TimesFM only' });
+  // Signal row. Price card = raw TimesFM for the same latte, labelled with what Orbit's signals add.
+  const sc = signalCards(el.querySelector('.lt-page > section:last-child'), data, { accent, priceItem: item });
   disposers.push(() => sc.dispose());
 
   return () => disposers.forEach(d => { try { d(); } catch (e) { console.warn(e); } });
