@@ -104,6 +104,12 @@
 
 .ea-attrib { position: absolute; z-index: 5; right: 22px; bottom: 1px; font-size: 9.5px; color: rgba(255,255,255,.45); pointer-events: none; }
 
+@media (max-width: 1380px) {
+  .ea-chip-row { gap: 6px; }
+  .ea-chip, .ea-home { height: 46px; padding: 0 12px 0 6px; gap: 6px; font-size: 13px; }
+  .ea-home { width: 46px; padding: 0; }
+  .ea-ph { width: 30px; height: 30px; }
+}
 @media (max-width: 900px) {
   .ea-stats { width: auto; left: 92px; top: auto; bottom: 108px; }
   .ea-legend { display: none; }

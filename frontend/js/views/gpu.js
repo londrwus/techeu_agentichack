@@ -155,7 +155,7 @@ function driversHero(card, data, item) {
         const x = Math.min(p0[0], p1[0]), w = Math.max(2, Math.abs(p1[0] - p0[0])), y = p0[1] - bh / 2;
         const kids = [{
           type: 'rect', shape: { x, y, width: w, height: bh, r: 4 }, style: { fill: color(r, params.dataIndex) },
-          enterFrom: { shape: { width: 0, x: p0[0] } }, enterAnimation: { duration: 450, delay: 120 + params.dataIndex * 70 },
+          enterFrom: { style: { opacity: 0 } }, enterAnimation: { duration: 450, delay: 120 + params.dataIndex * 70 },
         }, {
           type: 'text', style: {
             text: `${r.v >= 0 ? '+' : '−'}${Math.abs(r.v).toFixed(1)}${params.dataIndex === topI ? ' pts' : ''}`, x: x + w + 6, y: p0[1],

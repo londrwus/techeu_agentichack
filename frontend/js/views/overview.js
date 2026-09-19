@@ -93,7 +93,7 @@ function renderBasket(page, mods) {
     const sq = Array.from({ length: 10 }, (_, k) =>
       `<i style="${k < n ? `background:${fill};` : ''}animation-delay:${ci * 60 + k * 35}ms"></i>`).join('');
     return `<div class="wcol" title="${esc(r.name || r.short)}: ${pct(r.v, 1)} in 6 months">
-      <div class="val ${hot ? 'hot' : r.v < 0 ? 'neg' : ''}">${pct(r.v)}</div>
+      <div class="val ${hot ? 'hot' : r.v < 0 ? 'neg' : ''}">${pct(r.v, Math.abs(r.v) < 1 ? 1 : 0)}</div>
       <div class="wstack">${sq}</div>
       <div class="emo">${r.emoji}</div><div class="nm">${esc(r.short)}</div></div>`;
   }).join('');
