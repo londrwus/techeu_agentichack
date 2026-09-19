@@ -103,6 +103,12 @@ def eval_summary():
     return data.read_json("eval/summary.json") or {}
 
 
+@app.get("/api/leaderboard")
+def leaderboard():
+    """Model zoo leaderboard (VAL + TEST metrics) and the Orbit v2 stack (data/built/eval/leaderboard.json)."""
+    return data.read_json("eval/leaderboard.json") or {}
+
+
 @app.get("/api/eval/{item_id}")
 def eval_item(item_id: str):
     v = data.read_json(f"eval/{item_id}.json") if item_id.replace("_", "").isalnum() else None
@@ -165,3 +171,7 @@ def stats():
 def health():
     return {"ok": True, "data_dir": str(data.DATA), "data_exists": data.DATA.exists(),
             "frontend": (data.FRONTEND / "index.html").exists()}
+
+
+from backend.extra_rent import router as _rent_router  # noqa: E402
+app.include_router(_rent_router)

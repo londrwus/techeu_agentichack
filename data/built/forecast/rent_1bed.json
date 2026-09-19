@@ -828,5 +828,7 @@
   }
  ],
  "model_prob_up_6m": 0.62,
- "model_change_6m_pct": 0.4
+ "model_change_6m_pct": 0.4,
+ "prob_bigup_6m": 0.0,
+ "method": "orbit_v1 (no backtest series: v2 stack not applicable)"
 }

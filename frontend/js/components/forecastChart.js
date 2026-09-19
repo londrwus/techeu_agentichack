@@ -8,7 +8,8 @@
 // Options: accent ('#F97316'), unit ('£'), calloutTitle ('Latte'), compact (false), band (false),
 //   months (history months shown; default 12 compact / 18 hero), calloutIndex (forecast index, default last),
 //   valueFmt (v => string), showCallout (true), yMin / yMax.
-import { fmtGBP, isNum, onResize } from './ui.js';
+import { fmtGBP, isNum, onResize, arrowIcon } from './ui.js';
+import { axisTooltip, tipHtml, fmtMonth } from './chartTheme.js';
 
 const HIST = '#334155';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -112,7 +113,25 @@ export function forecastChart(el, opts = {}) {
         axisLabel: { color: '#A8A29E', fontSize: 11, fontWeight: 500, formatter: axisFmt },
         splitLine: { lineStyle: { color: '#F1F0EE' } },
       },
-      tooltip: { show: false },
+      tooltip: axisTooltip(ps => {
+        const p0 = Array.isArray(ps) ? ps[0] : ps; const i = p0 ? (months.indexOf(p0.axisValue) >= 0 ? months.indexOf(p0.axisValue) : p0.dataIndex) : null;
+        if (i == null || !months[i]) return '';
+        const name = o.calloutTitle || o.itemName || '';
+        if (i <= iToday) {
+          const v = h[i]?.price, ch = lastP && i < iToday ? (lastP / v - 1) * 100 : null;
+          return tipHtml({
+            title: fmtMonth(months[i]), tag: i === iToday ? 'Today' : '',
+            rows: [{ color: HIST, label: name ? `${name} price` : 'Price', value: fmt(v) }],
+            note: isNum(ch) ? `Since then: ${ch >= 0 ? '+' : '−'}${Math.abs(ch).toFixed(1)}% to today` : (i === iToday ? 'Latest observed price' : ''),
+          });
+        }
+        const f = fc[i - h.length]; if (!f) return '';
+        const ch = lastP ? (f.p50 / lastP - 1) * 100 : null;
+        const rows = [{ color: accent, dashed: true, label: 'Expected', value: fmt(f.p50) }];
+        if (isNum(f.p10) && isNum(f.p90)) rows.push({ label: 'Likely range', value: `${fmt(f.p10)} – ${fmt(f.p90)}` });
+        if (isNum(ch)) rows.push({ label: 'vs today', html: `<span class="delta ${ch > 0.05 ? 'up' : ch < -0.05 ? 'down' : 'flat'}">${ch >= 0 ? '+' : '−'}${Math.abs(ch).toFixed(1)}%</span>` });
+        return tipHtml({ title: fmtMonth(months[i]), tag: 'Forecast', rows, note: name ? `${name} · 80% of outcomes fall in the range` : '80% of outcomes fall in the range' });
+      }),
       series,
     }, true);
 
@@ -120,10 +139,9 @@ export function forecastChart(el, opts = {}) {
     if (o.showCallout === false || !fc.length) { call.classList.remove('on'); pt = null; return; }
     const cv = fc[ci].p50, delta = lastP ? (cv / lastP - 1) * 100 : null;
     const cls = !isNum(delta) ? '' : delta > 0.05 ? 'up' : delta < -0.05 ? 'down' : 'flat';
-    const arrow = cls === 'up' ? '↑' : cls === 'down' ? '↓' : '→';
     call.className = `fc-callout${o.compact ? ' compact' : ''}${shown ? ' on' : ''}`;
     call.innerHTML = `<div class="t">${o.calloutTitle ? `${o.calloutTitle} · ` : ''}${monLong(fc[ci].month)}</div>
-      <div class="v"><b>${fmt(cv)}</b>${isNum(delta) ? `<span class="delta ${cls}">${arrow} ${Math.abs(delta).toFixed(1)}%</span>` : ''}</div>`;
+      <div class="v"><b>${fmt(cv)}</b>${isNum(delta) ? `<span class="delta ${cls}">${arrowIcon(delta)}${Math.abs(delta).toFixed(1)}%</span>` : ''}</div>`;
     pt = { x: h.length + ci, y: cv, rising: isNum(delta) && delta > 0 };
   }
 
@@ -155,6 +173,9 @@ export function forecastChart(el, opts = {}) {
   }
 
   chart.on('finished', place);
+  // Fade the static callout while the user is hovering (the tooltip takes over).
+  plot.addEventListener('mouseenter', () => call.classList.add('dim'));
+  plot.addEventListener('mouseleave', () => call.classList.remove('dim'));
   const stop = onResize(el, () => { chart.resize(); place(); });
 
   const api = {

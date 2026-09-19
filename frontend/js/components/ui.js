@@ -1,10 +1,11 @@
 // Shared UI helpers for the module screens. Re-exports the common lib helpers so views can import from one place.
 import { api, esc, isNum, pct, countUp, deltaPill, monthLabel, ITEM_META, REGION_META, MODULE_META, tint } from '../lib.js';
 export { api, esc, isNum, pct, countUp, deltaPill, monthLabel, ITEM_META, REGION_META, MODULE_META, tint };
+import { icon, moduleIcon, itemIcon, MODULE_ICON, ITEM_ICON, UI_ICON } from './icons.js';
+export { icon, moduleIcon, itemIcon, MODULE_ICON, ITEM_ICON, UI_ICON };
 
 /** Module accents from MODULES.md (forecast line, active risk curve, sparklines). */
 export const ACCENT = { groceries: '#F97316', latte: '#A16207', beer_wine: '#CA8A04', gpu: '#6366F1', rent: '#10B981' };
-export const MODULE_ICON = { groceries: 'shopping-cart', latte: 'coffee', beer_wine: 'beer', gpu: 'cpu', rent: 'building-2' };
 
 /** Cached GET /api/modules/{id} (null when missing). */
 export const loadModule = id => api(`/api/modules/${id}`);
@@ -18,12 +19,14 @@ export function fmtGBP(v, { compact = false, unit = '£', digits } = {}) {
   return '£' + v.toFixed(digits ?? 2);
 }
 
-/** Inline delta text "↑ 11.4%" coloured up (red) / down (green). */
+/** Small arrow icon for a signed change (up = red, down = green in CSS). */
+export const arrowIcon = (v, size = 13) => icon(v > 0.05 ? 'arrow-up-right' : v < -0.05 ? 'arrow-down-right' : 'arrow-right', { size, stroke: 2.25 });
+
+/** Inline delta text "↗ 11.4%" coloured up (red) / down (green). */
 export function deltaText(v, { digits = 1, suffix = '%' } = {}) {
   if (!isNum(v)) return '';
   const cls = v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat';
-  const arrow = v > 0.05 ? '↑' : v < -0.05 ? '↓' : '→';
-  return `<span class="delta ${cls}">${arrow} ${Math.abs(v).toFixed(digits)}${suffix}</span>`;
+  return `<span class="delta ${cls}">${arrowIcon(v)}${Math.abs(v).toFixed(digits)}${suffix}</span>`;
 }
 
 /** Soft pill "+17%" (up-soft/up). */
@@ -49,11 +52,12 @@ export function latestMonth(region) {
 /** Tile URL for region/month (month defaults to latest). */
 export function tileUrl(regionId, month) { return month ? `/tiles/${regionId}/${month}.png` : null; }
 
-/** <img> of a satellite tile that swaps to a soft placeholder when the PNG is missing. */
+/** <img> of a satellite tile that swaps to a soft placeholder when the PNG is missing.
+ *  Clicking it opens the satellite lightbox (components/lightbox.js) via the data-sat-* attributes. */
 export function satImg(regionId, month, { alt = '', cls = '' } = {}) {
   const src = tileUrl(regionId, month);
   if (!src) return `<div class="sat-img sat-missing ${cls}"></div>`;
-  return `<img class="sat-img ${cls}" src="${src}" alt="${esc(alt)}" loading="lazy" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'sat-img sat-missing ${cls}'}))">`;
+  return `<img class="sat-img sat ${cls}" src="${src}" alt="${esc(alt)}" data-sat-region="${esc(regionId)}" data-sat-month="${esc(month)}" loading="lazy" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'sat-img sat-missing ${cls}'}))">`;
 }
 
 const COMMODITY_WORDS = /\b(coffee|arabica|robusta|cocoa|olives?|olive oil|oranges?|wheat|hops|vines?|vineyards?|grapes?|citrus|groves?|belt|farms?|fields?|estates?|plantations?|reservoir|fabs?|science park|park|port)\b/gi;

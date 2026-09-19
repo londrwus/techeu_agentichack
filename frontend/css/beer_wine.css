@@ -18,7 +18,7 @@
 .bw-row.on small i { display: inline-block; }
 .bw-cell {
   border-radius: 6px; display: flex; align-items: center; justify-content: center; min-height: 44px;
-  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: default;
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: zoom-in;
   opacity: 0; transform: translateY(4px); transition: opacity .35s ease-out, transform .35s ease-out, box-shadow .15s;
 }
 .bw-cell.in { opacity: 1; transform: none; }

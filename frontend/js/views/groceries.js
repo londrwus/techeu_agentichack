@@ -3,7 +3,8 @@
 import { topbar, wireScan } from './common.js';
 import { backtestBadge } from '../components/moduleHeader.js';
 import { forecastChart } from '../components/forecastChart.js';
-import { loadModule, ACCENT, ITEM_META, esc, isNum, countUp, retailSeries, shortRegion, satImg } from '../components/ui.js';
+import { loadModule, ACCENT, esc, isNum, countUp, retailSeries, shortRegion, satImg, icon, itemIcon, moduleIcon, arrowIcon } from '../components/ui.js';
+import { tipHtml, fmtMonth, fmtPct } from '../components/chartTheme.js';
 import { toast } from '../lib.js';
 
 const ACC = ACCENT.groceries;
@@ -46,11 +47,11 @@ function pillCls(v) { return v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; }
 function pill(v) {
   if (!isNum(v)) return '';
   const c = pillCls(v);
-  return `<span class="gs-pill ${c}">${c === 'up' ? '▲' : c === 'down' ? '▼' : '•'} ${Math.abs(v).toFixed(1)}%</span>`;
+  return `<span class="gs-pill ${c}">${arrowIcon(v, 12)}${Math.abs(v).toFixed(1)}%</span>`;
 }
+/** Product packshot, whole object visible (contain on white). Falls back to a Lucide item icon. */
 function photo(id, cls = '') {
-  const em = ITEM_META[id]?.emoji || '🛒';
-  return `<img class="${cls}" src="/static/assets/products/${id}.jpg" alt="" onerror="this.outerHTML='<div class=&quot;gs-noimg ${cls}&quot;>${em}</div>'">`;
+  return `<span class="gs-pic ${cls}"><img src="/static/assets/products/${id}.jpg" alt="" data-no-lightbox onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="gs-noimg" hidden>${itemIcon(id, { size: 28 })}</span></span>`;
 }
 /** Best recent satellite month for a region: latest with a thumb and cloud ≤ 60 %, else latest thumb. */
 function bestMonth(r) {
@@ -63,13 +64,33 @@ function regionLabel(r) {
   const country = parts.length > 1 ? parts.at(-1).trim() : '';
   return shortRegion(r) + (country ? `, ${country}` : '');
 }
+/** Sparkline points: last 12 months of shelf price + 6 forecast months (p50, with p10/p90). */
+function sparkPts(it) {
+  return [
+    ...it.hist.slice(-12).filter(p => isNum(p.price)).map(p => ({ month: p.month, v: p.price })),
+    ...it.fc.slice(0, 6).filter(p => isNum(p.p50)).map(p => ({ month: p.month, v: p.p50, lo: p.p10, hi: p.p90, fc: true })),
+  ];
+}
+const SW = 160, SH = 30;
+const sx = (i, n) => i / (n - 1) * (SW - 4) + 2;
 function sparkline(it) {
-  const pts = [...it.hist.slice(-12).map(p => p.price), ...it.fc.slice(0, 6).map(p => p.p50)].filter(isNum);
+  const pts = it.spark;
   if (pts.length < 3) return '';
-  const W = 160, H = 26, lo = Math.min(...pts), hi = Math.max(...pts), sp = hi - lo || 1;
-  const d = pts.map((v, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1) * (W - 4) + 2).toFixed(1)},${(H - 3 - (v - lo) / sp * (H - 6)).toFixed(1)}`).join('');
+  const lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v)), sp = hi - lo || 1;
+  const xy = pts.map((p, i) => [sx(i, pts.length), SH - 4 - (p.v - lo) / sp * (SH - 8)]);
+  pts.forEach((p, i) => { p.x = xy[i][0] / SW; p.y = xy[i][1] / SH; });
+  const k = pts.findIndex(p => p.fc), nH = k < 0 ? pts.length : k;
+  const path = a => a.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
   const col = isNum(it.chg) && it.chg < 0 ? 'var(--down)' : ACC;
-  return `<svg class="gs-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+  const hPath = path(xy.slice(0, nH)), fPath = k > 0 ? path(xy.slice(nH - 1)) : '';
+  return `<div class="gs-sparkw" data-spark="${it.id}">
+    <svg class="gs-spark" viewBox="0 0 ${SW} ${SH}" preserveAspectRatio="none">
+      <path d="${hPath}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      ${fPath ? `<path class="fc" d="${fPath}" fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="3 3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` : ''}
+    </svg>
+    ${k > 0 ? `<i class="gs-snow" style="left:${(xy[nH - 1][0] / SW * 100).toFixed(2)}%"></i>` : ''}
+    <i class="gs-sline" hidden></i><i class="gs-sdot" hidden style="--c:${col}"></i>
+  </div>`;
 }
 function pUp(h) { const p = h?.supply_effect?.probs || {}; return (p.strongly_up || 0) + (p.up || 0); }
 function pDown(h) { const p = h?.supply_effect?.probs || {}; return (p.strongly_down || 0) + (p.down || 0); }
@@ -95,6 +116,7 @@ function buildItems(data) {
       nHl: heads.filter(h => h.item_id === raw.item_id).length,
     };
     it.rec = recOf(it);
+    it.spark = sparkPts(it);
     return it;
   });
 }
@@ -135,7 +157,7 @@ function evidenceHtml(it, data) {
       const d = h.date ? `${mon(h.date.slice(0, 7))} ${h.date.slice(0, 4)}` : '';
       return `<a class="gs-hl" href="${esc(h.url || '#')}" target="_blank" rel="noopener">
         <div style="min-width:0"><div class="t">${esc(h.title)}</div><div class="s">${esc(h.source || '')}${d ? ` · ${d}` : ''}</div></div>
-        <div class="p"><b class="${isUp ? 'up' : 'down'}">${isUp ? '↑' : '↓'} ${(isUp ? up : dn).toFixed(2)}</b><span>P(price ${isUp ? 'up' : 'down'})</span></div></a>`;
+        <div class="p"><b class="${isUp ? 'up' : 'down'}">${arrowIcon(isUp ? 1 : -1, 12)}${Math.min(99, Math.round((isUp ? up : dn) * 100))}%</b><span>chance price ${isUp ? 'rises' : 'falls'}</span></div></a>`;
     }).join(''));
   }
   return parts.length ? `<div class="gs-ev">${parts.join('')}</div>` : '';
@@ -145,7 +167,7 @@ export async function render(el) {
   ensureCss();
   const head = d => topbar({
     crumb: 'Modules  /  Groceries  /  Shop', title: 'Groceries',
-    iconSq: `<div class="icon-sq lg" style="background:${ACC}22;color:${ACC}"><i data-lucide="shopping-cart"></i></div>`,
+    iconSq: `<div class="icon-sq lg" style="background:${ACC}1A;color:${ACC}">${moduleIcon('groceries', { size: 22 })}</div>`,
     right: d ? backtestBadge(d) : '',
   });
   el.innerHTML = head(null) + `<div class="card skeleton" style="height:600px"></div>`;
@@ -201,6 +223,7 @@ export async function render(el) {
   }));
   $('.gs-sort select').addEventListener('change', e => { state.sort = e.target.value; applyGrid(); });
   grid.addEventListener('click', e => {
+    if (e.target.closest('[data-sat-region]')) return; // satellite thumb → lightbox only
     const c = e.target.closest('.gs-card'); if (!c) return;
     const wasHidden = detail.hidden;
     state.sel = c.dataset.id; detail.hidden = false; applyGrid();
@@ -218,7 +241,7 @@ export async function render(el) {
         <div><div class="gs-dtitle">${esc(it.name)}${it.size ? ` · ${esc(it.size)}` : ''}</div>
           <div class="gs-dsub">Price history &amp; ${esc((it.raw.model || 'TimesFM').split('+')[0].trim())} forecast${hShown[0] && last ? ` · ${monY(hShown[0].month)} – ${monY(last)}` : ''}</div></div>
         <div class="gs-seg">${[12, 36, 60].map(m => `<button data-r="${m}" class="${m === state.range ? 'on' : ''}">${m / 12}Y</button>`).join('')}</div>
-        <button class="gs-x" title="Close"><i data-lucide="x"></i></button>
+        <button class="gs-x" title="Close">${icon('x', { size: 16 })}</button>
       </div>
       <div class="gs-dbody${ev ? '' : ' solo'}"><div class="gs-chartwrap"><div class="fc gs-chart"></div><div class="gs-call"></div></div>${ev}</div>`;
     window.lucide?.createIcons();
@@ -253,7 +276,7 @@ export async function render(el) {
     if (!f || !isNum(it.now)) { call.hidden = true; return; }
     const d = (f.p50 / it.now - 1) * 100, c = pillCls(d);
     call.innerHTML = `<div class="t">${esc(it.name)} · ${monY(f.month)}</div>
-      <div class="v"><b>${gbp(f.p50)}</b><span class="delta ${c}">${c === 'up' ? '↑' : c === 'down' ? '↓' : '→'} ${Math.abs(d).toFixed(1)}%</span></div>
+      <div class="v"><b>${gbp(f.p50)}</b><span class="delta ${c}">${arrowIcon(d)}${Math.abs(d).toFixed(1)}%</span></div>
       ${isNum(f.p10) && isNum(f.p90) ? `<div class="l3">likely ${gbp(f.p10)} – ${gbp(f.p90)}${isNum(it.prob) ? ` · ${Math.round(it.prob * 100)}% chance it rises` : ''}</div>` : ''}`;
     call.classList.remove('on'); void call.offsetWidth; call.classList.add('on');
   }
@@ -261,17 +284,17 @@ export async function render(el) {
   // ---------- cart ----------
   cart.innerHTML = `
     <div class="gs-chead"><div><h2>Your weekly basket</h2><div class="sub"></div></div>
-      <div class="gs-cicon"><i data-lucide="shopping-basket"></i></div></div>
+      <div class="gs-cicon">${icon('shopping-basket', { size: 18 })}</div></div>
     <div class="gs-rows">${items.map(it => `
       <div class="gs-row" data-id="${it.id}">${photo(it.id)}
         <div style="min-width:0"><div class="nm">${esc(it.name)}</div>
-          <div class="gs-step"><button data-d="-1" aria-label="Less">−</button><span class="q"></span><button data-d="1" aria-label="More">+</button></div></div>
+          <div class="gs-step"><button data-d="-1" aria-label="Less">${icon('minus', { size: 12, stroke: 2.25 })}</button><span class="q"></span><button data-d="1" aria-label="More">${icon('plus', { size: 12, stroke: 2.25 })}</button></div></div>
         <div class="amt"><b class="now"></b><span class="then"></span></div>
       </div>`).join('')}</div>
     <div class="gs-bars-wrap"><div class="gs-bars-head"><b>Basket cost by month</b><span>£ · TimesFM p50</span></div><div class="gs-bars"></div></div>
     <div class="gs-tot"><div>Total today<b class="t0"></b></div><div>Same basket in 6 months<b class="t6"></b></div></div>
     <div class="gs-save"></div>
-    <button class="gs-buy"><i data-lucide="package-plus"></i><span></span></button>`;
+    <button class="gs-buy">${icon('package-plus', { size: 18 })}<span></span></button>`;
   window.lucide?.createIcons();
 
   // Months: today (last history) + next 6 forecast months, only if every item has them.
@@ -281,6 +304,7 @@ export async function render(el) {
     return items.every(i => i.hist.length && i.fc.length >= 6) ? ms : [];
   })();
   const priceAt = (it, k) => (k === 0 ? it.now : it.fc[k - 1]?.p50);
+  let barTot = [];
 
   function renderCart(first = false) {
     const stock = items.filter(i => i.rec === 'stock' && qty[i.id] > 0);
@@ -305,11 +329,12 @@ export async function render(el) {
     barsWrap.hidden = !months.length || !n;
     if (months.length && n) {
       const tot = months.map((_, k) => items.reduce((s, it) => s + (qty[it.id] || 0) * (priceAt(it, k) || 0), 0));
+      barTot = tot;
       const lo = Math.min(...tot), hi = Math.max(...tot), span = hi - lo || hi * 0.02 || 1;
       const floor = lo - span * 1.2, peak = tot.indexOf(hi);
       cart.querySelector('.gs-bars').innerHTML = tot.map((v, k) => {
         const hPct = 18 + 82 * (v - floor) / (hi - floor || 1);
-        return `<div class="gs-bar"><span class="v${k === 0 || k === peak ? ' hi' : ''}">${v.toFixed(2)}</span><i class="${k === 0 ? 'now' : k === peak ? 'peak' : ''}" style="height:${first ? 0 : hPct}%" data-h="${hPct}"></i><span class="m">${mon(months[k])}</span></div>`;
+        return `<div class="gs-bar" data-k="${k}"><span class="v${k === 0 || k === peak ? ' hi' : ''}">${v.toFixed(2)}</span><i class="${k === 0 ? 'now' : k === peak ? 'peak' : ''}" style="height:${first ? 0 : hPct}%" data-h="${hPct}"></i><span class="m">${mon(months[k])}</span></div>`;
       }).join('');
       if (first) requestAnimationFrame(() => requestAnimationFrame(() => cart.querySelectorAll('.gs-bar i').forEach((b, k) => { b.style.transitionDelay = `${k * 40}ms`; b.style.height = b.dataset.h + '%'; })));
     }
@@ -336,9 +361,64 @@ export async function render(el) {
     if (e.target.closest('.gs-buy')) toast('<i data-lucide="check-circle-2"></i> Added to plan', 2500);
   });
 
+  // ---------- hover tooltips (sparklines + basket bars) ----------
+  const tip = document.createElement('div');
+  tip.className = 'gs-tip'; tip.hidden = true; document.body.appendChild(tip);
+  const showTip = (html, x, y) => {
+    tip.innerHTML = html; tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let l = x + 14, t = y - h - 12;
+    if (l + w > innerWidth - 8) l = x - w - 14;
+    if (t < 8) t = y + 16;
+    tip.style.left = l + 'px'; tip.style.top = t + 'px';
+  };
+  const hideTip = () => { tip.hidden = true; };
+  grid.addEventListener('mousemove', e => {
+    const w = e.target.closest('.gs-sparkw');
+    grid.querySelectorAll('.gs-sparkw.hov').forEach(x => { if (x !== w) { x.classList.remove('hov'); x.querySelector('.gs-sline').hidden = x.querySelector('.gs-sdot').hidden = true; } });
+    if (!w) return hideTip();
+    const it = byId[w.dataset.spark], pts = it?.spark || [];
+    if (!pts.length) return;
+    const r = w.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width;
+    let i = 0; pts.forEach((p, j) => { if (Math.abs(p.x - fx) < Math.abs(pts[i].x - fx)) i = j; });
+    const p = pts[i], line = w.querySelector('.gs-sline'), dot = w.querySelector('.gs-sdot');
+    w.classList.add('hov');
+    line.hidden = dot.hidden = false;
+    line.style.left = dot.style.left = (p.x * 100) + '%'; dot.style.top = (p.y * 100) + '%';
+    const vs = isNum(it.now) ? (p.v / it.now - 1) * 100 : null, isNow = !p.fc && i === pts.findIndex(q => q.fc) - 1;
+    showTip(tipHtml({
+      title: fmtMonth(p.month), tag: p.fc ? 'Forecast' : isNow ? 'Today' : '',
+      rows: [
+        { color: p.fc ? ACC : '#334155', dashed: p.fc, label: p.fc ? 'Expected price' : 'Shelf price', value: gbp(p.v) },
+        p.fc && isNum(p.lo) && isNum(p.hi) ? { label: 'Likely range', value: `${gbp(p.lo)} – ${gbp(p.hi)}` } : null,
+        !isNow && isNum(vs) ? { label: 'vs today', value: fmtPct(vs) } : null,
+      ],
+    }), e.clientX, e.clientY);
+  });
+  grid.addEventListener('mouseleave', () => { hideTip(); grid.querySelectorAll('.gs-sparkw.hov').forEach(x => { x.classList.remove('hov'); x.querySelector('.gs-sline').hidden = x.querySelector('.gs-sdot').hidden = true; }); });
+  const bars = cart.querySelector('.gs-bars');
+  bars.addEventListener('mousemove', e => {
+    const b = e.target.closest('.gs-bar');
+    bars.querySelectorAll('.gs-bar.hov').forEach(x => x !== b && x.classList.remove('hov'));
+    if (!b) return hideTip();
+    b.classList.add('hov');
+    const k = +b.dataset.k, v = barTot[k], m = months[k];
+    const lines = items.filter(it => (qty[it.id] || 0) > 0).map(it => ({ label: `${qty[it.id]} × ${it.name}`, value: gbp(qty[it.id] * (priceAt(it, k) || 0)) }));
+    showTip(tipHtml({
+      title: fmtMonth(m), tag: k === 0 ? 'Today' : 'Forecast',
+      rows: [{ color: k === 0 ? '#334155' : ACC, label: 'Basket total', value: gbp(v) }, ...lines,
+        k > 0 && isNum(barTot[0]) ? { label: 'vs today', value: `${v - barTot[0] >= 0 ? '+' : '−'}${gbp(Math.abs(v - barTot[0]))}` } : null],
+      note: k > 0 ? 'TimesFM median (p50) forecast' : '',
+    }), e.clientX, e.clientY);
+  });
+  bars.addEventListener('mouseleave', () => { hideTip(); bars.querySelectorAll('.gs-bar.hov').forEach(x => x.classList.remove('hov')); });
+  // Detail chart has its own crosshair tooltip (forecastChart) — fade the static callout while hovering it.
+  detail.addEventListener('mouseover', e => { if (e.target.closest('.gs-chartwrap')) detail.classList.add('hovering'); });
+  detail.addEventListener('mouseout', e => { if (!e.relatedTarget?.closest?.('.gs-chartwrap')) detail.classList.remove('hovering'); });
+
   applyGrid();
   renderDetail();
   renderCart(true);
   window.lucide?.createIcons();
-  return () => { fc?.dispose(); };
+  return () => { fc?.dispose(); tip.remove(); };
 }

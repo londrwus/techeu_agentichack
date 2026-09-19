@@ -1,7 +1,10 @@
 import { api, allModules, MODULE_META, ITEM_META, esc, fmt, pct, money, isNum, icons, monthLabel, retailMapper } from '../lib.js';
 import { wireBriefing } from './common.js';
+import { icon, MODULE_ICON } from '../components/icons.js';
+import { tipHtml, fmtMonth, fmtPct } from '../components/chartTheme.js';
+import { showTip, hideTip } from '../lib.js';
 
-const SUGGEST = ['🍫 Why is chocolate so expensive?', '🖥️ Will GPUs get cheaper next year?', '🏠 Where will rents rise most?', '🍺 Is a pint going to hit £8?'];
+const SUGGEST = [['candy', 'Why is chocolate so expensive?'], ['cpu', 'Will GPUs get cheaper next year?'], ['building-2', 'Where will rents rise most?'], ['beer', 'Is a pint going to hit £8?']];
 const STEPS = [
   ['git-branch', 'var(--p-jev)', 'var(--p-jev-soft)', 'Jev routes the question'],
   ['eye', 'var(--p-gemini)', '#DBEAFE', 'Gemini reads the evidence'],
@@ -10,9 +13,15 @@ const STEPS = [
 ];
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12, christmas: 12, xmas: 12, summer: 7, spring: 4, winter: 1 };
 
+function ensureCss() {
+  if (document.getElementById('views-misc-css')) return;
+  document.head.appendChild(Object.assign(document.createElement('link'), { id: 'views-misc-css', rel: 'stylesheet', href: '/static/css/views_misc.css' }));
+}
+
 let msgs = null; // chat history survives route changes
 
 export async function render(page, arg) {
+  ensureCss();
   page.innerHTML = `
   <header class="topbar"><div><div class="title-row"><h1>Ask Orbit</h1></div>
     <div class="tagline">Ask about any price. Jev routes it, Gemini answers with the evidence.</div></div></header>
@@ -34,7 +43,7 @@ export async function render(page, arg) {
       </div>
       <div class="card" style="padding:20px;flex:1">
         <div style="font-size:16px;font-weight:700">Try asking</div>
-        <div class="sugg">${SUGGEST.map(s => `<button data-q="${esc(s.slice(s.indexOf(' ') + 1))}">${esc(s)}</button>`).join('')}</div>
+        <div class="sugg">${SUGGEST.map(([ic, s]) => `<button data-q="${esc(s)}">${icon(ic, { size: 16 })}<span>${esc(s)}</span></button>`).join('')}</div>
       </div>
     </div>
   </section>`;
@@ -96,7 +105,7 @@ async function send(page, q) {
   const mod = mods.find(m => (m.items || []).some(i => i.item_id === itemId)) || mods.find(m => m.module?.id === (focus.module_id || label));
   const item = itemId ? mod?.items?.find(i => i.item_id === itemId) : null;
 
-  body.innerHTML = `<span class="route"><i data-lucide="git-branch"></i>Jev routed → ${mMeta ? `${mMeta.emoji} ${esc(mMeta.name)}` : 'General'}${confTxt ? ' · ' + confTxt : ''}</span><p class="atext"></p>`;
+  body.innerHTML = `<span class="route"><i data-lucide="git-branch"></i>Jev routed ${icon('arrow-right', { size: 13 })} ${mMeta ? `${icon(MODULE_ICON[label] || 'circle', { size: 14 })}${esc(mMeta.name)}` : 'General'}${confTxt ? ' · ' + confTxt : ''}</span><p class="atext"></p>`;
   icons();
   // Trace (one by one)
   const calls = res.tool_calls || [];
@@ -129,7 +138,7 @@ function chartCard(item, q) {
   const map = retailMapper(item) || (() => null);
   const fc = (item.forecast || []).slice(0, 6);
   const nowMonth = item.history?.[item.history.length - 1]?.month;
-  const bars = [{ m: nowMonth, v: item.retail_now, now: true }, ...fc.map(f => ({ m: f.month, v: map(f.p50) }))].filter(b => isNum(b.v));
+  const bars = [{ m: nowMonth, v: item.retail_now, now: true }, ...fc.map(f => ({ m: f.month, v: map(f.p50), lo: map(f.p10), hi: map(f.p90) }))].filter(b => isNum(b.v));
   const card = document.createElement('div');
   card.className = 'ans-chart';
   if (bars.length < 2) { card.innerHTML = `<div class="h">${esc(item.name)}<span>${isNum(item.prob_up_6m) ? Math.round(item.prob_up_6m * 100) + '% chance of rising' : ''}</span></div>`; return card; }
@@ -142,6 +151,20 @@ function chartCard(item, q) {
   card.innerHTML = `<div class="h">${esc(ITEM_META[item.item_id]?.short || item.name)} price, next ${bars.length - 1} months<span>${isNum(item.prob_up_6m) ? Math.round(item.prob_up_6m * 100) + '% chance of rising' : ''}</span></div>
     <div class="cols">${bars.map((b, i) => `<div class="c ${b.now ? 'now' : ''} ${i === hl ? 'hl' : ''}"><b>${money(b.v)}</b><i data-h="${H(b.v)}"></i><span>${monthLabel(b.m)}</span></div>`).join('')}</div>`;
   card.querySelectorAll('.cols i').forEach((el, i) => setTimeout(() => (el.style.height = el.dataset.h + '%'), 60 + i * 60));
+  const base = bars[0].v;
+  card.querySelectorAll('.cols .c').forEach((c, i) => {
+    const b = bars[i];
+    const html = tipHtml({
+      title: fmtMonth(b.m), tag: b.now ? 'Today' : 'Forecast',
+      rows: [
+        { color: b.now ? '#A8A29E' : 'var(--accent)', label: b.now ? 'Price' : 'Expected price', value: money(b.v) },
+        !b.now && isNum(b.lo) && isNum(b.hi) && { label: 'Likely range', value: `${money(b.lo)} – ${money(b.hi)}` },
+        !b.now && isNum(base) && { label: 'vs today', value: fmtPct((b.v / base - 1) * 100) },
+      ],
+    });
+    c.addEventListener('mousemove', e => showTip(html, e.clientX, e.clientY));
+    c.addEventListener('mouseleave', hideTip);
+  });
   return card;
 }
 

@@ -5,6 +5,7 @@ httpx==0.28.1
 modal==1.5.5
 numpy==2.5.3
 pandas==3.0.6
+pyarrow==25.0.1
 pydantic==2.13.5
 python-dotenv==1.2.3
 typesafe-sdk==0.7.0

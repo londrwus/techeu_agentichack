@@ -872,5 +872,7 @@
   "extra_12m_pct": 3.29,
   "tuned_on": "cutoffs < 2023 (see eval/summary.json)",
   "method": "TimesFM band re-centred by the tuned Orbit shift (trend blend, damping, satellite tilt, AI-era drivers) -> retail pass-through -> x (1 + h/12 x (Jev news + CPI))"
- }
+ },
+ "prob_bigup_6m": 0.0,
+ "method": "orbit_v1 (no backtest series: v2 stack not applicable)"
 }

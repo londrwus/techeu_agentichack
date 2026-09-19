@@ -1,6 +1,8 @@
 import { api, allModules, MODULE_META, esc, fmt, isNum, tint, countUp, icons } from '../lib.js';
 import { scan, onScan, startScan, stopScan } from '../scan.js';
 import { wireBriefing } from './common.js';
+import { showTip, hideTip } from '../lib.js';
+import { tipHtml, fmtMonth } from '../components/chartTheme.js';
 
 function gpuShort(model) {
   const m = String(model || '').match(/(B200|H200|H100|A100|A10G|L40S|L4|T4)/i);
@@ -12,9 +14,15 @@ function gpuFamily(model) {
   const s = String(model || '').replace(/\s*(on|·)?\s*(NVIDIA\s*)?(B200|H200|H100|A100|A10G|L40S|L4|T4).*$/i, '').trim();
   return s || 'Forecast';
 }
+function ensureCss() {
+  if (document.getElementById('views-misc-css')) return;
+  document.head.appendChild(Object.assign(document.createElement('link'), { id: 'views-misc-css', rel: 'stylesheet', href: '/static/css/views_misc.css' }));
+}
+
 const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 export async function render(page, arg) {
+  ensureCss();
   page.innerHTML = `
   <header class="topbar">
     <div><div class="title-row"><h1>Mission Control</h1><span id="mc-pill"></span></div>
@@ -45,7 +53,7 @@ export async function render(page, arg) {
       </div>
       <div class="card" style="padding:20px;flex:1">
         <div class="card-head"><div style="font-size:15px;font-weight:700">Jev judgments / sec</div><div style="font-size:13px;color:var(--text-3)" id="peak">peak –</div></div>
-        <div class="tput" id="tput">${Array.from({ length: 30 }, () => '<i></i>').join('')}</div>
+        <div class="tput-wrap"><div class="tput" id="tput">${Array.from({ length: 30 }, () => '<i></i>').join('')}</div><div class="tput-empty" id="tput-empty">Live throughput appears here during a scan</div></div>
       </div>
     </div>
   </section>`;
@@ -79,7 +87,8 @@ export async function render(page, arg) {
     if (state === 'proc') c.innerHTML = `<i data-lucide="loader"></i>`;
     else if (state === 'done' || state === 'stale') {
       const col = MODULE_META[ev.module_id || regionMod[ev.region_id]]?.color || '#A8A29E';
-      c.innerHTML = ev.thumb ? `<img src="/${esc(ev.thumb)}" alt="" onerror="this.remove()"><span class="lab">${esc(regionName[ev.region_id] || ev.region_id || '')}</span>`
+      const tm = /(\d{4}-\d{2})\.png$/.exec(ev.thumb || '')?.[1] || ev.month || '';
+      c.innerHTML = ev.thumb ? `<img src="/${esc(ev.thumb)}" alt="${esc(regionName[ev.region_id] || '')}" data-sat-region="${esc(ev.region_id || '')}" data-sat-month="${esc(tm)}" title="${esc(regionName[ev.region_id] || ev.region_id || '')}${tm ? ' · ' + fmtMonth(tm) : ''}" onerror="this.remove()"><span class="lab">${esc(regionName[ev.region_id] || ev.region_id || '')}</span>`
         : `<span class="lab" style="color:var(--text-2);text-shadow:none">${esc(regionName[ev.region_id] || ev.region_id || 'tile')}</span>`;
       c.style.boxShadow = `inset 0 -3px 0 ${col}`;
     } else { c.innerHTML = ''; c.style.boxShadow = ''; }
@@ -170,13 +179,27 @@ export async function render(page, arg) {
     const max = Math.max(10, ...pad);
     page.querySelectorAll('#tput i').forEach((b, i) => (b.style.height = Math.max(2, (pad[i] / max) * 100) + '%'));
     page.querySelector('#peak').textContent = `peak ${fmt(scan.peakJps)}`;
+    page.querySelector('#tput-empty').hidden = hist.some(v => v > 0);
   };
+
+  // throughput bar tooltips: seconds ago + judgments/sec
+  const tput = page.querySelector('#tput');
+  tput.addEventListener('mousemove', e => {
+    const bars = [...tput.children], i = bars.indexOf(e.target);
+    if (i < 0) { hideTip(); return; }
+    const hist = scan.jevHistory.slice(-30), pad = Array(30 - hist.length).fill(null).concat(hist), v = pad[i];
+    const ago = 29 - i;
+    showTip(tipHtml({ title: ago ? `${ago}s ago` : 'Now', tag: scan.running ? 'Live' : '',
+      rows: [{ color: i === 29 ? 'var(--accent)' : '#C7D2FE', label: 'Jev judgments / sec', value: v == null ? 'no data' : fmt(v) }],
+      note: v == null ? 'Press Scan now to stream live judgments.' : `Peak this scan: ${fmt(scan.peakJps)}/s` }), e.clientX, e.clientY);
+  });
+  tput.addEventListener('mouseleave', hideTip);
 
   draw();
   if ((arg === 'scan' || arg === 'replay') && !scan.running) startScan(arg === 'replay' ? 'replay' : 'auto');
   const off = onScan(draw);
   const poll = setInterval(async () => { stats = (await api('/api/stats', { fresh: true })) || stats; if (!scan.running) draw(); }, 4000);
-  return () => { off(); clearInterval(poll); };
+  return () => { off(); clearInterval(poll); hideTip(); };
 }
 
 function counter(id, icon, color, label, src) {

@@ -77,10 +77,10 @@ function heatCard(hd) {
       const now = y === nowY ? ' now' : '';
       if (!c) { g += `<div class="bw-cell na${now}" data-col="${ci}">·</div>`; return; }
       const v = Math.round(c.pct), [, bg, fg] = bucket(v);
-      g += `<div class="bw-cell${now}" data-col="${ci}" data-r="${ri}" data-y="${y}" style="background:${bg};color:${fg}">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}</div>`;
+      g += `<div class="bw-cell${now}" data-col="${ci}" data-r="${ri}" data-y="${y}" data-sat-region="${esc(r.region_id)}" data-sat-month="${esc(c.month)}" style="background:${bg};color:${fg}">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}</div>`;
     });
   });
-  const sub = `Sentinel-2 NDVI, Jun–Aug mean vs ${hd.years.length}-year average, %`;
+  const sub = `Sentinel-2 NDVI, Jun–Aug mean vs ${hd.years.length}-year average, % · click a cell for the satellite image`;
   return `<section class="bw-card bw-heat">
     <div class="bw-head"><div><div class="bw-title">Crop health by region</div><div class="bw-sub">${sub}</div></div>${legend}</div>
     <div class="bw-grid" style="${cols}">${g}</div>
@@ -137,13 +137,14 @@ export async function render(el) {
         tip.innerHTML = `<div class="bw-tip">${satImg(row.region.region_id, cell.month, { alt: '' })}<div>
           <b>${esc(shortRegion(row.region))} · ${c.dataset.y}</b>
           <div class="muted">Summer NDVI ${cell.ndvi.toFixed(2)} · avg ${cell.base.toFixed(2)}</div>
-          <div class="v">${pct(cell.pct, 1)}</div><div class="muted">Tile: ${monLong(cell.month)}</div></div></div>`;
+          <div class="v">${pct(cell.pct, 1)}</div><div class="muted">Tile: ${monLong(cell.month)} · click to zoom</div></div></div>`;
       }
       tip.hidden = false;
       const x = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 12), y = Math.min(e.clientY + 16, innerHeight - tip.offsetHeight - 12);
       tip.style.left = x + 'px'; tip.style.top = y + 'px';
     });
     grid.addEventListener('mouseleave', () => { tip.hidden = true; });
+    grid.addEventListener('click', () => { tip.hidden = true; });
   }
 
   // Forecast card with Pint | Wine toggle.

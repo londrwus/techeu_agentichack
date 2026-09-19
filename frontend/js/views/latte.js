@@ -2,7 +2,7 @@
 import { moduleHeader, wireScan, backtestBadge } from '../components/moduleHeader.js';
 import { forecastChart } from '../components/forecastChart.js';
 import { signalCards } from '../components/signalCards.js';
-import { loadModule, ACCENT, fmtGBP, isNum, esc, monthLabel, shortRegion, countAll, deltaText } from '../components/ui.js';
+import { loadModule, ACCENT, fmtGBP, isNum, esc, monthLabel, shortRegion, countAll, deltaText, icon } from '../components/ui.js';
 
 const ID = 'latte', REGION = 'minas_coffee';
 
@@ -82,11 +82,14 @@ export async function render(el) {
         ${ndviPill}
       </div>
       ${pair ? `<div class="compare" ${note ? `title="${esc(note)}"` : ''}>
-          <img class="after" src="/${pair.after.thumb}" alt="${esc(pair.after.month)}">
-          <img class="before" src="/${pair.before.thumb}" alt="${esc(pair.before.month)}" style="clip-path:inset(0 50% 0 0)">
+          <img class="after" data-no-lightbox src="/${pair.after.thumb}" alt="${esc(pair.after.month)}">
+          <img class="before" data-no-lightbox src="/${pair.before.thumb}" alt="${esc(pair.before.month)}" style="clip-path:inset(0 50% 0 0)">
           <div class="handle" style="left:50%"><div class="knob"><i data-lucide="chevrons-left-right"></i></div></div>
-          <span class="tag" style="left:12px">${monthLabel(pair.before.month, true)}</span>
-          <span class="tag" style="right:12px">${monthLabel(pair.after.month, true)}</span></div>`
+          <div class="lt-zoom">
+            <button type="button" data-sat-region="${esc(region.region_id)}" data-sat-month="${esc(pair.before.month)}" title="Open ${monthLabel(pair.before.month, true)} tile">${icon('zoom-in', { size: 14 })}${monthLabel(pair.before.month, true)}</button>
+            <button type="button" data-sat-region="${esc(region.region_id)}" data-sat-month="${esc(pair.after.month)}" title="Open ${monthLabel(pair.after.month, true)} tile">${icon('zoom-in', { size: 14 })}${monthLabel(pair.after.month, true)}</button>
+          </div></div>
+        <div class="lt-hint">Drag to compare · click a date to zoom</div>`
         : `<div class="empty" style="margin-top:16px">Satellite tiles are still downloading…</div>`}
     </section>` : '';
 
@@ -114,7 +117,7 @@ export async function render(el) {
       const p = Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100));
       bImg.style.clipPath = `inset(0 ${100 - p}% 0 0)`; handle.style.left = p + '%';
     };
-    cmp.addEventListener('pointerdown', e => { drag = true; cmp.setPointerCapture(e.pointerId); set(e.clientX); });
+    cmp.addEventListener('pointerdown', e => { if (e.target.closest('.lt-zoom')) return; drag = true; cmp.setPointerCapture(e.pointerId); set(e.clientX); });
     cmp.addEventListener('pointermove', e => drag && set(e.clientX));
     cmp.addEventListener('pointerup', () => (drag = false));
     cmp.addEventListener('pointercancel', () => (drag = false));

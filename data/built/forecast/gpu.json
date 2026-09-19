@@ -344,80 +344,80 @@
  "forecast": [
   {
    "month": "2026-09",
-   "p10": 1610.23,
-   "p50": 1674.75,
-   "p90": 1742.81
+   "p10": 1582.89,
+   "p50": 1655.99,
+   "p90": 1744.52
   },
   {
    "month": "2026-10",
-   "p10": 1542.66,
-   "p50": 1699.73,
-   "p90": 1834.18
+   "p10": 1518.51,
+   "p50": 1662.01,
+   "p90": 1844.45
   },
   {
    "month": "2026-11",
-   "p10": 1470.6,
-   "p50": 1724.91,
-   "p90": 1930.01
+   "p10": 1456.75,
+   "p50": 1668.05,
+   "p90": 1950.11
   },
   {
    "month": "2026-12",
-   "p10": 1394.27,
-   "p50": 1750.32,
-   "p90": 2030.63
+   "p10": 1458.55,
+   "p50": 1697.56,
+   "p90": 2072.2
   },
   {
    "month": "2027-01",
-   "p10": 1346.04,
-   "p50": 1775.95,
-   "p90": 2125.88
+   "p10": 1460.35,
+   "p50": 1727.59,
+   "p90": 2201.94
   },
   {
    "month": "2027-02",
-   "p10": 1307.51,
-   "p50": 1801.8,
-   "p90": 2220.28
+   "p10": 1462.15,
+   "p50": 1758.16,
+   "p90": 2339.8
   },
   {
    "month": "2027-03",
-   "p10": 1282.45,
-   "p50": 1827.88,
-   "p90": 2322.43
+   "p10": 1456.73,
+   "p50": 1790.55,
+   "p90": 2470.44
   },
   {
    "month": "2027-04",
-   "p10": 1253.97,
-   "p50": 1854.18,
-   "p90": 2418.59
+   "p10": 1451.32,
+   "p50": 1823.53,
+   "p90": 2608.37
   },
   {
    "month": "2027-05",
-   "p10": 1235.01,
-   "p50": 1880.7,
-   "p90": 2517.08
+   "p10": 1445.94,
+   "p50": 1857.13,
+   "p90": 2754.01
   },
   {
    "month": "2027-06",
-   "p10": 1227.77,
-   "p50": 1907.46,
-   "p90": 2616.4
+   "p10": 1440.57,
+   "p50": 1891.34,
+   "p90": 2907.78
   },
   {
    "month": "2027-07",
-   "p10": 1235.61,
-   "p50": 1934.45,
-   "p90": 2713.62
+   "p10": 1435.22,
+   "p50": 1926.18,
+   "p90": 3070.13
   },
   {
    "month": "2027-08",
-   "p10": 1245.24,
+   "p10": 1429.9,
    "p50": 1961.67,
-   "p90": 2810.15
+   "p90": 3241.55
   }
  ],
- "prob_up_6m": 0.665,
- "change_6m_pct": 9.2,
- "model": "TimesFM 3.0 + Orbit (tuned)",
+ "prob_up_6m": 0.66,
+ "change_6m_pct": 6.6,
+ "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
  "backtest": null,
  "model_driver": {
   "months": [
@@ -1015,45 +1015,87 @@
  "drivers": [
   {
    "name": "Price trend (24-month momentum)",
-   "value": 25.36,
-   "contribution_pct": 3.41,
-   "source": "price history, weight 0.25 (tuned)"
-  },
-  {
-   "name": "TimesFM forecast path",
-   "value": 0.08,
-   "contribution_pct": 0.0,
-   "source": "TimesFM 3.0 on L4 GPU, weight 0.0 (tuned; TimesFM always sets the p10-p90 band)"
+   "value": 25.358,
+   "contribution_pct": 0.78,
+   "source": "Orbit v1 member: 24m log-trend blend (weight 0.25 in the v2 stack)"
   },
   {
    "name": "AI data-centre demand",
    "value": 0.378,
-   "contribution_pct": 2.27,
-   "source": "Jev: AI compute demand in GPU/AI headlines (-1..1), last 3 months"
+   "contribution_pct": 0.59,
+   "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "HBM / memory & CoWoS supply squeeze",
    "value": 0.3,
-   "contribution_pct": 2.1,
-   "source": "Jev: GPU/memory supply constraint (-1..1), last 3 months"
+   "contribution_pct": 0.54,
+   "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Export controls & tariffs",
    "value": 0.035,
-   "contribution_pct": 0.07,
-   "source": "Jev: export-control tightening (-1..1), last 3 months"
+   "contribution_pct": 0.02,
+   "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Data-centre build-out (satellite)",
    "value": 17.3,
-   "contribution_pct": 1.73,
-   "source": "Sentinel-2: share of AI-campus land transformed, change over 2 years (pts)"
+   "contribution_pct": 0.45,
+   "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Taiwan fab water stress (satellite)",
    "value": 22.8,
-   "contribution_pct": -0.38,
-   "source": "Sentinel-2 reservoir water extent vs normal, %"
+   "contribution_pct": -0.1,
+   "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
+  },
+  {
+   "name": "TimesFM 3.0 (GPU foundation model)",
+   "value": 0.081,
+   "contribution_pct": 0.0,
+   "source": "TimesFM share of the statistical ensemble member"
+  },
+  {
+   "name": "Statistical ensemble (ETS/ARIMA/Theta)",
+   "value": 2.537,
+   "contribution_pct": 0.65,
+   "source": "statsforecast fits on Modal CPUs, equal-weight, damped 0.75"
+  },
+  {
+   "name": "Quant momentum & mean-reversion",
+   "value": 4.914,
+   "contribution_pct": 1.27,
+   "source": "ridge TSMOM on 40 commodity series (vol-scaled momentum, breakouts, 5y z-score)"
+  },
+  {
+   "name": "GBP/USD exchange rate",
+   "value": 0.001,
+   "contribution_pct": 0.04,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "Oil price (Brent)",
+   "value": 0.004,
+   "contribution_pct": 0.1,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "EU gas / fertiliser proxy",
+   "value": -0.003,
+   "contribution_pct": -0.09,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "Price momentum (macro ridge)",
+   "value": -0.005,
+   "contribution_pct": 2.36,
+   "source": "exog ridge member: price features + item level"
+  },
+  {
+   "name": "Satellite crop stress",
+   "value": 0.0,
+   "contribution_pct": 0.0,
+   "source": "Sentinel-2 NDVI/NDWI anomaly: tracked, but no validated forecast skill yet -> weight 0 in v2"
   }
  ],
  "orbit_overlay": {
@@ -1483,5 +1525,153 @@
     "anomaly_pct": 15.6
    }
   ]
+ },
+ "forecast_v1": [
+  {
+   "month": "2026-09",
+   "p10": 1610.23,
+   "p50": 1674.75,
+   "p90": 1742.81
+  },
+  {
+   "month": "2026-10",
+   "p10": 1542.66,
+   "p50": 1699.73,
+   "p90": 1834.18
+  },
+  {
+   "month": "2026-11",
+   "p10": 1470.6,
+   "p50": 1724.91,
+   "p90": 1930.01
+  },
+  {
+   "month": "2026-12",
+   "p10": 1394.27,
+   "p50": 1750.32,
+   "p90": 2030.63
+  },
+  {
+   "month": "2027-01",
+   "p10": 1346.04,
+   "p50": 1775.95,
+   "p90": 2125.88
+  },
+  {
+   "month": "2027-02",
+   "p10": 1307.51,
+   "p50": 1801.8,
+   "p90": 2220.28
+  },
+  {
+   "month": "2027-03",
+   "p10": 1282.45,
+   "p50": 1827.88,
+   "p90": 2322.43
+  },
+  {
+   "month": "2027-04",
+   "p10": 1253.97,
+   "p50": 1854.18,
+   "p90": 2418.59
+  },
+  {
+   "month": "2027-05",
+   "p10": 1235.01,
+   "p50": 1880.7,
+   "p90": 2517.08
+  },
+  {
+   "month": "2027-06",
+   "p10": 1227.77,
+   "p50": 1907.46,
+   "p90": 2616.4
+  },
+  {
+   "month": "2027-07",
+   "p10": 1235.61,
+   "p50": 1934.45,
+   "p90": 2713.62
+  },
+  {
+   "month": "2027-08",
+   "p10": 1245.24,
+   "p50": 1961.67,
+   "p90": 2810.15
+  }
+ ],
+ "prob_up_6m_v1": 0.665,
+ "change_6m_pct_v1": 9.2,
+ "drivers_v1": [
+  {
+   "name": "Price trend (24-month momentum)",
+   "value": 25.36,
+   "contribution_pct": 3.41,
+   "source": "price history, weight 0.25 (tuned)"
+  },
+  {
+   "name": "TimesFM forecast path",
+   "value": 0.08,
+   "contribution_pct": 0.0,
+   "source": "TimesFM 3.0 on L4 GPU, weight 0.0 (tuned; TimesFM always sets the p10-p90 band)"
+  },
+  {
+   "name": "AI data-centre demand",
+   "value": 0.378,
+   "contribution_pct": 2.27,
+   "source": "Jev: AI compute demand in GPU/AI headlines (-1..1), last 3 months"
+  },
+  {
+   "name": "HBM / memory & CoWoS supply squeeze",
+   "value": 0.3,
+   "contribution_pct": 2.1,
+   "source": "Jev: GPU/memory supply constraint (-1..1), last 3 months"
+  },
+  {
+   "name": "Export controls & tariffs",
+   "value": 0.035,
+   "contribution_pct": 0.07,
+   "source": "Jev: export-control tightening (-1..1), last 3 months"
+  },
+  {
+   "name": "Data-centre build-out (satellite)",
+   "value": 17.3,
+   "contribution_pct": 1.73,
+   "source": "Sentinel-2: share of AI-campus land transformed, change over 2 years (pts)"
+  },
+  {
+   "name": "Taiwan fab water stress (satellite)",
+   "value": 22.8,
+   "contribution_pct": -0.38,
+   "source": "Sentinel-2 reservoir water extent vs normal, %"
+  }
+ ],
+ "prob_bigup_6m": 0.319,
+ "driver_change_6m_pct": 6.6,
+ "big_move_alert": true,
+ "recommendation": "stock_up",
+ "method": "orbit_v2",
+ "orbit_v2": {
+  "as_of": "2026-08",
+  "driver_base": 1650.0,
+  "weights_h6": {
+   "orbit_v1": 0.25,
+   "stat_combo": 0.25,
+   "quant_tsmom": 0.25,
+   "exog_ridge": 0.25
+  },
+  "members_6m_pct": {
+   "orbit_v1": 9.2,
+   "timesfm": 0.08,
+   "stat_combo": 2.57,
+   "quant_tsmom": 5.04,
+   "exog_ridge": 9.58
+  },
+  "driver_band_6m_pct": [
+   -11.4,
+   41.8
+  ],
+  "big_alert_threshold": 0.22,
+  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

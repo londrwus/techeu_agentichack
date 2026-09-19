@@ -57,7 +57,7 @@
 .ea-c-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.12); }
 .ea-c-name { font-size: 17px; font-weight: 800; letter-spacing: -.2px; }
 .ea-c-sub { margin-top: 3px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.6); }
-.ea-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex: none; border: 1px solid rgba(255,255,255,.2); }
+.ea-thumb { width: 56px; height: 56px; cursor: zoom-in; border-radius: 8px; object-fit: cover; flex: none; border: 1px solid rgba(255,255,255,.2); }
 .ea-c-lab { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.75); margin-top: 12px; }
 .ea-c-lab:first-of-type { margin-top: 0; }
 .ea-c-big { font-size: 28px; font-weight: 800; letter-spacing: -.5px; line-height: 1.15; }
@@ -87,7 +87,7 @@
 .ea-leg-row i.tech { background: #818CF8; }
 
 /* chip carousel */
-.ea-chips { position: absolute; z-index: 5; left: 92px; right: 16px; bottom: 16px; height: 80px; padding: 0 14px; display: flex; align-items: center; }
+.ea-chips { position: absolute; z-index: 5; left: 16px; right: 16px; bottom: 16px; height: 80px; padding: 0 14px; display: flex; align-items: center; }
 .ea-chip-row { display: flex; gap: 8px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
 .ea-chip-row::-webkit-scrollbar { display: none; }
 .ea-chip, .ea-home { height: 52px; flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px 0 7px; border-radius: 999px; cursor: pointer;
@@ -111,7 +111,7 @@
   .ea-ph { width: 30px; height: 30px; }
 }
 @media (max-width: 900px) {
-  .ea-stats { width: auto; left: 92px; top: auto; bottom: 108px; }
+  .ea-stats { width: auto; left: 16px; top: auto; bottom: 108px; }
   .ea-legend { display: none; }
   .ea-scan { top: 16px; }
   .ea .earth-title { min-width: 0; max-width: calc(100% - 250px); }

@@ -1,5 +1,6 @@
 // GPU & Gadgets screen (MODULES.md §09, AI-era edition).
-// Hero left: "What's driving GPU prices" waterfall of forecast drivers[] + before/after tile of an AI campus.
+// Hero left: "What's driving GPU prices" = verdict sentence + a £ "price bridge" (today -> 6 months) of grouped
+//            drivers[] with evidence tooltips, + before/after tile of an AI campus (Zoom opens the lightbox).
 //            Falls back to the reservoir chart ("Water for the fabs") when drivers[] is missing.
 // Hero right: GPU | Laptop forecast card. Signal row below (shared).
 import { moduleHeader, wireScan } from '../components/moduleHeader.js';
@@ -7,6 +8,8 @@ import { forecastChart } from '../components/forecastChart.js';
 import { signalCards } from '../components/signalCards.js';
 import { loadModule, ACCENT, ITEM_META, fmtGBP, esc, isNum, pct, countAll, retailSeries, shortRegion, onResize, monthLabel } from '../components/ui.js';
 import { icons } from '../lib.js';
+import { icon, itemIcon } from '../components/icons.js';
+import { axisTooltip, tipHtml, fmtMonth } from '../components/chartTheme.js';
 
 const ACC = ACCENT.gpu;
 const UP = '#DC2626', DOWN = '#16A34A', INK = '#0C0A09';
@@ -19,20 +22,85 @@ function ensureCss() {
   document.head.appendChild(Object.assign(document.createElement('link'), { id: 'gpu-css', rel: 'stylesheet', href: '/static/css/gpu.css' }));
 }
 
-/** Short label + source tag for a driver row. */
-function driverLabel(d) {
-  const n = String(d.name || d.label || d.id || 'Driver');
-  const s = String(d.source || '');
-  const rules = [
-    [/inflation|cpi/i, 'UK inflation', 'ONS CPI'], [/momentum/i, 'Price momentum', '24-month trend'], [/timesfm|trend/i, 'Price trend', 'TimesFM'], [/ai.*demand|demand/i, 'AI data-centre demand', 'Jev · news'],
-    [/hbm|memory|cowos/i, 'HBM memory squeeze', 'Jev · news'], [/export|tariff/i, 'Export controls', 'Jev · news'],
-    [/build/i, 'Data-centre build-out', 'Sentinel-2'], [/water|reservoir/i, 'Fab water stress', 'Sentinel-2'],
-  ];
-  const r = rules.find(([re]) => re.test(n));
-  const src = /sentinel/i.test(s) ? 'Sentinel-2' : /jev/i.test(s) ? 'Jev · news' : /timesfm/i.test(s) ? 'TimesFM' : r?.[2] || '';
-  return { name: r ? r[1] : n.replace(/\s*\(.*?\)/g, ''), src };
-}
+// ---------------------------------------------------------------- drivers -> plain-English groups in £
 const contrib = d => [d.contribution_pct, d.contribution, d.pts, d.impact_pct, d.value_pct].find(isNum);
+
+/** Source families: tag text, icon, colour. */
+const SRC = {
+  hist: { t: 'Price history', ic: 'chart-line', c: '#475569', bg: '#F1F5F9' },
+  news: { t: 'News · Jev', ic: 'newspaper', c: '#6D28D9', bg: '#F3E8FF' },
+  sat: { t: 'Satellite', ic: 'satellite', c: '#0F766E', bg: '#CCFBF1' },
+  mkt: { t: 'Markets', ic: 'landmark', c: '#B45309', bg: '#FEF3C7' },
+  mix: { t: 'Several', ic: 'layers', c: '#57534E', bg: '#F5F5F4' },
+};
+/** Raw driver name -> group. Order matters (first match wins). `ai` marks the AI-era signals. */
+const GROUPS = [
+  { k: 'skip', re: /crop/i },
+  { k: 'mkt', re: /gbp|usd|oil|brent|gas|inflation|cpi|fertil/i, label: 'Pound, oil & inflation', ic: 'pound-sterling', src: 'mkt' },
+  { k: 'ai', re: /ai.*demand|demand/i, label: 'AI data-centres buying chips', ic: 'brain-circuit', src: 'news', ai: 1 },
+  { k: 'mem', re: /hbm|memory|cowos|dram/i, label: 'Memory chip shortage', ic: 'memory-stick', src: 'news', ai: 1 },
+  { k: 'build', re: /build/i, label: 'Data-centres seen from space', ic: 'building-2', src: 'sat', ai: 1 },
+  { k: 'export', re: /export|tariff/i, label: 'Export rules & tariffs', ic: 'ship', src: 'news', ai: 1 },
+  { k: 'water', re: /water|reservoir/i, label: 'Water for Taiwan chip fabs', ic: 'droplets', src: 'sat', ai: 1 },
+  { k: 'trend', re: /./, label: 'Recent price trend', ic: 'trending-up', src: 'hist' },
+];
+
+/** Drivers (contribution in % points of the 6-month change) -> grouped rows in £, tiny ones folded into "Other". */
+function driverGroups(item, now) {
+  const by = new Map();
+  (item.drivers || []).forEach(d => {
+    const v = contrib(d); if (!isNum(v)) return;
+    const g = GROUPS.find(x => x.re.test(String(d.name || d.label || d.id || '')));
+    if (!g || g.k === 'skip') return;
+    const row = by.get(g.k) || by.set(g.k, { ...g, pts: 0, parts: [] }).get(g.k);
+    row.pts += v; row.parts.push(d);
+  });
+  let rows = [...by.values()].map(r => ({ ...r, gbp: (r.pts / 100) * now }));
+  const small = rows.filter(r => Math.abs(r.pts) < 0.06);
+  rows = rows.filter(r => Math.abs(r.pts) >= 0.06);
+  const oth = small.reduce((a, r) => a + r.pts, 0);
+  const pos = rows.filter(r => r.gbp >= 0).sort((a, b) => b.gbp - a.gbp), neg = rows.filter(r => r.gbp < 0).sort((a, b) => a.gbp - b.gbp);
+  const other = small.length && Math.abs(oth) >= 0.005
+    ? [{ k: 'other', label: 'Other small effects', ic: 'ellipsis', src: 'mix', pts: oth, gbp: (oth / 100) * now, parts: small.flatMap(r => r.parts), groups: small }] : [];
+  return [...pos, ...other, ...neg];
+}
+
+const gbpS = v => `${v >= 0 ? '+' : '−'}£${Math.abs(v) >= 10 ? Math.round(Math.abs(v)).toLocaleString('en-GB') : Math.abs(v).toFixed(1).replace(/\.0$/, '')}`;
+const clip = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
+
+/** Evidence for a group's hover tooltip: rows + one plain-English note. */
+function evidence(g, item, data) {
+  const hs = (data.signals?.headlines || []).filter(h => !h.item_id || h.item_id === 'none' || h.item_id === item.item_id);
+  const judged = key => hs.filter(h => (h.ai?.[key]?.value ?? 0) > 0.25).sort((a, b) => (b.ai?.[key]?.value ?? 0) - (a.ai?.[key]?.value ?? 0));
+  const ae = item.ai_era || {};
+  const head = list => (list[0]?.title ? `e.g. “${clip(list[0].title, 90)}”` : '');
+  switch (g.k) {
+    case 'trend': {
+      const t = item.orbit_overlay?.trend_24m_pct_per_year;
+      return { rows: [isNum(t) && { label: 'Last 24 months', value: `${pct(t, 0)} a year` }, { label: 'Forecast models', value: `${g.parts.length} agree` }],
+        note: 'Models trained on years of past prices (TimesFM, ETS/ARIMA, momentum) expect the recent direction to carry on.' };
+    }
+    case 'ai': { const l = judged('ai_demand');
+      return { rows: [isNum(ae.ai_index_now) && { label: 'AI demand index', value: `${Math.round(ae.ai_index_now)} vs ${Math.round(ae.ai_index_baseline ?? 50)} normal` }, l.length && { label: 'Headlines about AI buying', value: l.length.toLocaleString('en-GB') }],
+        note: `Jev read the news: big AI labs are buying more chips, so less stock is left for shops. ${head(l)}` }; }
+    case 'mem': { const l = judged('supply_constraint');
+      return { rows: [l.length && { label: 'Headlines about shortages', value: l.length.toLocaleString('en-GB') }],
+        note: `Memory chips (HBM, DRAM) go into every graphics card. Fewer chips → higher prices. ${head(l)}` }; }
+    case 'export': { const l = judged('export_controls');
+      return { rows: [{ label: 'Headlines about trade rules', value: l.length.toLocaleString('en-GB') }], note: 'Export bans and tariffs make chips harder to ship.' }; }
+    case 'build': { const s = [...(ae.buildout_sites || [])].sort((a, b) => (b.growth_2y_pts ?? 0) - (a.growth_2y_pts ?? 0));
+      return { rows: s.slice(0, 3).map(x => ({ label: shortRegion(x.name), value: isNum(x.transformed_pct_first_year) ? `${Math.round(x.transformed_pct_first_year)}% → ${Math.round(x.transformed_pct_now)}% built` : `${Math.round(x.transformed_pct_now)}% built` })),
+        note: 'Sentinel-2 shows fields turning into AI data-centres. Every new campus needs tens of thousands of GPUs.' }; }
+    case 'water': { const w = ae.water_sites || [];
+      const full = w.length && w.reduce((a, x) => a + (x.anomaly_pct ?? 0), 0) >= 0;
+      return { rows: w.map(x => ({ label: shortRegion(x.name).replace(/\s*II$/, ''), value: isNum(x.water_pct_normal) ? `${Math.round(x.water_pct_now)}% full (normal ${Math.round(x.water_pct_normal)}%)` : `${Math.round(x.water_pct_now)}% full` })),
+        note: full ? 'Chip fabs use huge amounts of water. Reservoirs are fuller than usual, so no drought risk → nudges prices slightly lower.'
+          : 'Chip fabs use huge amounts of water. Reservoirs are low, raising the risk of production cuts.' }; }
+    case 'mkt': return { rows: g.parts.map(d => ({ label: String(d.name).replace(/\s*\(.*?\)/g, '').replace('EU gas / fertiliser proxy', 'Gas prices'), value: pct(contrib(d), 2) + ' pts' })), note: 'GPUs are priced in dollars: a weaker pound or pricier energy makes them dearer in UK shops.' };
+    case 'other': return { rows: (g.groups || []).map(x => ({ label: x.label, value: gbpS(x.gbp) })), note: 'Drivers too small to matter on their own.' };
+    default: return { rows: [], note: '' };
+  }
+}
 
 // ---------------------------------------------------------------- AI campus before/after tile
 function buildSites(data, item) {
@@ -76,106 +144,122 @@ function wireCompare(cmp) {
   setTimeout(() => requestAnimationFrame(intro), 700);
 }
 
-// ---------------------------------------------------------------- hero A: drivers waterfall
+// ---------------------------------------------------------------- hero A: "price bridge" from today to 6 months out, in £
 function driversHero(card, data, item) {
-  const drivers = (item.drivers || []).filter(d => isNum(contrib(d)) && Math.abs(contrib(d)) >= 0.05);
-  const total = isNum(item.change_6m_pct) ? item.change_6m_pct : drivers.reduce((a, d) => a + contrib(d), 0);
   const short = ITEM_META[item.item_id]?.short || item.name;
+  const noun = short === 'GPU' ? 'GPU' : short.toLowerCase();
+  const { history, forecast } = retailSeries(item);
+  const now = item.retail_now ?? history.at(-1)?.price;
+  const f6 = forecast[Math.min(5, forecast.length - 1)];
+  const groups = driverGroups(item, now);
+  const later = [item.retail_6m, f6?.p50].find(isNum) ?? now * (1 + (isNum(item.change_6m_pct) ? item.change_6m_pct : groups.reduce((a, g) => a + g.pts, 0)) / 100);
+  const totalGbp = later - now, totalPct = (totalGbp / now) * 100;
+  const when = f6?.month ? fmtMonth(f6.month) : 'six months';
   const sites = buildSites(data, item);
-  const water = item.orbit_overlay?.water_anomaly_pct ?? (() => { const w = item.ai_era?.water_sites || []; return w.length ? w.reduce((a, x) => a + x.anomaly_pct, 0) / w.length : null; })();
-  let si = 0;
+
+  // Verdict sentence + push/pull summary (AI-era signals summed so the story is one line).
+  const dir = Math.abs(totalPct) < 1 ? 'flat' : totalPct > 0 ? 'up' : 'down';
+  const verdict = dir === 'flat' ? `${short} prices likely <b class="flat">flat</b> to ${esc(when)}`
+    : `${short} prices likely <b class="${dir}">${dir === 'up' ? 'up' : 'down'} ${Math.abs(totalPct).toFixed(1)}%</b> by ${esc(when)}`;
+  const aiSum = groups.filter(g => g.ai).reduce((a, g) => a + g.gbp, 0);
+  const trend = groups.find(g => g.k === 'trend'), mkt = groups.find(g => g.k === 'mkt');
+  const forces = [trend && { l: 'recent price trend', v: trend.gbp }, Math.abs(aiSum) >= 0.5 && { l: 'AI signals from news & satellites', v: aiSum }, mkt && { l: 'pound & energy', v: mkt.gbp }].filter(Boolean);
+  const push = forces.filter(f => f.v > 0).sort((a, b) => b.v - a.v), pull = forces.filter(f => f.v < 0).concat(
+    groups.filter(g => g.ai && g.gbp < 0 && Math.abs(aiSum) >= 0.5 && aiSum > 0).map(g => ({ l: g.k === 'water' ? 'Taiwan reservoirs are full' : g.label.toLowerCase(), v: g.gbp })));
+  const fl = a => a.map(f => `${esc(f.l)} <b>${gbpS(f.v)}</b>`).join(', ');
+
+  // Scale for the floating bars: cumulative £ from today (0) to the forecast.
+  let cum = 0;
+  const rows = groups.map(g => { const r = { ...g, a: cum, b: cum + g.gbp }; cum += g.gbp; return r; });
+  const lo = Math.min(0, ...rows.flatMap(r => [r.a, r.b]), totalGbp), hi = Math.max(0, ...rows.flatMap(r => [r.a, r.b]), totalGbp);
+  const X = v => ((v - lo) / ((hi - lo) || 1)) * 100;
+  const topI = rows.reduce((bi, r, i) => (r.gbp > (rows[bi]?.gbp ?? 0) ? i : bi), -1);
+  const src = s => `<span class="gd-src" style="--c:${SRC[s].c};--bg:${SRC[s].bg}">${icon(SRC[s].ic, { size: 11, stroke: 2 })}${SRC[s].t}</span>`;
 
   card.innerHTML = `
     <div class="card-head">
-      <div><div class="card-title">What's driving ${esc(short === 'GPU' ? 'GPU' : short.toLowerCase())} prices</div>
-        <div class="card-sub">Contribution to the 6-month forecast · % points</div></div>
-      <div class="gpu-stat">
-        <div class="row"><b data-count="${total}" data-digits="1" data-prefix="${total >= 0 ? '+' : ''}" data-suffix="%">${pct(total, 1)}</b></div>
-        <div class="s">${esc(short)} in 6 months · ${drivers.length} drivers</div>
+      <div><div class="card-title">What's driving ${esc(noun)} prices</div>
+        <div class="card-sub">Where the 6-month forecast comes from, in pounds · hover a row for the evidence</div></div>
+    </div>
+    <div class="gd-verdict">
+      <div class="gd-big">${verdict}</div>
+      <div class="gd-path"><span>${fmtGBP(now)} today</span>${icon('arrow-right', { size: 16, stroke: 2 })}<b>${fmtGBP(later)}</b>
+        ${isNum(item.prob_up_6m) ? `<span class="gd-prob">${Math.round(item.prob_up_6m * 100)}% chance it rises</span>` : ''}</div>
+      <div class="gd-why">
+        ${push.length ? `<span class="gd-f up">${icon('arrow-up', { size: 12, stroke: 2.5 })}Pushing up</span><span>${fl(push)}</span>` : ''}
+        ${pull.length ? `<span class="gd-f down">${icon('arrow-down', { size: 12, stroke: 2.5 })}Pulling down</span><span>${fl(pull)}</span>` : ''}
       </div>
     </div>
     <div class="gpu-body">
-      <div class="gpu-plot"><div class="chart"></div></div>
+      <div class="gd-bridge">
+        ${rows.map((r, i) => `
+        <div class="gd-row" data-i="${i}">
+          <div class="gd-lab"><span class="gd-ic">${icon(r.ic, { size: 16 })}</span><div><div class="gd-n" title="${esc(r.label)}">${esc(r.label)}</div><div class="gd-tags">${src(r.src)}${i === topI ? '<span class="gd-top">Biggest</span>' : ''}</div></div></div>
+          <div class="gd-track"><i class="gd-zero" style="left:${X(0)}%"></i><i class="gd-end" style="left:${X(totalGbp)}%"></i>
+            <div class="gd-bar ${r.gbp < 0 ? 'down' : i === topI ? 'up top' : 'up'}" style="left:${X(Math.min(r.a, r.b))}%;--w:${Math.max(0.6, X(Math.max(r.a, r.b)) - X(Math.min(r.a, r.b)))}%;--d:${150 + i * 80}ms"></div></div>
+          <div class="gd-v ${r.gbp < 0 ? 'down' : 'up'}">${gbpS(r.gbp)}</div>
+        </div>`).join('')}
+        <div class="gd-row total" data-i="total">
+          <div class="gd-lab"><span class="gd-ic">${icon('equal', { size: 16 })}</span><div><div class="gd-n">Forecast change</div><span class="gd-sub">${fmtGBP(now)} → ${fmtGBP(later)}</span></div></div>
+          <div class="gd-track"><i class="gd-zero" style="left:${X(0)}%"></i>
+            <div class="gd-bar total" style="left:${X(Math.min(0, totalGbp))}%;--w:${Math.max(0.6, Math.abs(X(totalGbp) - X(0)))}%;--d:${150 + rows.length * 80}ms"></div></div>
+          <div class="gd-v">${gbpS(totalGbp)}<small>${pct(totalPct, 1)}</small></div>
+        </div>
+      </div>
       <div class="gpu-tiles">
-        ${sites.length ? `<div class="cmp-host" style="flex:1;min-height:0;display:flex"></div>` : ''}
+        ${sites.length ? `<div class="gd-sat-h">${icon('satellite', { size: 13, stroke: 2 })}Seen from space</div><div class="cmp-host"></div>` : ''}
         ${sites.length > 1 ? `<div class="gpu-dots">${sites.map((_, i) => `<button data-i="${i}" title="${esc(shortRegion(sites[i].r.name))}"></button>`).join('')}</div>` : ''}
         <div class="build-pill"></div>
-        ${isNum(water) ? `<span class="gpu-chip ${water < 0 ? 'up' : 'down'}"><i data-lucide="droplets"></i>Taiwan reservoirs ${pct(water, 0)}</span>` : ''}
-        <div class="gpu-cap">Sentinel-2 · 10 m · drag to compare</div>
+        <div class="gpu-cap">Sentinel-2 · 10 m · drag to compare, click Zoom to explore</div>
       </div>
     </div>`;
 
+  // Satellite before/after with a zoom button (the slider itself is a drag target, so it opts out of click-to-zoom).
   const showSite = i => {
-    si = i; const s = sites[i]; if (!s) return;
+    const s = sites[i]; if (!s) return;
     const host = card.querySelector('.cmp-host');
-    host.innerHTML = compareHtml(s);
+    host.innerHTML = compareHtml(s) + `<button class="gd-zoom" data-sat-region="${esc(s.r.region_id)}" data-sat-month="${esc(s.after.month)}" title="Open full-size satellite view">${icon('maximize-2', { size: 13, stroke: 2 })}Zoom</button>`;
+    host.querySelector('.compare')?.setAttribute('data-no-lightbox', '');
+    host.querySelector('.gd-zoom').addEventListener('pointerdown', e => e.stopPropagation());
     wireCompare(host.querySelector('.compare'));
     card.querySelectorAll('.gpu-dots button').forEach((b, k) => b.classList.toggle('on', k === i));
     card.querySelector('.build-pill').innerHTML = isNum(s.growth)
-      ? `<span class="gpu-chip ind"><i data-lucide="building-2"></i>Built-up ${s.growth >= 0 ? '+' : ''}${s.growth.toFixed(0)} pts since ${s.before?.month?.slice(0, 4) || ''}</span>` : '';
-    icons();
+      ? `<span class="gpu-chip ind">${icon('building-2', { size: 13 })}Built-up land ${s.growth >= 0 ? '+' : ''}${s.growth.toFixed(0)} pts since ${s.before?.month?.slice(0, 4) || ''}</span>` : '';
   };
   card.querySelectorAll('.gpu-dots button').forEach(b => b.addEventListener('click', () => showSite(+b.dataset.i)));
   if (!sites.length) card.querySelector('.gpu-body').style.gridTemplateColumns = '1fr';
   showSite(0);
 
-  // Waterfall rows: drivers top→bottom, then the total.
-  const rows = []; let cum = 0;
-  drivers.forEach(d => { const v = contrib(d); const L = driverLabel(d); rows.push({ ...L, v, a: cum, b: cum + v, d }); cum += v; });
-  rows.push({ name: `${short} · 6-mo change`, src: 'All drivers', v: total, a: 0, b: total, total: true });
-  const plot = card.querySelector('.gpu-plot');
-  const chart = echarts.init(plot.querySelector('.chart'));
-  const topI = rows.reduce((bi, r, i) => (!r.total && !/momentum|timesfm|trend/i.test(r.d?.name || '') && r.v > 0 && r.v > (rows[bi]?.v ?? 0) ? i : bi), -1);
-  const ext = Math.max(...rows.flatMap(r => [Math.abs(r.a), Math.abs(r.b)]), 0.5);
-  const lo = Math.min(0, ...rows.flatMap(r => [r.a, r.b])), hi = Math.max(0, ...rows.flatMap(r => [r.a, r.b]));
-  const pad = ext * 0.28;
-  const color = (r, i) => (r.total ? INK : r.v < 0 ? DOWN : i === topI ? UP : '#F87171');
-
-  chart.setOption({
-    animation: true,
-    grid: { left: 172, right: 36, top: 4, bottom: 26 },
-    xAxis: {
-      type: 'value', min: Math.floor((lo - (lo < 0 ? pad : 0)) * 2) / 2, max: Math.ceil((hi + pad * (topI >= 0 ? 2.2 : 1)) * 2) / 2,
-      axisLabel: { color: '#A8A29E', fontSize: 11, fontWeight: 500, formatter: v => (v > 0 ? '+' : '') + v + '%' },
-      splitLine: { lineStyle: { color: '#F1F0EE' } }, axisLine: { show: false }, axisTick: { show: false },
-    },
-    yAxis: {
-      type: 'category', inverse: true, data: rows.map(r => r.name), axisLine: { show: false }, axisTick: { show: false },
-      axisLabel: {
-        formatter: (v, i) => `{n${rows[i]?.total ? 't' : ''}|${v}}\n${i === topI ? '{h|Top driver}  ' : ''}{s|${rows[i]?.src || ''}}`, margin: 14, align: 'right',
-        rich: { n: { fontSize: 13, fontWeight: 600, color: '#1C1917', lineHeight: 18 }, nt: { fontSize: 13, fontWeight: 800, color: INK, lineHeight: 18 }, s: { fontSize: 11, fontWeight: 500, color: '#A8A29E', lineHeight: 15 }, h: { fontSize: 10, fontWeight: 700, color: UP, backgroundColor: '#FEE2E2', borderRadius: 4, padding: [1, 4] } },
-      },
-    },
-    series: [{
-      type: 'custom', data: rows.map((r, i) => [r.a, r.b, i]), encode: { x: [0, 1], y: 2 }, clip: false,
-      renderItem: (params, api) => {
-        const r = rows[params.dataIndex];
-        const p0 = api.coord([r.a, params.dataIndex]), p1 = api.coord([r.b, params.dataIndex]);
-        const bh = Math.min(26, api.size([0, 1])[1] * 0.56);
-        const x = Math.min(p0[0], p1[0]), w = Math.max(2, Math.abs(p1[0] - p0[0])), y = p0[1] - bh / 2;
-        const kids = [{
-          type: 'rect', shape: { x, y, width: w, height: bh, r: 4 }, style: { fill: color(r, params.dataIndex) },
-          enterFrom: { style: { opacity: 0 } }, enterAnimation: { duration: 450, delay: 120 + params.dataIndex * 70 },
-        }, {
-          type: 'text', style: {
-            text: `${r.v >= 0 ? '+' : '−'}${Math.abs(r.v).toFixed(1)}${params.dataIndex === topI ? ' pts' : ''}`, x: x + w + 6, y: p0[1],
-            textAlign: 'left', textVerticalAlign: 'middle', fill: r.total ? INK : r.v < 0 ? DOWN : UP, fontSize: params.dataIndex === topI ? 13 : 12, fontWeight: 700,
-          }, enterFrom: { style: { opacity: 0 } }, enterAnimation: { duration: 300, delay: 450 + params.dataIndex * 70 },
-        }];
-        if (!r.total && params.dataIndex < rows.length - 1) { // connector to next row
-          const n = api.coord([r.b, params.dataIndex + 1]);
-          kids.push({ type: 'line', shape: { x1: p1[0], y1: y + bh, x2: n[0], y2: n[1] - bh / 2 }, style: { stroke: '#D6D3D1', lineWidth: 1, lineDash: [2, 3] } });
-        }
-        return { type: 'group', children: kids };
-      },
-    }, {
-      type: 'line', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: '#A8A29E', width: 1 }, label: { show: false }, data: [{ xAxis: 0 }] },
-    }],
+  // Hover tooltip with the evidence behind each row (same look as the ECharts tooltips).
+  const tip = document.createElement('div');
+  tip.className = 'gd-tip'; tip.hidden = true; document.body.appendChild(tip);
+  const move = e => {
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(window.innerWidth - w - 8, e.clientX + 16) + 'px';
+    tip.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, e.clientY - h / 2)) + 'px';
+  };
+  card.querySelectorAll('.gd-row').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const r = rows[+el.dataset.i];
+      if (r) {
+        const ev = evidence(r, item, data);
+        tip.innerHTML = tipHtml({ title: r.label, tag: SRC[r.src].t,
+          rows: [{ color: r.gbp < 0 ? DOWN : UP, label: 'Effect on price', value: `${gbpS(r.gbp)} (${pct(r.pts, 2)} pts)` }, ...ev.rows.filter(Boolean)], note: ev.note });
+      } else {
+        tip.innerHTML = tipHtml({ title: `${short} forecast · ${when}`, tag: 'Total',
+          rows: [{ label: 'Today', value: fmtGBP(now) }, { color: ACC, label: 'Expected', value: fmtGBP(later) },
+            isNum(f6?.p10) && { label: 'Likely range', value: `${fmtGBP(f6.p10)} – ${fmtGBP(f6.p90)}` },
+            isNum(item.prob_up_6m) && { label: 'Chance it rises', value: `${Math.round(item.prob_up_6m * 100)}%` }],
+          note: 'The sum of all the drivers above.' });
+      }
+      tip.hidden = false; move(e);
+      if (r?.k === 'build') card.querySelector('.cmp-host')?.classList.add('glow');
+    });
+    el.addEventListener('mousemove', move);
+    el.addEventListener('mouseleave', () => { tip.hidden = true; card.querySelector('.cmp-host')?.classList.remove('glow'); });
   });
-
-  const off = onResize(plot, () => chart.resize());
-  countAll(card);
-  return () => { off(); chart.dispose(); };
+  requestAnimationFrame(() => card.querySelector('.gd-bridge')?.classList.add('on'));
+  return () => tip.remove();
 }
 
 // ---------------------------------------------------------------- hero B (fallback): reservoir chart
@@ -224,6 +308,10 @@ function reservoirHero(card, data) {
   const chart = echarts.init(plot.querySelector('.chart'));
   const endData = mainD.map((v, i) => (i === lastI ? v : null));
   chart.setOption({
+    tooltip: axisTooltip(ps => { const i = ps[0]?.dataIndex ?? 0; return tipHtml({ title: fmtMonth(months[i]), rows: [
+      isNum(mainD[i]) && { color: ACC, label: name, value: `${Math.round(mainD[i])}% full` },
+      other && isNum(otherD[i]) && { color: '#94A3B8', label: shortRegion(other.name).replace(/\s*II$/, ''), value: `${Math.round(otherD[i])}% full` },
+      isNum(avg5[i]) && { color: '#A8A29E', dashed: true, label: '5-yr average', value: `${Math.round(avg5[i])}%` }] }); }),
     grid: { left: 40, right: 8, top: 10, bottom: 26 },
     xAxis: { type: 'category', data: months, boundaryGap: false, axisLine: { show: false }, axisTick: { show: false },
       axisLabel: { color: '#A8A29E', fontSize: 11, interval: i => i === 0 || i === months.length - 1 || i === 12, formatter: monShort } },
@@ -259,16 +347,16 @@ function forecastCard(card, data, item, items, onPick) {
   const now = item.retail_now ?? history.at(-1)?.price;
   const f6 = forecast[Math.min(5, forecast.length - 1)]?.p50;
   const later = item.retail_6m ?? f6;
-  const drivers = (item.drivers || []).filter(d => isNum(contrib(d)));
-  const topD = drivers.filter(d => !/momentum|timesfm|trend/i.test(d.name || '')).sort((a, b) => contrib(b) - contrib(a))[0];
+  const aiG = isNum(now) ? driverGroups(item, now).filter(g => g.ai) : [];
+  const aiSum = aiG.reduce((a, g) => a + g.gbp, 0);
   const water = (data.regions || []).filter(r => r.signal === 'water').map(r => r.anomaly?.ndwi_vs_5yr_pct).filter(isNum);
-  const stat2 = topD ? { v: `${contrib(topD) >= 0 ? '+' : ''}${contrib(topD).toFixed(1)} pts`, l: driverLabel(topD).name, cls: contrib(topD) >= 0 ? 'up' : 'down' }
+  const stat2 = aiG.length ? { v: gbpS(aiSum), l: 'from AI signals', cls: aiSum >= 0 ? 'up' : 'down' }
     : water.length ? { v: pct(Math.min(...water), 0), l: 'reservoir vs 5-yr', cls: Math.min(...water) < 0 ? 'up' : 'down' } : null;
 
   card.innerHTML = `
     ${items.length > 1 ? `<div class="seg" style="align-self:flex-start">${items.map(i => `<button data-item="${i.item_id}" class="${i === item ? 'on' : ''}">${esc(ITEM_META[i.item_id]?.short || i.name)}</button>`).join('')}</div>` : ''}
     <div class="gpu-prod">
-      <img src="/static/assets/products/${item.item_id}.jpg" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'${ITEM_META[item.item_id]?.emoji || ''}'}))">
+      <img src="/static/assets/products/${item.item_id}.jpg" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="ph" hidden>${itemIcon(item.item_id, { size: 20 })}</div>
       <div><div class="n">${esc(PRODUCT[item.item_id] || item.name)}</div><div class="m">London retail · in 6 months</div></div>
     </div>
     <div class="hero-price"><b data-count="${later}" data-prefix="£">${fmtGBP(later)}</b>${isNum(now) ? `<span>from ${fmtGBP(now)} today</span>` : ''}</div>

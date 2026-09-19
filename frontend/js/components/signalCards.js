@@ -3,7 +3,8 @@
 // priceItem: item object or item_id (default items[1] ?? items[0]).
 // earthMetric: 'ndvi' (default) or 'ndwi' (GPU reservoirs). Cards with no data are hidden.
 import { forecastChart } from './forecastChart.js';
-import { esc, isNum, ITEM_META, shortRegion, commodityOf, riskOf, onResize } from './ui.js';
+import { esc, isNum, ITEM_META, shortRegion, commodityOf, riskOf, onResize, arrowIcon } from './ui.js';
+import { axisTooltip, itemTooltip, tipHtml, fmtMonth, fmtPct } from './chartTheme.js';
 
 const GREYS = ['#94A3B8', '#CBD5E1', '#E2E8F0', '#E2E8F0', '#E2E8F0'];
 const axisTxt = { color: '#A8A29E', fontSize: 11, fontWeight: 500 };
@@ -45,7 +46,7 @@ export function signalCards(el, data, opts = {}) {
     const reg = regions.find(r => r.region_id === worst.j.region_id) || worst.j;
     const prev = worst.j.prev_score ?? worst.j.harvest_risk?.prev_score;
     body.querySelector('.sig-call').innerHTML = `<div class="t">${esc(commodityOf(reg))} supply risk</div>
-      <div class="v"><b>${worst.v.toFixed(2)}</b>${isNum(prev) ? `<span class="delta ${worst.v >= prev ? 'up' : 'down'}">${worst.v >= prev ? '↑' : '↓'} ${Math.abs(worst.v - prev).toFixed(2)}</span>` : ''}</div>`;
+      <div class="v"><b>${worst.v.toFixed(2)}</b>${isNum(prev) ? `<span class="delta ${worst.v >= prev ? 'up' : 'down'}">${arrowIcon(worst.v - prev)}${Math.abs(worst.v - prev).toFixed(2)}</span>` : ''}</div>`;
     const colors = risks.map((_, i) => (i === 0 ? accent : GREYS[i - 1]));
     body.querySelector('.sig-legend').innerHTML = risks.slice(0, 3).map((r, i) => `<span><i style="background:${colors[i]}"></i>${esc(shortRegion(r.j.name || r.j.region_id))}</span>`).join('');
     const chart = echarts.init(body.querySelector('.sig-chart'));
@@ -73,7 +74,32 @@ export function signalCards(el, data, opts = {}) {
         ],
       };
     }
-    chart.setOption({ animationDuration: 600, tooltip: { show: false }, ...option });
+    const riskWord = v => (v >= 0.66 ? 'High' : v >= 0.33 ? 'Medium' : 'Low');
+    const shown = hasHist ? risks.slice(0, 3) : risks;
+    const tooltip = hasHist
+      ? axisTooltip(ps => {
+        const i = (Array.isArray(ps) ? ps[0] : ps)?.dataIndex; if (i == null) return '';
+        return tipHtml({
+          title: fmtMonth(risks[0].j.history[i]?.month), rows: shown.map((r, k) => {
+            const v = r.j.history[i]?.score ?? r.j.history[i]?.v;
+            return { color: colors[k], label: shortRegion(r.j.name || r.j.region_id), value: isNum(v) ? `${v.toFixed(2)} · ${riskWord(v)}` : '–' };
+          }), note: 'Jev supply-risk score, 0 = safe · 1 = severe',
+        });
+      })
+      : itemTooltip(p => {
+        const r = risks[p.dataIndex]; if (!r) return '';
+        const reg = regions.find(x => x.region_id === r.j.region_id) || r.j;
+        const probs = r.j.harvest_risk?.probs || {};
+        const conf = r.j.confidence ?? r.j.harvest_risk?.confidence;
+        return tipHtml({
+          title: shortRegion(reg), tag: riskWord(r.v) + ' risk',
+          rows: [{ color: colors[p.dataIndex], label: `${commodityOf(reg)} supply risk`, value: r.v.toFixed(2) },
+            ...['low', 'medium', 'high', 'severe'].filter(k => isNum(probs[k])).map(k => ({ label: `P(${k})`, value: Math.round(probs[k] * 100) + '%' })),
+            isNum(conf) ? { label: 'Jev confidence', value: Math.round(conf * 100) + '%' } : null],
+          note: 'Judged by Jev from satellite stats + news',
+        });
+      });
+    chart.setOption({ animationDuration: 600, tooltip, ...option });
     disposers.push(onResize(body, () => chart.resize()), () => chart.dispose());
   } else hide('risk');
 
@@ -91,7 +117,17 @@ export function signalCards(el, data, opts = {}) {
     const lo = Math.min(...vals), hi = Math.max(...vals);
     const chart = echarts.init(body.firstElementChild);
     chart.setOption({
-      animationDuration: 300, tooltip: { show: false },
+      animationDuration: 300,
+      tooltip: axisTooltip(ps => {
+        const i = (Array.isArray(ps) ? ps[0] : ps)?.dataIndex; const r = bars[i]; if (!r) return '';
+        const a = r.anomaly[key], last = (r.series || []).filter(s => isNum(s?.[metric])).pop();
+        return tipHtml({
+          title: shortRegion(r), tag: a < 0 ? 'Below 5-yr avg' : 'Above 5-yr avg',
+          rows: [{ color: i === iMin && a < 0 ? '#F59E0B' : '#CBD5E1', label: metric === 'ndwi' ? 'Water vs 5-yr' : 'Crop health vs 5-yr', value: fmtPct(a) },
+            last ? { label: `${metric.toUpperCase()} · ${fmtMonth(last.month)}`, value: last[metric].toFixed(2) } : null],
+          note: r.name || '',
+        });
+      }, { pointer: 'shadow' }),
       grid: { left: 2, right: 2, top: 26, bottom: 22 },
       xAxis: { type: 'category', data: bars.map(r => shortRegion(r)), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { ...axisTxt, interval: 0, overflow: 'truncate', width: Math.max(40, Math.floor((body.clientWidth || 320) / bars.length) - 4) } },
       yAxis: { type: 'value', show: false, min: Math.max(0, lo - Math.max(12, (hi - lo) * 0.6)), max: hi + 2 },

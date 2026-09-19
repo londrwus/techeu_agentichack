@@ -1,0 +1,463 @@
+{
+ "generated_at": "2026-09-19T12:59:12Z",
+ "model": "LightGBM stacked on TimesFM 3.0",
+ "target": "6-month % change of the underlying commodity/driver series",
+ "n_series": 81,
+ "n_series_worldbank": 71,
+ "n_rows_train": 5534,
+ "n_rows_test": 973,
+ "train_period": "2005-01..2022-10",
+ "validation_period": "2019-01..2022-12 (hyperparameter search; final model refit on train+val)",
+ "test_period": "2023-01..2026-01 (cutoffs; outcomes 6m later)",
+ "features": [
+  "tfm_p50_pct",
+  "tfm_width",
+  "mom_3",
+  "mom_6",
+  "mom_12",
+  "vol_12",
+  "dist_5y",
+  "month",
+  "sat_anom"
+ ],
+ "best_config": {
+  "num_leaves": 8,
+  "min_data_in_leaf": 40,
+  "learning_rate": 0.03,
+  "n_estimators": 400,
+  "target": "residual",
+  "shrink": 1.0
+ },
+ "gpu": {
+  "type": "NVIDIA L4",
+  "seconds": 62.1,
+  "containers": 6,
+  "contexts": 6695,
+  "wall_seconds": 25.0,
+  "contexts_total": 6695,
+  "contexts_this_run": 6695
+ },
+ "cpu_containers": 52,
+ "search": [
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.054
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.059
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.061
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.155
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.163
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.176
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.202
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual",
+    "shrink": 1.0
+   },
+   "val_mae": 17.213
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.216
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual",
+    "shrink": 0.75
+   },
+   "val_mae": 17.24
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual",
+    "shrink": 0.75
+   },
+   "val_mae": 17.26
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.314
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.314
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.356
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.386
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "direct",
+    "shrink": 1.0
+   },
+   "val_mae": 17.422
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.591
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.636
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.64
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.644
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 400,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.665
+  },
+  {
+   "cfg": {
+    "num_leaves": 8,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.668
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 40,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.672
+  },
+  {
+   "cfg": {
+    "num_leaves": 4,
+    "min_data_in_leaf": 150,
+    "learning_rate": 0.03,
+    "n_estimators": 150,
+    "target": "residual_demean",
+    "shrink": 0.25
+   },
+   "val_mae": 17.681
+  }
+ ],
+ "val_mae_timesfm": 17.625,
+ "test_metrics": {
+  "naive": {
+   "mae_pct": 14.0,
+   "directional_acc": 0.0,
+   "big_move_recall": 0.0,
+   "n": 973,
+   "n_big_moves": 306
+  },
+  "timesfm": {
+   "mae_pct": 13.77,
+   "directional_acc": 0.531,
+   "big_move_recall": 0.209,
+   "n": 973,
+   "n_big_moves": 306
+  },
+  "orbit_learner": {
+   "mae_pct": 13.98,
+   "directional_acc": 0.564,
+   "big_move_recall": 0.275,
+   "n": 973,
+   "n_big_moves": 306
+  }
+ },
+ "test_metrics_our_items": {
+  "timesfm": {
+   "mae_pct": 20.37,
+   "directional_acc": 0.443,
+   "big_move_recall": 0.122,
+   "n": 88,
+   "n_big_moves": 41
+  },
+  "orbit_learner": {
+   "mae_pct": 21.49,
+   "directional_acc": 0.5,
+   "big_move_recall": 0.512,
+   "n": 88,
+   "n_big_moves": 41
+  }
+ },
+ "feature_importance": [
+  {
+   "feature": "dist_5y",
+   "gain_pct": 26.4
+  },
+  {
+   "feature": "mom_12",
+   "gain_pct": 15.0
+  },
+  {
+   "feature": "vol_12",
+   "gain_pct": 12.8
+  },
+  {
+   "feature": "tfm_p50_pct",
+   "gain_pct": 11.8
+  },
+  {
+   "feature": "mom_3",
+   "gain_pct": 9.7
+  },
+  {
+   "feature": "tfm_width",
+   "gain_pct": 8.4
+  },
+  {
+   "feature": "mom_6",
+   "gain_pct": 7.8
+  },
+  {
+   "feature": "month",
+   "gain_pct": 7.2
+  },
+  {
+   "feature": "sat_anom",
+   "gain_pct": 1.0
+  }
+ ],
+ "per_item": [
+  {
+   "item_id": "bread",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 3.0,
+   "learner_6m_pct": 14.9,
+   "correction_pct": 11.9
+  },
+  {
+   "item_id": "chocolate",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 2.0,
+   "learner_6m_pct": 10.1,
+   "correction_pct": 8.0
+  },
+  {
+   "item_id": "gpu",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": -0.1,
+   "learner_6m_pct": 12.4,
+   "correction_pct": 12.5
+  },
+  {
+   "item_id": "laptop",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": -0.4,
+   "learner_6m_pct": 5.3,
+   "correction_pct": 5.8
+  },
+  {
+   "item_id": "latte",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 3.4,
+   "learner_6m_pct": 9.1,
+   "correction_pct": 5.6
+  },
+  {
+   "item_id": "olive_oil",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -0.9,
+   "learner_6m_pct": 6.1,
+   "correction_pct": 6.9
+  },
+  {
+   "item_id": "orange_juice",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -2.0,
+   "learner_6m_pct": 9.4,
+   "correction_pct": 11.4
+  },
+  {
+   "item_id": "pint",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -0.6,
+   "learner_6m_pct": 8.6,
+   "correction_pct": 9.2
+  },
+  {
+   "item_id": "rent_1bed",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": 2.1,
+   "learner_6m_pct": 4.5,
+   "correction_pct": 2.4
+  },
+  {
+   "item_id": "wine",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": 0.7,
+   "learner_6m_pct": 5.6,
+   "correction_pct": 4.9
+  }
+ ],
+ "seconds": 60.8,
+ "backtest_candidates": {
+  "rows": 2154,
+  "folds": 27,
+  "file": "data/cache/eval/candidates/learner.json"
+ }
+}

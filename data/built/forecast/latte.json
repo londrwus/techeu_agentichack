@@ -344,80 +344,80 @@
  "forecast": [
   {
    "month": "2026-08",
-   "p10": 3.92,
+   "p10": 3.94,
    "p50": 3.96,
-   "p90": 4.04
+   "p90": 4.0
   },
   {
    "month": "2026-09",
-   "p10": 3.91,
+   "p10": 3.92,
    "p50": 3.98,
-   "p90": 4.09
+   "p90": 4.05
   },
   {
    "month": "2026-10",
    "p10": 3.91,
    "p50": 3.99,
-   "p90": 4.13
+   "p90": 4.11
   },
   {
    "month": "2026-11",
-   "p10": 3.9,
-   "p50": 4.0,
-   "p90": 4.18
+   "p10": 3.92,
+   "p50": 4.01,
+   "p90": 4.15
   },
   {
    "month": "2026-12",
-   "p10": 3.9,
-   "p50": 4.01,
-   "p90": 4.22
+   "p10": 3.92,
+   "p50": 4.02,
+   "p90": 4.2
   },
   {
    "month": "2027-01",
-   "p10": 3.9,
+   "p10": 3.93,
    "p50": 4.03,
-   "p90": 4.26
+   "p90": 4.25
   },
   {
    "month": "2027-02",
-   "p10": 3.91,
+   "p10": 3.92,
    "p50": 4.04,
-   "p90": 4.3
+   "p90": 4.32
   },
   {
    "month": "2027-03",
-   "p10": 3.91,
-   "p50": 4.05,
-   "p90": 4.33
+   "p10": 3.92,
+   "p50": 4.06,
+   "p90": 4.4
   },
   {
    "month": "2027-04",
    "p10": 3.91,
    "p50": 4.07,
-   "p90": 4.37
+   "p90": 4.48
   },
   {
    "month": "2027-05",
-   "p10": 3.92,
+   "p10": 3.91,
    "p50": 4.08,
-   "p90": 4.41
+   "p90": 4.57
   },
   {
    "month": "2027-06",
-   "p10": 3.92,
+   "p10": 3.9,
    "p50": 4.09,
-   "p90": 4.45
+   "p90": 4.66
   },
   {
    "month": "2027-07",
-   "p10": 3.93,
+   "p10": 3.9,
    "p50": 4.11,
-   "p90": 4.48
+   "p90": 4.77
   }
  ],
- "prob_up_6m": 0.716,
+ "prob_up_6m": 0.577,
  "change_6m_pct": 2.0,
- "model": "TimesFM 3.0 + Orbit (tuned)",
+ "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
  "backtest": {
   "as_of": "2024-03",
   "story": "Brazil 2024 drought → coffee at record highs",
@@ -531,6 +531,14 @@
    },
    "story": "Crop canopy looked normal-to-greener before 2024-03 (NDVI +2%): the shock wasn't visible from orbit.",
    "method": "tuned Orbit method (fit on cutoffs < 2023) at as_of; retail = share x driver change"
+  },
+  "orbit_v2_signal": {
+   "predicted_change_pct": 0.1,
+   "driver_change_pct": 0.7,
+   "prob_up_6m": 0.5335,
+   "prob_bigup_6m": 0.2613,
+   "in_sample": false,
+   "split": "test"
   }
  },
  "model_driver": {
@@ -946,6 +954,168 @@
  "drivers": [
   {
    "name": "Price trend (24-month momentum)",
+   "value": 16.716,
+   "contribution_pct": 0.06,
+   "source": "Orbit v1 member: 24m log-trend blend (weight 0.25 in the v2 stack)"
+  },
+  {
+   "name": "TimesFM 3.0 (GPU foundation model)",
+   "value": 3.383,
+   "contribution_pct": 0.02,
+   "source": "TimesFM share of the statistical ensemble member"
+  },
+  {
+   "name": "Statistical ensemble (ETS/ARIMA/Theta)",
+   "value": 3.009,
+   "contribution_pct": 0.08,
+   "source": "statsforecast fits on Modal CPUs, equal-weight, damped 0.75"
+  },
+  {
+   "name": "Quant momentum & mean-reversion",
+   "value": 3.822,
+   "contribution_pct": 0.12,
+   "source": "ridge TSMOM on 40 commodity series (vol-scaled momentum, breakouts, 5y z-score)"
+  },
+  {
+   "name": "GBP/USD exchange rate",
+   "value": -0.0,
+   "contribution_pct": -0.0,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "Oil price (Brent)",
+   "value": -0.032,
+   "contribution_pct": -0.1,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "EU gas / fertiliser proxy",
+   "value": 0.024,
+   "contribution_pct": 0.07,
+   "source": "exog ridge member (frozen 2022 fit)"
+  },
+  {
+   "name": "Price momentum (macro ridge)",
+   "value": -0.003,
+   "contribution_pct": 0.12,
+   "source": "exog ridge member: price features + item level"
+  },
+  {
+   "name": "Satellite crop stress",
+   "value": -0.052,
+   "contribution_pct": 0.0,
+   "source": "Sentinel-2 NDVI/NDWI anomaly: tracked, but no validated forecast skill yet -> weight 0 in v2"
+  },
+  {
+   "name": "Jev news pressure",
+   "value": 0.268,
+   "contribution_pct": 0.39,
+   "source": "Jev supply-effect judgments over recent headlines (not backtested)"
+  },
+  {
+   "name": "UK inflation (non-commodity costs)",
+   "value": 3.0,
+   "contribution_pct": 1.24,
+   "source": "3% CPI on the non-commodity share"
+  }
+ ],
+ "orbit_overlay": {
+  "params": {
+   "ctx": "full",
+   "damp": 0.0,
+   "blend": 0.25,
+   "sat": 0.0,
+   "mom": 0.0,
+   "cap": 0.5,
+   "ai": 1.0
+  },
+  "news_pressure": 0.268,
+  "satellite_stress": -0.052,
+  "trend_24m_pct_per_year": 16.72,
+  "ai_drift_12m_pct": null,
+  "extra_12m_pct": 3.41,
+  "tuned_on": "cutoffs < 2023 (see eval/summary.json)",
+  "method": "TimesFM band re-centred by the tuned Orbit shift (trend blend, damping, satellite tilt, AI-era drivers) -> retail pass-through -> x (1 + h/12 x (Jev news + CPI))"
+ },
+ "forecast_v1": [
+  {
+   "month": "2026-08",
+   "p10": 3.92,
+   "p50": 3.96,
+   "p90": 4.04
+  },
+  {
+   "month": "2026-09",
+   "p10": 3.91,
+   "p50": 3.98,
+   "p90": 4.09
+  },
+  {
+   "month": "2026-10",
+   "p10": 3.91,
+   "p50": 3.99,
+   "p90": 4.13
+  },
+  {
+   "month": "2026-11",
+   "p10": 3.9,
+   "p50": 4.0,
+   "p90": 4.18
+  },
+  {
+   "month": "2026-12",
+   "p10": 3.9,
+   "p50": 4.01,
+   "p90": 4.22
+  },
+  {
+   "month": "2027-01",
+   "p10": 3.9,
+   "p50": 4.03,
+   "p90": 4.26
+  },
+  {
+   "month": "2027-02",
+   "p10": 3.91,
+   "p50": 4.04,
+   "p90": 4.3
+  },
+  {
+   "month": "2027-03",
+   "p10": 3.91,
+   "p50": 4.05,
+   "p90": 4.33
+  },
+  {
+   "month": "2027-04",
+   "p10": 3.91,
+   "p50": 4.07,
+   "p90": 4.37
+  },
+  {
+   "month": "2027-05",
+   "p10": 3.92,
+   "p50": 4.08,
+   "p90": 4.41
+  },
+  {
+   "month": "2027-06",
+   "p10": 3.92,
+   "p50": 4.09,
+   "p90": 4.45
+  },
+  {
+   "month": "2027-07",
+   "p10": 3.93,
+   "p50": 4.11,
+   "p90": 4.48
+  }
+ ],
+ "prob_up_6m_v1": 0.716,
+ "change_6m_pct_v1": 2.0,
+ "drivers_v1": [
+  {
+   "name": "Price trend (24-month momentum)",
    "value": 16.72,
    "contribution_pct": 0.29,
    "source": "price history, weight 0.25 (tuned)"
@@ -969,22 +1139,32 @@
    "source": "3% CPI on the non-commodity share"
   }
  ],
- "orbit_overlay": {
-  "params": {
-   "ctx": "full",
-   "damp": 0.0,
-   "blend": 0.25,
-   "sat": 0.0,
-   "mom": 0.0,
-   "cap": 0.5,
-   "ai": 1.0
+ "prob_bigup_6m": 0.334,
+ "driver_change_6m_pct": 3.0,
+ "big_move_alert": true,
+ "recommendation": "hold",
+ "method": "orbit_v2",
+ "orbit_v2": {
+  "as_of": "2026-07",
+  "driver_base": 359.1622727272727,
+  "weights_h6": {
+   "orbit_v1": 0.25,
+   "stat_combo": 0.25,
+   "quant_tsmom": 0.25,
+   "exog_ridge": 0.25
   },
-  "news_pressure": 0.268,
-  "satellite_stress": -0.052,
-  "trend_24m_pct_per_year": 16.72,
-  "ai_drift_12m_pct": null,
-  "extra_12m_pct": 3.41,
-  "tuned_on": "cutoffs < 2023 (see eval/summary.json)",
-  "method": "TimesFM band re-centred by the tuned Orbit shift (trend blend, damping, satellite tilt, AI-era drivers) -> retail pass-through -> x (1 + h/12 x (Jev news + CPI))"
+  "members_6m_pct": {
+   "orbit_v1": 2.11,
+   "timesfm": 3.44,
+   "stat_combo": 3.05,
+   "quant_tsmom": 3.9,
+   "exog_ridge": 3.12
+  },
+  "driver_band_6m_pct": [
+   -18.5,
+   48.1
+  ],
+  "big_alert_threshold": 0.22,
+  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

@@ -1,24 +1,24 @@
 {
- "generated_at": "2026-09-19T12:48:07+00:00",
+ "generated_at": "2026-09-19T13:39:56+00:00",
  "modules": [
   {
    "module_id": "groceries",
    "name": "Groceries",
    "emoji": "🛒",
    "color": "#F97316",
-   "pressure": 50,
-   "prob_up_6m": 0.665,
-   "top_item": "Loaf of bread",
-   "top_item_id": "bread",
-   "change_6m_pct": 2.1
+   "pressure": 51,
+   "prob_up_6m": 0.574,
+   "top_item": "Chocolate bar (100g)",
+   "top_item_id": "chocolate",
+   "change_6m_pct": 4.3
   },
   {
    "module_id": "latte",
    "name": "Latte Index",
    "emoji": "☕",
    "color": "#A16207",
-   "pressure": 58,
-   "prob_up_6m": 0.716,
+   "pressure": 52,
+   "prob_up_6m": 0.577,
    "top_item": "Latte (London café)",
    "top_item_id": "latte",
    "change_6m_pct": 2.0
@@ -28,7 +28,7 @@
    "name": "Beer & Wine",
    "emoji": "🍺",
    "color": "#EAB308",
-   "pressure": 79,
+   "pressure": 72,
    "prob_up_6m": 0.97,
    "top_item": "Bottle of wine",
    "top_item_id": "wine",
@@ -39,11 +39,11 @@
    "name": "GPU & Gadgets",
    "emoji": "🖥️",
    "color": "#6366F1",
-   "pressure": 68,
-   "prob_up_6m": 0.665,
+   "pressure": 65,
+   "prob_up_6m": 0.66,
    "top_item": "High-end GPU",
    "top_item_id": "gpu",
-   "change_6m_pct": 9.2
+   "change_6m_pct": 6.6
   },
   {
    "module_id": "rent",

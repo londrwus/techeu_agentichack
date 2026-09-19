@@ -1,5 +1,5 @@
 // 00 Earth: full-bleed Sentinel-2 basemap with the regions that set tomorrow's prices.
-// The router adds body.rail (sidebar → 56px glass rail). render() returns a cleanup function.
+// The router adds body.full-bleed (same sidebar as every page; this view fills the content area). render() returns a cleanup function.
 import { api, esc, isNum, countUp, icons, MODULE_IDS, ITEM_META } from '../lib.js';
 import { fmtGBP, commodityOf, riskOf } from '../components/ui.js';
 
@@ -153,7 +153,7 @@ export async function render(el) {
     const label = CHIPS.find(c => c[0] === r.item_id)?.[1] || it.name || '';
     const sub = r.london ? `1-bed flat · ${boroughs.length || 33} boroughs` : r.tech ? KIND[r.signal] || 'Chip supply' : `${commodityOf(r)} · feeds ${label.toLowerCase()}`;
     const month = r.series?.at(-1)?.month;
-    const thumb = !r.london && month ? `<img class="ea-thumb" src="/tiles/${esc(r.region_id)}/${esc(month)}.png" alt="" onerror="this.remove()">` : '';
+    const thumb = !r.london && month ? `<img class="ea-thumb" src="/tiles/${esc(r.region_id)}/${esc(month)}.png" data-sat-region="${esc(r.region_id)}" data-sat-month="${esc(month)}" title="Open satellite image" alt="" onerror="this.remove()">` : '';
     const now = it.retail_now, fut = it.retail_6m;
     const nameShort = r.london ? 'London' : r.name.replace(/\s*\(.*?\)/, '');
     return `<a class="ea-card-link" href="#/${MOD_ROUTE[r.module_id] || 'overview'}">

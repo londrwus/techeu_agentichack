@@ -1,0 +1,16 @@
+/* Mission Control + Ask Orbit extras (owned by views/mission.js, views/ask.js) */
+.tooltip .ct b.ct-val { display: inline; margin: 0; font-size: 12px; }
+.sugg button { display: flex; align-items: center; gap: 10px; }
+.sugg button svg.lucide { flex: none; color: var(--text-3); }
+.sugg button:hover svg.lucide { color: var(--accent-ink); }
+.route svg.lucide + svg.lucide { color: currentColor; }
+.cols .c { cursor: default; }
+.cols .c:hover i { filter: brightness(.94); }
+.tput i { cursor: default; }
+.tput i:hover { filter: brightness(.9); }
+.tile.done { cursor: zoom-in; }
+.tile.done:hover img { filter: brightness(1.08); }
+.tile.stale:hover img { opacity: 1; filter: none; }
+.tile .lab { pointer-events: none; }
+.tput-wrap { position: relative; flex: 1; display: flex; flex-direction: column; }
+.tput-empty { position: absolute; inset: 16px 0 0; display: grid; place-items: center; font-size: 13px; color: var(--text-3); pointer-events: none; }

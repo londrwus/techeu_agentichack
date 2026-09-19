@@ -1,4 +1,5 @@
 // Shared helpers: fetch with cache, DOM, formatting, count-up, icons, tooltip.
+import { MODULE_ICON, ITEM_ICON, upgradeIcons } from './components/icons.js';
 const cache = new Map();
 
 export async function api(path, { fresh = false } = {}) {
@@ -11,20 +12,22 @@ export async function api(path, { fresh = false } = {}) {
 }
 
 export const MODULE_IDS = ['groceries', 'latte', 'beer_wine', 'gpu'];
+// Icons: Lucide only (components/icons.js). `emoji` is kept as a field name for older views but now holds Lucide markup.
 export const MODULE_META = {
-  groceries: { name: 'Groceries', emoji: '🛒', color: '#F97316', icon: 'shopping-cart' },
-  latte: { name: 'Latte Index', emoji: '☕', color: '#A16207', icon: 'coffee' },
-  beer_wine: { name: 'Beer & Wine', emoji: '🍺', color: '#EAB308', icon: 'beer' },
-  gpu: { name: 'GPU & Gadgets', emoji: '🖥️', color: '#6366F1', icon: 'cpu' },
-  rent: { name: 'Rent Radar', emoji: '🏠', color: '#10B981', icon: 'building-2' },
+  groceries: { name: 'Groceries', color: '#F97316', icon: MODULE_ICON.groceries },
+  latte: { name: 'Latte Index', color: '#A16207', icon: MODULE_ICON.latte },
+  beer_wine: { name: 'Beer & Wine', color: '#EAB308', icon: MODULE_ICON.beer_wine },
+  gpu: { name: 'GPU & Gadgets', color: '#6366F1', icon: MODULE_ICON.gpu },
+  rent: { name: 'Rent Radar', color: '#10B981', icon: MODULE_ICON.rent },
 };
 export const ITEM_META = {
-  chocolate: { short: 'Choc', emoji: '🍫' }, olive_oil: { short: 'Olive oil', emoji: '🫒' },
-  orange_juice: { short: 'OJ', emoji: '🍊' }, bread: { short: 'Bread', emoji: '🍞' },
-  latte: { short: 'Latte', emoji: '☕' }, pint: { short: 'Pint', emoji: '🍺' },
-  wine: { short: 'Wine', emoji: '🍷' }, gpu: { short: 'GPU', emoji: '🖥️' },
-  laptop: { short: 'Laptop', emoji: '💻' }, rent_1bed: { short: 'Rent', emoji: '🏠' },
+  chocolate: { short: 'Choc' }, olive_oil: { short: 'Olive oil' }, orange_juice: { short: 'OJ' }, bread: { short: 'Bread' },
+  latte: { short: 'Latte' }, pint: { short: 'Pint' }, wine: { short: 'Wine' }, gpu: { short: 'GPU' },
+  laptop: { short: 'Laptop' }, rent_1bed: { short: 'Rent' },
 };
+// Quote-free markup so it stays safe inside HTML attributes / JS strings; the icon observer (icons.js) upgrades it to SVG.
+for (const m of Object.values(MODULE_META)) m.emoji = `<i data-lucide=${m.icon}></i>`;
+for (const [id, m] of Object.entries(ITEM_META)) { m.icon = ITEM_ICON[id]; m.emoji = `<i data-lucide=${m.icon}></i>`; }
 // region -> {item, signal} (mirrors orbit/config.py REGIONS)
 export const REGION_META = {
   jaen_olives: ['olive_oil', 'crop'], soubre_cocoa: ['chocolate', 'crop'], ashanti_cocoa: ['chocolate', 'crop'],
@@ -51,7 +54,7 @@ export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 export function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-export function icons() { try { window.lucide?.createIcons(); } catch (e) { console.warn(e); } }
+export function icons() { upgradeIcons(); }
 
 export const isNum = v => typeof v === 'number' && isFinite(v);
 export function money(v, unit = '£') {

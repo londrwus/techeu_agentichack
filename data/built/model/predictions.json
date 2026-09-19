@@ -1,0 +1,78 @@
+{
+ "generated_at": "2026-09-19T12:59:12Z",
+ "model": "LightGBM stacked on TimesFM 3.0",
+ "horizon_months": 6,
+ "note": "6m % change of each item's driver series; blend into retail via commodity_share",
+ "items": {
+  "bread": {
+   "item_id": "bread",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 3.0,
+   "learner_6m_pct": 14.9,
+   "correction_pct": 11.9
+  },
+  "chocolate": {
+   "item_id": "chocolate",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 2.0,
+   "learner_6m_pct": 10.1,
+   "correction_pct": 8.0
+  },
+  "gpu": {
+   "item_id": "gpu",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": -0.1,
+   "learner_6m_pct": 12.4,
+   "correction_pct": 12.5
+  },
+  "laptop": {
+   "item_id": "laptop",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": -0.4,
+   "learner_6m_pct": 5.3,
+   "correction_pct": 5.8
+  },
+  "latte": {
+   "item_id": "latte",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": 3.4,
+   "learner_6m_pct": 9.1,
+   "correction_pct": 5.6
+  },
+  "olive_oil": {
+   "item_id": "olive_oil",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -0.9,
+   "learner_6m_pct": 6.1,
+   "correction_pct": 6.9
+  },
+  "orange_juice": {
+   "item_id": "orange_juice",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -2.0,
+   "learner_6m_pct": 9.4,
+   "correction_pct": 11.4
+  },
+  "pint": {
+   "item_id": "pint",
+   "as_of": "2026-07",
+   "timesfm_6m_pct": -0.6,
+   "learner_6m_pct": 8.6,
+   "correction_pct": 9.2
+  },
+  "rent_1bed": {
+   "item_id": "rent_1bed",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": 2.1,
+   "learner_6m_pct": 4.5,
+   "correction_pct": 2.4
+  },
+  "wine": {
+   "item_id": "wine",
+   "as_of": "2026-08",
+   "timesfm_6m_pct": 0.7,
+   "learner_6m_pct": 5.6,
+   "correction_pct": 4.9
+  }
+ }
+}

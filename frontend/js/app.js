@@ -12,9 +12,11 @@ import * as rent from './views/rent.js';
 import * as mission from './views/mission.js';
 import * as ask from './views/ask.js';
 import * as track from './views/track.js';
+import { watchIcons } from './components/icons.js';
+import { installLightbox } from './components/lightbox.js';
 
 const VIEWS = { earth, overview, groceries, latte, beer_wine, gpu, rent, mission, ask, track };
-// Views that take over the whole viewport (sidebar collapses to a glass rail).
+// Views whose content fills the whole content area edge-to-edge (the sidebar stays identical on every page).
 const FULL_BLEED = new Set(['earth']);
 
 const view = document.getElementById('view');
@@ -35,7 +37,7 @@ async function route() {
   try { cleanup?.(); } catch (e) { console.warn(e); }
   cleanup = null;
   $$('.nav-item').forEach(a => a.classList.toggle('active', a.dataset.route === r.key));
-  document.body.classList.toggle('rail', FULL_BLEED.has(r.name));
+  document.body.classList.toggle('full-bleed', FULL_BLEED.has(r.name));
   document.body.dataset.view = r.name;
   view.innerHTML = '';
   view.scrollTop = 0;
@@ -53,6 +55,8 @@ async function route() {
   icons();
 }
 
+watchIcons();
+installLightbox();
 window.addEventListener('hashchange', route);
 route();
 
