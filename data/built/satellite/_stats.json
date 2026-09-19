@@ -1,1 +1,1 @@
-{"tiles_processed": 1472, "tiles_total": 1472, "containers_peak": 101, "seconds": 673.4, "errors": 0, "fresh": 1472}
+{"tiles_processed": 1840, "tiles_total": 1840, "containers_peak": 101, "seconds": 673.4, "errors": 0, "fresh": 1472, "last_subset_run": {"tiles_processed": 460, "tiles_total": 460, "containers_peak": 95, "seconds": 67.2, "errors": 0, "fresh": 460, "regions": ["hsinchu_park", "loudoun_dc_alley", "stargate_abilene", "tsmc_arizona", "xai_colossus"], "add_tiles_processed": 0, "add_tiles_total": 0}}

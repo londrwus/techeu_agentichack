@@ -1,8 +1,8 @@
 {
  "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
  "gpu_type": "NVIDIA L4",
- "gpu_seconds": 7.5,
- "seconds": 27.2,
+ "gpu_seconds": 5.7,
+ "seconds": 18.9,
  "series": 13,
  "items": [
   {
@@ -86,22 +86,22 @@
   },
   {
    "item_id": "gpu",
-   "source": "FRED:PCU334413334413",
+   "source": "curated",
    "last": "2026-08",
    "now": 1650.0,
-   "p50_6m": 1617.55,
-   "change_6m_pct": -2.0,
-   "prob_up_6m": 0.194,
+   "p50_6m": 1651.34,
+   "change_6m_pct": 0.1,
+   "prob_up_6m": 0.502,
    "bt": null
   },
   {
    "item_id": "laptop",
-   "source": "synthetic",
+   "source": "FRED:CUSR0000SEEE01",
    "last": "2026-08",
    "now": 1150.0,
-   "p50_6m": 1151.92,
-   "change_6m_pct": 0.2,
-   "prob_up_6m": 0.547,
+   "p50_6m": 1145.75,
+   "change_6m_pct": -0.4,
+   "prob_up_6m": 0.471,
    "bt": null
   },
   {
@@ -115,5 +115,5 @@
    "bt": null
   }
  ],
- "generated_at": "2026-09-19T12:03:21Z"
+ "generated_at": "2026-09-19T12:47:09Z"
 }

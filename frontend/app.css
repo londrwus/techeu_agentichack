@@ -321,3 +321,104 @@ nav { display: flex; flex-direction: column; gap: 2px; }
 #c4 .big, #c4 .cv { font-size: 38px; letter-spacing: -0.5px; }
 .price-line.big-num .price-now { font-size: 30px; }
 .price-line.big-num .price-next { font-size: 38px; }
+
+/* =========================================================================
+   Shared building blocks for the module screens (components/*.js)
+   ========================================================================= */
+
+/* ---------- rail mode (Earth): sidebar collapses to a 56px glass strip ---------- */
+body.rail { display: block; background: #0A0F2C; }
+body.rail .sidebar {
+  position: fixed; z-index: 30; left: 16px; top: 16px; bottom: 16px; height: auto; width: 56px; padding: 10px 7px; gap: 12px;
+  background: rgba(10,15,44,.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.4); overflow: visible;
+}
+body.rail .brand { padding: 0; justify-content: center; }
+body.rail .brand > div:not(.brand-tile), body.rail .nav-label, body.rail .side-foot,
+body.rail .nav-item span, body.rail .nav-item .dot { display: none; }
+body.rail .nav-item { width: 40px; height: 40px; padding: 0; justify-content: center; color: rgba(255,255,255,.7); margin-bottom: 6px; }
+body.rail .nav-item:hover { background: rgba(255,255,255,.08); }
+body.rail .nav-item.active { background: #F9731633; color: #FDBA74; }
+body.rail .main { padding: 0; }
+.page.full { gap: 0; position: relative; min-height: 100vh; animation: none; }
+
+/* ---------- glass panels (dark map overlays) ---------- */
+.glass-panel {
+  background: rgba(10,15,44,.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 16px; color: #fff; padding: 16px 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.4);
+}
+.glass-panel .card-title { color: #fff; font-size: 16px; }
+.glass-panel .card-sub { color: rgba(255,255,255,.6); font-size: 12px; }
+.glass-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #fff;
+  background: rgba(10,15,44,.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.12); white-space: nowrap; }
+
+/* Earth stub */
+.earth-stage { position: relative; flex: 1; min-height: 100vh; background: radial-gradient(1200px 700px at 50% 45%, #13205a 0%, #0A0F2C 70%); overflow: hidden; }
+.earth-title { position: absolute; left: 92px; top: 16px; width: max-content; min-width: 420px; max-width: calc(100% - 108px); z-index: 5; }
+.earth-title .kicker { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #FFFFFFA6; }
+.earth-title .kicker .live { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; }
+.earth-title h1 { margin: 6px 0 4px; font-size: 26px; font-weight: 800; letter-spacing: -.3px; }
+.earth-title .sub { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.75); }
+
+/* ---------- forecast chart + floating callout ---------- */
+.fc { position: relative; min-height: 120px; min-width: 0; }
+.fc-plot { position: absolute; inset: 0; }
+.fc-callout {
+  position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,.12); white-space: nowrap;
+  opacity: 0; transition: opacity .2s ease-out;
+}
+.fc-callout.on { opacity: 1; }
+.fc-callout .t { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.fc-callout .v { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.fc-callout .v b { font-size: 24px; font-weight: 700; letter-spacing: -.5px; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.fc-callout.compact { padding: 8px 12px; }
+.fc-callout.compact .t { font-size: 11px; font-weight: 500; color: var(--text-3); }
+.fc-callout.compact .v b { font-size: 18px; }
+.fc-callout.compact .delta { font-size: 12px; }
+.delta { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.delta.up { color: var(--up); } .delta.down { color: var(--down); } .delta.flat { color: var(--text-3); }
+.dchip { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dchip.up { background: var(--up-soft); color: var(--up); }
+.dchip.down { background: var(--down-soft); color: var(--down-ink); }
+.dchip.flat { background: var(--bg); color: var(--text-2); }
+
+/* Legend swatches for chart cards: <span><i class="solid"></i>History</span><span><i class="dash" style="--c:#A16207"></i>Forecast (p50)</span> */
+.fc-legend { display: flex; gap: 16px; font-size: 12px; font-weight: 500; color: var(--text-2); align-items: center; flex-wrap: wrap; }
+.fc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fc-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid #334155; }
+.fc-legend i.dash { border-top: 2px dashed var(--c, var(--accent)); }
+
+/* Stat strip under hero charts */
+.stat-strip { display: flex; gap: 24px; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap; }
+.stat-strip .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-strip .l { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+/* Big hero price: <div class="hero-price"><b>£4.40</b><span>from £3.95 today</span></div> */
+.hero-price { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hero-price b { font-size: 40px; font-weight: 700; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.hero-price span { font-size: 15px; font-weight: 500; color: var(--text-3); }
+
+/* ---------- module screen grid ---------- */
+.module-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 16px; min-height: 500px; }
+.module-hero > .card { min-height: 0; }
+@media (max-width: 1100px) { .module-hero { grid-template-columns: 1fr; } }
+
+/* ---------- signal row ---------- */
+.sig-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.card.sig { padding: 20px; height: 232px; gap: 10px; }
+.sig-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sig-head b { font-size: 15px; font-weight: 700; }
+.sig-head span { font-size: 12px; font-weight: 500; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sig-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sig-body.fc { display: block; }
+.sig-chart { flex: 1; min-height: 0; }
+.sig-legend { display: flex; gap: 14px; font-size: 11px; font-weight: 500; color: var(--text-2); padding-top: 6px; flex-wrap: wrap; }
+.sig-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sig-legend i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.sig-call { transform: translate(0, 0); }
+
+/* ---------- satellite tiles ---------- */
+.sat-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; background: #1f2937; }
+.sat-missing { background: linear-gradient(135deg, #1e293b, #334155); }

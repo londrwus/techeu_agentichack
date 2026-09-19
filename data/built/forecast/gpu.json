@@ -2,339 +2,339 @@
  "item_id": "gpu",
  "name": "High-end GPU",
  "unit": "£",
- "source": "FRED:PCU334413334413",
+ "source": "curated",
  "history": [
   {
    "month": "2019-09",
-   "price": 1797.01
+   "price": 680.0
   },
   {
    "month": "2019-10",
-   "price": 1790.06
+   "price": 690.23
   },
   {
    "month": "2019-11",
-   "price": 1790.06
+   "price": 678.85
   },
   {
    "month": "2019-12",
-   "price": 1793.53
+   "price": 679.08
   },
   {
    "month": "2020-01",
-   "price": 1783.1
+   "price": 687.78
   },
   {
    "month": "2020-02",
-   "price": 1786.58
+   "price": 687.98
   },
   {
    "month": "2020-03",
-   "price": 1790.06
+   "price": 687.37
   },
   {
    "month": "2020-04",
-   "price": 1758.76
+   "price": 681.37
   },
   {
    "month": "2020-05",
-   "price": 1755.29
+   "price": 688.68
   },
   {
    "month": "2020-06",
-   "price": 1755.29
+   "price": 690.0
   },
   {
    "month": "2020-07",
-   "price": 1748.33
+   "price": 711.79
   },
   {
    "month": "2020-08",
-   "price": 1744.86
+   "price": 714.42
   },
   {
    "month": "2020-09",
-   "price": 1744.86
+   "price": 738.47
   },
   {
    "month": "2020-10",
-   "price": 1706.61
+   "price": 760.0
   },
   {
    "month": "2020-11",
-   "price": 1706.61
+   "price": 816.97
   },
   {
    "month": "2020-12",
-   "price": 1710.08
+   "price": 900.81
   },
   {
    "month": "2021-01",
-   "price": 1706.61
+   "price": 1000.0
   },
   {
    "month": "2021-02",
-   "price": 1703.13
+   "price": 1077.13
   },
   {
    "month": "2021-03",
-   "price": 1706.61
+   "price": 1201.33
   },
   {
    "month": "2021-04",
-   "price": 1703.13
+   "price": 1304.63
   },
   {
    "month": "2021-05",
-   "price": 1706.61
+   "price": 1450.0
   },
   {
    "month": "2021-06",
-   "price": 1710.08
+   "price": 1400.97
   },
   {
    "month": "2021-07",
-   "price": 1696.7
+   "price": 1348.4
   },
   {
    "month": "2021-08",
-   "price": 1702.47
+   "price": 1294.83
   },
   {
    "month": "2021-09",
-   "price": 1702.37
+   "price": 1250.0
   },
   {
    "month": "2021-10",
-   "price": 1694.72
+   "price": 1242.21
   },
   {
    "month": "2021-11",
-   "price": 1702.43
+   "price": 1292.04
   },
   {
    "month": "2021-12",
-   "price": 1705.91
+   "price": 1323.63
   },
   {
    "month": "2022-01",
-   "price": 1716.41
+   "price": 1350.0
   },
   {
    "month": "2022-02",
-   "price": 1715.51
+   "price": 1232.09
   },
   {
    "month": "2022-03",
-   "price": 1721.45
+   "price": 1104.77
   },
   {
    "month": "2022-04",
-   "price": 1728.06
+   "price": 1017.9
   },
   {
    "month": "2022-05",
-   "price": 1732.96
+   "price": 923.28
   },
   {
    "month": "2022-06",
-   "price": 1739.43
+   "price": 850.0
   },
   {
    "month": "2022-07",
-   "price": 1737.83
+   "price": 819.86
   },
   {
    "month": "2022-08",
-   "price": 1733.69
+   "price": 812.27
   },
   {
    "month": "2022-09",
-   "price": 1741.0
+   "price": 775.25
   },
   {
    "month": "2022-10",
-   "price": 1763.28
+   "price": 760.0
   },
   {
    "month": "2022-11",
-   "price": 1767.46
+   "price": 974.36
   },
   {
    "month": "2022-12",
-   "price": 1767.87
+   "price": 1250.0
   },
   {
    "month": "2023-01",
-   "price": 1765.2
+   "price": 1238.18
   },
   {
    "month": "2023-02",
-   "price": 1771.59
+   "price": 1198.04
   },
   {
    "month": "2023-03",
-   "price": 1768.71
+   "price": 1181.89
   },
   {
    "month": "2023-04",
-   "price": 1759.63
+   "price": 1163.04
   },
   {
    "month": "2023-05",
-   "price": 1756.05
+   "price": 1141.42
   },
   {
    "month": "2023-06",
-   "price": 1758.56
+   "price": 1120.0
   },
   {
    "month": "2023-07",
-   "price": 1755.81
+   "price": 1085.38
   },
   {
    "month": "2023-08",
-   "price": 1758.59
+   "price": 1078.9
   },
   {
    "month": "2023-09",
-   "price": 1765.4
+   "price": 1072.08
   },
   {
    "month": "2023-10",
-   "price": 1761.34
+   "price": 1021.66
   },
   {
    "month": "2023-11",
-   "price": 1762.8
+   "price": 1026.86
   },
   {
    "month": "2023-12",
-   "price": 1757.55
+   "price": 1000.07
   },
   {
    "month": "2024-01",
-   "price": 1762.45
+   "price": 980.0
   },
   {
    "month": "2024-02",
-   "price": 1761.13
+   "price": 975.9
   },
   {
    "month": "2024-03",
-   "price": 1759.77
+   "price": 1004.1
   },
   {
    "month": "2024-04",
-   "price": 1765.82
+   "price": 994.14
   },
   {
    "month": "2024-05",
-   "price": 1763.74
+   "price": 976.98
   },
   {
    "month": "2024-06",
-   "price": 1755.91
+   "price": 991.8
   },
   {
    "month": "2024-07",
-   "price": 1724.06
+   "price": 999.02
   },
   {
    "month": "2024-08",
-   "price": 1718.99
+   "price": 993.64
   },
   {
    "month": "2024-09",
-   "price": 1720.06
+   "price": 1004.57
   },
   {
    "month": "2024-10",
-   "price": 1728.3
+   "price": 1000.0
   },
   {
    "month": "2024-11",
-   "price": 1728.48
+   "price": 1077.2
   },
   {
    "month": "2024-12",
-   "price": 1722.64
+   "price": 1169.65
   },
   {
    "month": "2025-01",
-   "price": 1707.23
+   "price": 1270.44
   },
   {
    "month": "2025-02",
-   "price": 1707.72
+   "price": 1350.0
   },
   {
    "month": "2025-03",
-   "price": 1714.33
+   "price": 1259.22
   },
   {
    "month": "2025-04",
-   "price": 1711.3
+   "price": 1193.01
   },
   {
    "month": "2025-05",
-   "price": 1702.5
+   "price": 1112.91
   },
   {
    "month": "2025-06",
-   "price": 1699.03
+   "price": 1050.0
   },
   {
    "month": "2025-07",
-   "price": 1696.11
+   "price": 1051.34
   },
   {
    "month": "2025-08",
-   "price": 1681.99
+   "price": 1037.53
   },
   {
    "month": "2025-09",
-   "price": 1684.01
+   "price": 1043.92
   },
   {
    "month": "2025-10",
-   "price": 1690.61
+   "price": 1050.0
   },
   {
    "month": "2025-11",
-   "price": 1690.82
+   "price": 1096.71
   },
   {
    "month": "2025-12",
-   "price": 1691.59
+   "price": 1150.0
   },
   {
    "month": "2026-01",
-   "price": 1689.92
+   "price": 1238.97
   },
   {
    "month": "2026-02",
-   "price": 1707.93
+   "price": 1326.16
   },
   {
    "month": "2026-03",
-   "price": 1707.72
+   "price": 1400.0
   },
   {
    "month": "2026-04",
-   "price": 1724.06
+   "price": 1405.92
   },
   {
    "month": "2026-05",
-   "price": 1710.61
+   "price": 1450.0
   },
   {
    "month": "2026-06",
-   "price": 1698.09
+   "price": 1501.79
   },
   {
    "month": "2026-07",
-   "price": 1670.38
+   "price": 1590.67
   },
   {
    "month": "2026-08",
@@ -344,162 +344,1144 @@
  "forecast": [
   {
    "month": "2026-09",
-   "p10": 1637.0,
-   "p50": 1652.4,
-   "p90": 1667.41
+   "p10": 1610.23,
+   "p50": 1674.75,
+   "p90": 1742.81
   },
   {
    "month": "2026-10",
-   "p10": 1630.56,
-   "p50": 1657.16,
-   "p90": 1679.96
+   "p10": 1542.66,
+   "p50": 1699.73,
+   "p90": 1834.18
   },
   {
    "month": "2026-11",
-   "p10": 1623.31,
-   "p50": 1661.07,
-   "p90": 1691.68
+   "p10": 1470.6,
+   "p50": 1724.91,
+   "p90": 1930.01
   },
   {
    "month": "2026-12",
-   "p10": 1618.06,
-   "p50": 1665.65,
-   "p90": 1701.91
+   "p10": 1394.27,
+   "p50": 1750.32,
+   "p90": 2030.63
   },
   {
    "month": "2027-01",
-   "p10": 1610.07,
-   "p50": 1666.98,
-   "p90": 1710.6
+   "p10": 1346.04,
+   "p50": 1775.95,
+   "p90": 2125.88
   },
   {
    "month": "2027-02",
-   "p10": 1604.25,
-   "p50": 1670.35,
-   "p90": 1720.03
+   "p10": 1307.51,
+   "p50": 1801.8,
+   "p90": 2220.28
   },
   {
    "month": "2027-03",
-   "p10": 1599.07,
-   "p50": 1674.78,
-   "p90": 1730.22
+   "p10": 1282.45,
+   "p50": 1827.88,
+   "p90": 2322.43
   },
   {
    "month": "2027-04",
-   "p10": 1594.47,
-   "p50": 1678.81,
-   "p90": 1739.44
+   "p10": 1253.97,
+   "p50": 1854.18,
+   "p90": 2418.59
   },
   {
    "month": "2027-05",
-   "p10": 1587.6,
-   "p50": 1680.88,
-   "p90": 1747.02
+   "p10": 1235.01,
+   "p50": 1880.7,
+   "p90": 2517.08
   },
   {
    "month": "2027-06",
-   "p10": 1580.65,
-   "p50": 1682.5,
-   "p90": 1753.25
+   "p10": 1227.77,
+   "p50": 1907.46,
+   "p90": 2616.4
   },
   {
    "month": "2027-07",
-   "p10": 1573.66,
-   "p50": 1683.38,
-   "p90": 1760.51
+   "p10": 1235.61,
+   "p50": 1934.45,
+   "p90": 2713.62
   },
   {
    "month": "2027-08",
-   "p10": 1565.87,
-   "p50": 1683.83,
-   "p90": 1766.4
+   "p10": 1245.24,
+   "p50": 1961.67,
+   "p90": 2810.15
   }
  ],
- "prob_up_6m": 0.674,
- "change_6m_pct": 1.2,
- "model": "TimesFM 3.0 + Orbit signal",
+ "prob_up_6m": 0.665,
+ "change_6m_pct": 9.2,
+ "model": "TimesFM 3.0 + Orbit (tuned)",
  "backtest": null,
+ "model_driver": {
+  "months": [
+   "2019-01",
+   "2019-02",
+   "2019-03",
+   "2019-04",
+   "2019-05",
+   "2019-06",
+   "2019-07",
+   "2019-08",
+   "2019-09",
+   "2019-10",
+   "2019-11",
+   "2019-12",
+   "2020-01",
+   "2020-02",
+   "2020-03",
+   "2020-04",
+   "2020-05",
+   "2020-06",
+   "2020-07",
+   "2020-08",
+   "2020-09",
+   "2020-10",
+   "2020-11",
+   "2020-12",
+   "2021-01",
+   "2021-02",
+   "2021-03",
+   "2021-04",
+   "2021-05",
+   "2021-06",
+   "2021-07",
+   "2021-08",
+   "2021-09",
+   "2021-10",
+   "2021-11",
+   "2021-12",
+   "2022-01",
+   "2022-02",
+   "2022-03",
+   "2022-04",
+   "2022-05",
+   "2022-06",
+   "2022-07",
+   "2022-08",
+   "2022-09",
+   "2022-10",
+   "2022-11",
+   "2022-12",
+   "2023-01",
+   "2023-02",
+   "2023-03",
+   "2023-04",
+   "2023-05",
+   "2023-06",
+   "2023-07",
+   "2023-08",
+   "2023-09",
+   "2023-10",
+   "2023-11",
+   "2023-12",
+   "2024-01",
+   "2024-02",
+   "2024-03",
+   "2024-04",
+   "2024-05",
+   "2024-06",
+   "2024-07",
+   "2024-08",
+   "2024-09",
+   "2024-10",
+   "2024-11",
+   "2024-12",
+   "2025-01",
+   "2025-02",
+   "2025-03",
+   "2025-04",
+   "2025-05",
+   "2025-06",
+   "2025-07",
+   "2025-08",
+   "2025-09",
+   "2025-10",
+   "2025-11",
+   "2025-12",
+   "2026-01",
+   "2026-02",
+   "2026-03",
+   "2026-04",
+   "2026-05",
+   "2026-06",
+   "2026-07",
+   "2026-08"
+  ],
+  "values": [
+   700.0,
+   697.48,
+   697.02,
+   690.53,
+   683.78,
+   684.31,
+   678.15,
+   682.88,
+   680.0,
+   690.23,
+   678.85,
+   679.08,
+   687.78,
+   687.98,
+   687.37,
+   681.37,
+   688.68,
+   690.0,
+   711.79,
+   714.42,
+   738.47,
+   760.0,
+   816.97,
+   900.81,
+   1000.0,
+   1077.13,
+   1201.33,
+   1304.63,
+   1450.0,
+   1400.97,
+   1348.4,
+   1294.83,
+   1250.0,
+   1242.21,
+   1292.04,
+   1323.63,
+   1350.0,
+   1232.09,
+   1104.77,
+   1017.9,
+   923.28,
+   850.0,
+   819.86,
+   812.27,
+   775.25,
+   760.0,
+   974.36,
+   1250.0,
+   1238.18,
+   1198.04,
+   1181.89,
+   1163.04,
+   1141.42,
+   1120.0,
+   1085.38,
+   1078.9,
+   1072.08,
+   1021.66,
+   1026.86,
+   1000.07,
+   980.0,
+   975.9,
+   1004.1,
+   994.14,
+   976.98,
+   991.8,
+   999.02,
+   993.64,
+   1004.57,
+   1000.0,
+   1077.2,
+   1169.65,
+   1270.44,
+   1350.0,
+   1259.22,
+   1193.01,
+   1112.91,
+   1050.0,
+   1051.34,
+   1037.53,
+   1043.92,
+   1050.0,
+   1096.71,
+   1150.0,
+   1238.97,
+   1326.16,
+   1400.0,
+   1405.92,
+   1450.0,
+   1501.79,
+   1590.67,
+   1650.0
+  ],
+  "quantiles": [
+   [
+    1616.5151,
+    1649.2407,
+    1662.3088,
+    1669.6288,
+    1681.2942,
+    1695.1599,
+    1707.6321,
+    1721.478,
+    1749.6155
+   ],
+   [
+    1539.2518,
+    1601.9946,
+    1646.3564,
+    1674.7856,
+    1695.9757,
+    1718.0708,
+    1746.0308,
+    1778.8074,
+    1830.1306
+   ],
+   [
+    1446.4573,
+    1536.082,
+    1610.0227,
+    1662.4196,
+    1696.5946,
+    1731.9772,
+    1773.8533,
+    1820.9441,
+    1898.3219
+   ],
+   [
+    1348.6102,
+    1461.5205,
+    1565.2927,
+    1644.7754,
+    1693.0061,
+    1741.5201,
+    1795.9132,
+    1861.9934,
+    1964.137
+   ],
+   [
+    1272.0854,
+    1403.7957,
+    1523.9032,
+    1619.3608,
+    1678.3722,
+    1737.9226,
+    1802.5426,
+    1883.8379,
+    2009.0737
+   ],
+   [
+    1198.3254,
+    1337.463,
+    1471.4832,
+    1579.7207,
+    1651.3384,
+    1722.6461,
+    1797.7477,
+    1890.2018,
+    2034.87
+   ],
+   [
+    1137.8402,
+    1285.1791,
+    1427.7319,
+    1540.2622,
+    1621.7671,
+    1705.1721,
+    1791.7524,
+    1897.4946,
+    2060.5552
+   ],
+   [
+    1074.4991,
+    1224.2235,
+    1374.9763,
+    1497.0623,
+    1588.8007,
+    1682.6001,
+    1777.4584,
+    1893.7919,
+    2072.436
+   ],
+   [
+    1022.0892,
+    1173.2217,
+    1325.9675,
+    1454.7424,
+    1556.4585,
+    1659.448,
+    1763.3431,
+    1889.3381,
+    2083.1157
+   ],
+   [
+    978.8798,
+    1121.2432,
+    1276.4209,
+    1411.2603,
+    1520.7795,
+    1632.2526,
+    1744.2041,
+    1878.3894,
+    2086.0039
+   ],
+   [
+    949.2892,
+    1086.2192,
+    1236.8152,
+    1369.2292,
+    1486.1877,
+    1604.7527,
+    1721.7527,
+    1863.5076,
+    2084.803
+   ],
+   [
+    918.8708,
+    1051.7297,
+    1196.2788,
+    1327.2844,
+    1447.5276,
+    1569.124,
+    1693.6407,
+    1842.9144,
+    2073.6255
+   ]
+  ],
+  "commodity_share": 1.0,
+  "retail_now": 1650.0
+ },
+ "sources": [
+  {
+   "what": "2019-2025 anchors: Nvidia UK launch MSRPs (RTX 3080 £649, 4080 £1,269, 4080 Super £959, 5080 £979) and widely reported 2021 shortage / 2022 crypto-crash street prices",
+   "url": null
+  },
+  {
+   "what": "RTX 5090 $3.5-4k street by Mar 2026, >$5k later; RTX 5080 $1,595 on Amazon",
+   "url": "https://tech-insider.org/gpu-prices-2026/"
+  },
+  {
+   "what": "RTX 5080 ~$1,250 in May 2026",
+   "url": "https://bottleneckpc.com/blog/rtx-5080-price-drop-may-2026"
+  },
+  {
+   "what": "GDDR7 memory crisis pushes RTX 5090 above $4,300 (Jul 2026)",
+   "url": "https://www.techtimes.com/articles/320169/20260711/gpu-memory-crisis-prices-rtx-5090-above-4300-nvidia-offers-paper-cards.htm"
+  },
+  {
+   "what": "Leaks: $5,000 RTX 5090 in 2026 thanks to AI demand",
+   "url": "https://www.techpowerup.com/344578/leaks-predict-usd-5000-rtx-5090-gpus-in-2026-thanks-to-ai-industry-demand"
+  },
+  {
+   "what": "TrendForce: conventional DRAM contract +58-63% QoQ in 2Q26, +13-18% in 3Q26",
+   "url": "https://www.trendforce.com/presscenter/news/20260709-13140.html"
+  },
+  {
+   "what": "TrendForce: 1Q26 DRAM industry revenue +81% QoQ on contract price surge",
+   "url": "https://www.trendforce.com/presscenter/news/20260601-13070.html"
+  },
+  {
+   "what": "H100 rental fell by ~half since early 2024, ~$3/hr average in 2026",
+   "url": "https://intuitionlabs.ai/articles/h100-rental-prices-cloud-comparison"
+  },
+  {
+   "what": "TrendForce: memory + CPU costs could push mainstream notebook prices up ~40%",
+   "url": "https://www.trendforce.com/presscenter/news/20260310-12959.html"
+  },
+  {
+   "what": "Laptop driver: BLS CPI Computers, peripherals & smart home assistants (FRED CUSR0000SEEE01)",
+   "url": "https://fred.stlouisfed.org/series/CUSR0000SEEE01"
+  }
+ ],
+ "source_note": "curated: UK street price of an x080-class card from public anchor points, log-linear monthly interpolation",
+ "anchors": [
+  {
+   "month": "2019-01",
+   "price": 700
+  },
+  {
+   "month": "2019-09",
+   "price": 680
+  },
+  {
+   "month": "2020-06",
+   "price": 690
+  },
+  {
+   "month": "2020-10",
+   "price": 760
+  },
+  {
+   "month": "2021-01",
+   "price": 1000
+  },
+  {
+   "month": "2021-05",
+   "price": 1450
+  },
+  {
+   "month": "2021-09",
+   "price": 1250
+  },
+  {
+   "month": "2022-01",
+   "price": 1350
+  },
+  {
+   "month": "2022-06",
+   "price": 850
+  },
+  {
+   "month": "2022-10",
+   "price": 760
+  },
+  {
+   "month": "2022-12",
+   "price": 1250
+  },
+  {
+   "month": "2023-06",
+   "price": 1120
+  },
+  {
+   "month": "2024-01",
+   "price": 980
+  },
+  {
+   "month": "2024-10",
+   "price": 1000
+  },
+  {
+   "month": "2025-02",
+   "price": 1350
+  },
+  {
+   "month": "2025-06",
+   "price": 1050
+  },
+  {
+   "month": "2025-10",
+   "price": 1050
+  },
+  {
+   "month": "2025-12",
+   "price": 1150
+  },
+  {
+   "month": "2026-03",
+   "price": 1400
+  },
+  {
+   "month": "2026-05",
+   "price": 1450
+  },
+  {
+   "month": "2026-08",
+   "price": 1650
+  }
+ ],
+ "context": {
+  "h100_rental_usd_hr": [
+   {
+    "month": "2023-06",
+    "value": 8.0
+   },
+   {
+    "month": "2024-01",
+    "value": 6.5
+   },
+   {
+    "month": "2024-09",
+    "value": 3.5
+   },
+   {
+    "month": "2025-06",
+    "value": 2.8
+   },
+   {
+    "month": "2026-01",
+    "value": 3.0
+   },
+   {
+    "month": "2026-09",
+    "value": 3.0
+   }
+  ],
+  "dram_contract_index": [
+   {
+    "month": "2023-06",
+    "value": 60
+   },
+   {
+    "month": "2024-01",
+    "value": 75
+   },
+   {
+    "month": "2024-06",
+    "value": 90
+   },
+   {
+    "month": "2025-06",
+    "value": 100
+   },
+   {
+    "month": "2025-12",
+    "value": 150
+   },
+   {
+    "month": "2026-03",
+    "value": 240
+   },
+   {
+    "month": "2026-06",
+    "value": 385
+   },
+   {
+    "month": "2026-09",
+    "value": 445
+   }
+  ]
+ },
  "model_forecast": [
   {
    "month": "2026-09",
-   "p10": 1628.14,
-   "p50": 1643.46,
-   "p90": 1658.39
+   "p10": 1616.52,
+   "p50": 1681.29,
+   "p90": 1749.62
   },
   {
    "month": "2026-10",
-   "p10": 1613.01,
-   "p50": 1639.32,
-   "p90": 1661.88
+   "p10": 1539.25,
+   "p50": 1695.98,
+   "p90": 1830.13
   },
   {
    "month": "2026-11",
-   "p10": 1597.24,
-   "p50": 1634.4,
-   "p90": 1664.52
+   "p10": 1446.46,
+   "p50": 1696.59,
+   "p90": 1898.32
   },
   {
    "month": "2026-12",
-   "p10": 1583.6,
-   "p50": 1630.18,
-   "p90": 1665.67
+   "p10": 1348.61,
+   "p50": 1693.01,
+   "p90": 1964.14
   },
   {
    "month": "2027-01",
-   "p10": 1567.44,
-   "p50": 1622.84,
-   "p90": 1665.3
+   "p10": 1272.09,
+   "p50": 1678.37,
+   "p90": 2009.07
   },
   {
    "month": "2027-02",
-   "p10": 1553.54,
-   "p50": 1617.55,
-   "p90": 1665.66
+   "p10": 1198.33,
+   "p50": 1651.34,
+   "p90": 2034.87
   },
   {
    "month": "2027-03",
-   "p10": 1540.41,
-   "p50": 1613.34,
-   "p90": 1666.75
+   "p10": 1137.84,
+   "p50": 1621.77,
+   "p90": 2060.56
   },
   {
    "month": "2027-04",
-   "p10": 1527.97,
-   "p50": 1608.8,
-   "p90": 1666.9
+   "p10": 1074.5,
+   "p50": 1588.8,
+   "p90": 2072.44
   },
   {
    "month": "2027-05",
-   "p10": 1513.5,
-   "p50": 1602.43,
-   "p90": 1665.48
+   "p10": 1022.09,
+   "p50": 1556.46,
+   "p90": 2083.12
   },
   {
    "month": "2027-06",
-   "p10": 1499.1,
-   "p50": 1595.69,
-   "p90": 1662.79
+   "p10": 978.88,
+   "p50": 1520.78,
+   "p90": 2086.0
   },
   {
    "month": "2027-07",
-   "p10": 1484.81,
-   "p50": 1588.33,
-   "p90": 1661.11
+   "p10": 949.29,
+   "p50": 1486.19,
+   "p90": 2084.8
   },
   {
    "month": "2027-08",
-   "p10": 1469.91,
-   "p50": 1580.65,
-   "p90": 1658.16
+   "p10": 918.87,
+   "p50": 1447.53,
+   "p90": 2073.63
   }
  ],
- "model_prob_up_6m": 0.194,
- "model_change_6m_pct": -2.0,
+ "model_prob_up_6m": 0.502,
+ "model_change_6m_pct": 0.1,
+ "drivers": [
+  {
+   "name": "Price trend (24-month momentum)",
+   "value": 25.36,
+   "contribution_pct": 3.41,
+   "source": "price history, weight 0.25 (tuned)"
+  },
+  {
+   "name": "TimesFM forecast path",
+   "value": 0.08,
+   "contribution_pct": 0.0,
+   "source": "TimesFM 3.0 on L4 GPU, weight 0.0 (tuned; TimesFM always sets the p10-p90 band)"
+  },
+  {
+   "name": "AI data-centre demand",
+   "value": 0.378,
+   "contribution_pct": 2.27,
+   "source": "Jev: AI compute demand in GPU/AI headlines (-1..1), last 3 months"
+  },
+  {
+   "name": "HBM / memory & CoWoS supply squeeze",
+   "value": 0.3,
+   "contribution_pct": 2.1,
+   "source": "Jev: GPU/memory supply constraint (-1..1), last 3 months"
+  },
+  {
+   "name": "Export controls & tariffs",
+   "value": 0.035,
+   "contribution_pct": 0.07,
+   "source": "Jev: export-control tightening (-1..1), last 3 months"
+  },
+  {
+   "name": "Data-centre build-out (satellite)",
+   "value": 17.3,
+   "contribution_pct": 1.73,
+   "source": "Sentinel-2: share of AI-campus land transformed, change over 2 years (pts)"
+  },
+  {
+   "name": "Taiwan fab water stress (satellite)",
+   "value": 22.8,
+   "contribution_pct": -0.38,
+   "source": "Sentinel-2 reservoir water extent vs normal, %"
+  }
+ ],
  "orbit_overlay": {
-  "news_pressure": 0.375,
-  "satellite_risk": -0.008,
-  "drift_12m_pct": 6.53,
-  "cpi_pct": 3.0,
-  "method": "TimesFM path x (1 + h/12 x drift); drift = share x 40% x (0.6 news + 0.4 satellite) + (1-share) x CPI"
+  "params": {
+   "ctx": "full",
+   "damp": 0.0,
+   "blend": 0.25,
+   "sat": 0.0,
+   "mom": 0.0,
+   "cap": 0.5,
+   "ai": 1.0
+  },
+  "news_pressure": 0.0,
+  "satellite_stress": 0.0,
+  "trend_24m_pct_per_year": 25.36,
+  "ai_drift_12m_pct": 11.59,
+  "extra_12m_pct": 0.0,
+  "tuned_on": "cutoffs < 2023 (see eval/summary.json)",
+  "method": "TimesFM band re-centred by the tuned Orbit shift (trend blend, damping, satellite tilt, AI-era drivers) -> retail pass-through -> x (1 + h/12 x (Jev news + CPI))"
+ },
+ "ai_era": {
+  "ai_index_now": 65.378,
+  "ai_index_baseline": 56.812,
+  "baseline_window": "2022-09..2024-12",
+  "timeline": [
+   {
+    "month": "2022-09",
+    "index": 49.4,
+    "ai_demand": 0.037,
+    "supply_constraint": -0.101,
+    "export_controls": 0.035
+   },
+   {
+    "month": "2022-10",
+    "index": 48.7,
+    "ai_demand": -0.113,
+    "supply_constraint": 0.038,
+    "export_controls": 0.231
+   },
+   {
+    "month": "2022-11",
+    "index": 52.0,
+    "ai_demand": 0.062,
+    "supply_constraint": -0.002,
+    "export_controls": 0.061
+   },
+   {
+    "month": "2022-12",
+    "index": 46.1,
+    "ai_demand": -0.095,
+    "supply_constraint": -0.095,
+    "export_controls": 0.071
+   },
+   {
+    "month": "2023-01",
+    "index": 51.0,
+    "ai_demand": -0.041,
+    "supply_constraint": 0.074,
+    "export_controls": 0.171
+   },
+   {
+    "month": "2023-02",
+    "index": 51.2,
+    "ai_demand": 0.027,
+    "supply_constraint": 0.013,
+    "export_controls": 0.055
+   },
+   {
+    "month": "2023-03",
+    "index": 47.2,
+    "ai_demand": -0.082,
+    "supply_constraint": -0.063,
+    "export_controls": 0.107
+   },
+   {
+    "month": "2023-04",
+    "index": 49.1,
+    "ai_demand": -0.036,
+    "supply_constraint": -0.011,
+    "export_controls": 0.057
+   },
+   {
+    "month": "2023-05",
+    "index": 51.1,
+    "ai_demand": 0.055,
+    "supply_constraint": -0.043,
+    "export_controls": 0.065
+   },
+   {
+    "month": "2023-06",
+    "index": 55.8,
+    "ai_demand": 0.136,
+    "supply_constraint": 0.075,
+    "export_controls": 0.152
+   },
+   {
+    "month": "2023-07",
+    "index": 53.0,
+    "ai_demand": 0.079,
+    "supply_constraint": 0.027,
+    "export_controls": 0.077
+   },
+   {
+    "month": "2023-08",
+    "index": 58.5,
+    "ai_demand": 0.246,
+    "supply_constraint": 0.075,
+    "export_controls": 0.083
+   },
+   {
+    "month": "2023-09",
+    "index": 56.8,
+    "ai_demand": 0.199,
+    "supply_constraint": 0.067,
+    "export_controls": 0.038
+   },
+   {
+    "month": "2023-10",
+    "index": 56.0,
+    "ai_demand": 0.097,
+    "supply_constraint": 0.139,
+    "export_controls": 0.173
+   },
+   {
+    "month": "2023-11",
+    "index": 58.9,
+    "ai_demand": 0.228,
+    "supply_constraint": 0.12,
+    "export_controls": 0.103
+   },
+   {
+    "month": "2023-12",
+    "index": 55.6,
+    "ai_demand": 0.152,
+    "supply_constraint": 0.057,
+    "export_controls": 0.091
+   },
+   {
+    "month": "2024-01",
+    "index": 56.3,
+    "ai_demand": 0.18,
+    "supply_constraint": 0.066,
+    "export_controls": 0.037
+   },
+   {
+    "month": "2024-02",
+    "index": 59.2,
+    "ai_demand": 0.276,
+    "supply_constraint": 0.083,
+    "export_controls": 0.041
+   },
+   {
+    "month": "2024-03",
+    "index": 60.9,
+    "ai_demand": 0.335,
+    "supply_constraint": 0.091,
+    "export_controls": 0.02
+   },
+   {
+    "month": "2024-04",
+    "index": 59.7,
+    "ai_demand": 0.288,
+    "supply_constraint": 0.094,
+    "export_controls": 0.026
+   },
+   {
+    "month": "2024-05",
+    "index": 64.1,
+    "ai_demand": 0.404,
+    "supply_constraint": 0.164,
+    "export_controls": 0.018
+   },
+   {
+    "month": "2024-06",
+    "index": 60.7,
+    "ai_demand": 0.3,
+    "supply_constraint": 0.132,
+    "export_controls": 0.034
+   },
+   {
+    "month": "2024-07",
+    "index": 63.4,
+    "ai_demand": 0.366,
+    "supply_constraint": 0.184,
+    "export_controls": 0.026
+   },
+   {
+    "month": "2024-08",
+    "index": 59.8,
+    "ai_demand": 0.257,
+    "supply_constraint": 0.143,
+    "export_controls": 0.042
+   },
+   {
+    "month": "2024-09",
+    "index": 59.7,
+    "ai_demand": 0.268,
+    "supply_constraint": 0.118,
+    "export_controls": 0.04
+   },
+   {
+    "month": "2024-10",
+    "index": 59.1,
+    "ai_demand": 0.279,
+    "supply_constraint": 0.073,
+    "export_controls": 0.024
+   },
+   {
+    "month": "2024-11",
+    "index": 58.4,
+    "ai_demand": 0.241,
+    "supply_constraint": 0.078,
+    "export_controls": 0.081
+   },
+   {
+    "month": "2024-12",
+    "index": 58.5,
+    "ai_demand": 0.218,
+    "supply_constraint": 0.11,
+    "export_controls": 0.105
+   },
+   {
+    "month": "2025-01",
+    "index": 55.4,
+    "ai_demand": 0.068,
+    "supply_constraint": 0.148,
+    "export_controls": 0.194
+   },
+   {
+    "month": "2025-02",
+    "index": 60.2,
+    "ai_demand": 0.272,
+    "supply_constraint": 0.138,
+    "export_controls": 0.053
+   },
+   {
+    "month": "2025-03",
+    "index": 59.2,
+    "ai_demand": 0.27,
+    "supply_constraint": 0.095,
+    "export_controls": 0.032
+   },
+   {
+    "month": "2025-04",
+    "index": 53.1,
+    "ai_demand": 0.105,
+    "supply_constraint": -0.016,
+    "export_controls": 0.097
+   },
+   {
+    "month": "2025-05",
+    "index": 56.5,
+    "ai_demand": 0.185,
+    "supply_constraint": 0.065,
+    "export_controls": 0.052
+   },
+   {
+    "month": "2025-06",
+    "index": 59.3,
+    "ai_demand": 0.263,
+    "supply_constraint": 0.106,
+    "export_controls": 0.037
+   },
+   {
+    "month": "2025-07",
+    "index": 59.5,
+    "ai_demand": 0.276,
+    "supply_constraint": 0.118,
+    "export_controls": -0.032
+   },
+   {
+    "month": "2025-08",
+    "index": 56.3,
+    "ai_demand": 0.178,
+    "supply_constraint": 0.073,
+    "export_controls": 0.02
+   },
+   {
+    "month": "2025-09",
+    "index": 60.4,
+    "ai_demand": 0.275,
+    "supply_constraint": 0.138,
+    "export_controls": 0.086
+   },
+   {
+    "month": "2025-10",
+    "index": 64.6,
+    "ai_demand": 0.341,
+    "supply_constraint": 0.277,
+    "export_controls": 0.079
+   },
+   {
+    "month": "2025-11",
+    "index": 62.5,
+    "ai_demand": 0.275,
+    "supply_constraint": 0.276,
+    "export_controls": 0.024
+   },
+   {
+    "month": "2025-12",
+    "index": 63.1,
+    "ai_demand": 0.302,
+    "supply_constraint": 0.282,
+    "export_controls": -0.035
+   },
+   {
+    "month": "2026-01",
+    "index": 62.9,
+    "ai_demand": 0.262,
+    "supply_constraint": 0.312,
+    "export_controls": 0.055
+   },
+   {
+    "month": "2026-02",
+    "index": 65.6,
+    "ai_demand": 0.37,
+    "supply_constraint": 0.307,
+    "export_controls": 0.015
+   },
+   {
+    "month": "2026-03",
+    "index": 64.5,
+    "ai_demand": 0.303,
+    "supply_constraint": 0.33,
+    "export_controls": 0.076
+   },
+   {
+    "month": "2026-04",
+    "index": 66.3,
+    "ai_demand": 0.397,
+    "supply_constraint": 0.299,
+    "export_controls": 0.033
+   },
+   {
+    "month": "2026-05",
+    "index": 61.9,
+    "ai_demand": 0.286,
+    "supply_constraint": 0.213,
+    "export_controls": 0.061
+   },
+   {
+    "month": "2026-06",
+    "index": 63.3,
+    "ai_demand": 0.292,
+    "supply_constraint": 0.276,
+    "export_controls": 0.083
+   },
+   {
+    "month": "2026-07",
+    "index": 63.3,
+    "ai_demand": 0.3,
+    "supply_constraint": 0.275,
+    "export_controls": 0.044
+   },
+   {
+    "month": "2026-08",
+    "index": 67.9,
+    "ai_demand": 0.41,
+    "supply_constraint": 0.366,
+    "export_controls": 0.043
+   },
+   {
+    "month": "2026-09",
+    "index": 66.3,
+    "ai_demand": 0.425,
+    "supply_constraint": 0.26,
+    "export_controls": 0.019
+   }
+  ],
+  "buildout_sites": [
+   {
+    "region_id": "stargate_abilene",
+    "name": "Stargate AI campus, Abilene TX",
+    "signal": "datacenter",
+    "transformed_pct_now": 62.3,
+    "transformed_pct_2y_ago": 18.4,
+    "transformed_pct_first_year": 4.2,
+    "now_month": "2026-08",
+    "growth_2y_pts": 43.9
+   },
+   {
+    "region_id": "xai_colossus",
+    "name": "xAI Colossus, Memphis TN",
+    "signal": "datacenter",
+    "transformed_pct_now": 41.3,
+    "transformed_pct_2y_ago": 38.4,
+    "transformed_pct_first_year": 16.2,
+    "now_month": "2026-08",
+    "growth_2y_pts": 2.9
+   },
+   {
+    "region_id": "loudoun_dc_alley",
+    "name": "Data Center Alley, Loudoun County VA",
+    "signal": "datacenter",
+    "transformed_pct_now": 38.9,
+    "transformed_pct_2y_ago": 33.8,
+    "transformed_pct_first_year": 12.3,
+    "now_month": "2026-08",
+    "growth_2y_pts": 5.1
+   },
+   {
+    "region_id": "tsmc_arizona",
+    "name": "TSMC Arizona fabs, Phoenix AZ",
+    "signal": "fab",
+    "transformed_pct_now": 55.9,
+    "transformed_pct_2y_ago": 24.4,
+    "transformed_pct_first_year": 0.6,
+    "now_month": "2026-08",
+    "growth_2y_pts": 31.5
+   }
+  ],
+  "water_sites": [
+   {
+    "region_id": "baoshan_reservoir",
+    "name": "Baoshan II reservoir (Hsinchu fabs), Taiwan",
+    "month": "2026-06",
+    "water_pct_now": 30.9,
+    "water_pct_normal": 23.8,
+    "anomaly_pct": 29.9
+   },
+   {
+    "region_id": "tsengwen_reservoir",
+    "name": "Tsengwen reservoir (Tainan fabs), Taiwan",
+    "month": "2026-07",
+    "water_pct_now": 84.0,
+    "water_pct_normal": 72.7,
+    "anomaly_pct": 15.6
+   }
+  ]
  }
 }

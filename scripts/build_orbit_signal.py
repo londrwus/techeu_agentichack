@@ -1,77 +1,122 @@
-"""Orbit signal layer on top of the TimesFM forecasts in data/built/forecast/{item}.json.
+"""Orbit layer on top of the TimesFM forecasts in data/built/forecast/{item}.json.
 
-1) Live overlay: forecast = TimesFM retail path x (1 + h/12 * drift), where
-   drift = commodity_share * 40% * (0.6 * Jev news item_pressure + 0.4 * Jev satellite harvest risk)
-         + (1 - commodity_share) * 3% UK CPI on the non-commodity part of the price.
-   The raw model path is kept in `model_forecast` (idempotent: always recomputed from it).
-2) Backtests: add backtest.orbit_signal (below).
+1) Live forecast = the Orbit method that was tuned and backtested in scripts/build_eval.py (params are read
+   from data/built/eval/summary.json -> tuned.params, fitted on cutoffs before 2023, tested on 2023+):
+       driver path = TimesFM quantiles (from `model_driver`, written by modal_app/forecast.py) shifted by
+       (damp-1)*ln(TimesFM p50/now) + blend*24m trend*h + satellite tilt + AI-era drivers (gpu, laptop)
+   mapped to retail with commodity_share, then x (1 + h/12 x extra) where extra =
+       share x 40% x 0.6 x Jev news pressure (NOT backtested: headline history is too short)
+       + (1 - share) x 3% UK CPI on the non-commodity part of the price.
+   Every forecast gets `drivers:[{name, value, contribution_pct, source}]` that sum to change_6m_pct.
+   The raw TimesFM retail path is kept in `model_forecast` (idempotent: always recomputed from it).
+2) Backtests: backtest.orbit_signal = the same tuned method at the story's as_of date (out-of-sample:
+   every as_of is in the 2023+ test period), from the eval harness.
 
-Orbit signal = model-implied 6m change + w * satellite crop stress at as_of,
-where stress = -(NDVI anomaly %) over the 6 months up to as_of vs the same months in
-earlier years (real Sentinel-2 series). One weight w is fitted in-sample by least squares
-across all backtests -> "in_sample": true.
-
-    .\\.venv\\Scripts\\python scripts/build_backtest.py
+    .\\.venv\\Scripts\\python scripts/build_orbit_signal.py
 """
 import json
 import math
 import statistics as st
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from orbit.config import BACKTESTS, ITEMS, REGIONS  # noqa: E402
+sys.path.insert(0, str(ROOT / "scripts"))
+from orbit.config import BACKTESTS, ITEM_BY_ID, ITEMS, REGIONS  # noqa: E402
+import build_eval as be  # noqa: E402
 
 BUILT = ROOT / "data" / "built"
-WINDOW = 6
-
-
-def _months(as_of: str, back_years: int = 0):
-    y, m = map(int, as_of.split("-"))
-    y -= back_years
-    out = []
-    for i in range(WINDOW):
-        mm, yy = m - i, y
-        while mm < 1:
-            mm += 12
-            yy -= 1
-        out.append(f"{yy:04d}-{mm:02d}")
-    return out
-
-
-def ndvi_anomaly(region_id: str, as_of: str):
-    p = BUILT / "satellite" / f"{region_id}.json"
-    if not p.exists():
-        return None
-    s = {x["month"]: x for x in json.loads(p.read_text(encoding="utf-8"))["series"]}
-
-    def mean(ms):
-        v = [s[m]["ndvi"] for m in ms if m in s and s[m].get("ndvi") is not None and (s[m].get("cloud_pct") or 0) <= 60]
-        return st.mean(v) if v else None
-
-    cur = mean(_months(as_of))
-    base = [b for b in (mean(_months(as_of, j)) for j in range(1, 6)) if b is not None]
-    if cur is None or not base:
-        return None
-    b = st.mean(base)
-    return {"region_id": region_id, "ndvi": round(cur, 3), "ndvi_normal": round(b, 3),
-            "ndvi_anomaly_pct": round((cur - b) / abs(b) * 100, 1), "baseline_years": len(base)}
-
-
-NEWS_W, SAT_W, SCALE, CPI = 0.6, 0.4, 0.40, 0.03
-RISK = {"low": 0.0, "medium": 1.0, "high": 2.0, "severe": 3.0}
+NEWS_W, SCALE, CPI = 0.6, 0.40, 0.03
 
 
 def _phi(x):
     return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
 
-def overlay():
-    sigs = {}
-    for p in (BUILT / "signals").glob("*.json"):
-        if not p.name.startswith("_"):
-            sigs[p.stem] = json.loads(p.read_text(encoding="utf-8"))
+def live_overlay(it: dict, fc: dict, sig: dict, params: dict) -> None:
+    md = fc["model_driver"]
+    months, vals, q = md["months"], md["values"], md["quantiles"]
+    iid, s, R = it["id"], it["commodity_share"], it["retail_now"]
+    cut = max(months[-1], time.strftime("%Y-%m"))  # live: all information available today
+    f = be.features(iid, vals, len(vals) - 1, months[-1])
+    ai = be.ai_drivers(iid, cut)
+    f["ai12"] = ai["drift12"] if ai else 0.0
+    qo = be.orbit_apply(q, f, params)
+    c_last = vals[-1]
+
+    news = 0.0
+    if it["module"] != "gpu":  # gpu module: its Jev news enters through the AI-era drivers
+        news = (sig.get("item_pressure") or {}).get(iid, sig.get("net_supply_pressure") or 0.0)
+    extra_news = s * SCALE * NEWS_W * news
+    extra_cpi = (1 - s) * CPI if not ai else 0.0  # laptop's CPI part is inside its AI-era drivers
+    extra = extra_news + extra_cpi
+
+    def retail(c: float, h: int) -> float:
+        return round(max(R * (1 + s * (c / c_last - 1)), 0.05 * R) * (1 + extra * h / 12), 2)
+
+    base_rows = fc["model_forecast"]
+    out = [{"month": base_rows[h - 1]["month"], "p10": retail(row[0], h), "p50": retail(row[4], h),
+            "p90": retail(row[8], h)} for h, row in enumerate(qo, 1)]
+    fc["forecast"] = out
+    now_p = (fc.get("history") or [{}])[-1].get("price") or R
+    r6 = out[5]
+    fc["change_6m_pct"] = round((r6["p50"] / now_p - 1) * 100, 1)
+    sigma = max((r6["p90"] - r6["p10"]) / 2.563, 1e-6)
+    fc["prob_up_6m"] = round(min(0.97, max(0.03, _phi((r6["p50"] - now_p) / sigma))), 3)
+
+    # driver contributions to the 6-month retail change (pct points), residual folded into the trend bar
+    p = params
+    tilt = f["sig"] * max(-p["cap"], min(p["cap"], p["sat"] * f["stress"] + p["mom"] * f["mom3"] / f["sig"]))
+    tfm6 = math.log(q[5][4] / c_last)
+    pct = lambda lf: s * (math.exp(lf) - 1) * 100  # noqa: E731
+    drivers = [
+        {"name": "Price trend (24-month momentum)", "value": round(f["slope"] * 1200, 2),
+         "contribution_pct": pct(p["blend"] * f["slope"] * 6), "source": f"price history, weight {p['blend']} (tuned)"},
+        {"name": "TimesFM forecast path", "value": round(tfm6 * 100, 2), "contribution_pct": pct(p["damp"] * tfm6),
+         "source": f"TimesFM 3.0 on L4 GPU, weight {p['damp']} (tuned; TimesFM always sets the p10-p90 band)"},
+    ]
+    if p["sat"] or p["mom"]:
+        drivers.append({"name": "Satellite crop stress", "value": round(f["stress"], 3), "contribution_pct": pct(tilt),
+                        "source": "Sentinel-2 NDVI/NDWI anomaly, 6 months vs prior years"})
+    for name, val, d12, src in (ai["parts"] if ai else []):
+        drivers.append({"name": name, "value": round(val, 3), "contribution_pct": s * d12 * 6 / 12 * 100
+                        if "inflation" not in name else d12 * 6 / 12 * 100, "source": src})
+    if it["module"] != "gpu":
+        drivers.append({"name": "Jev news pressure", "value": round(news, 3), "contribution_pct": extra_news * 50,
+                        "source": "Jev supply-effect judgments over recent headlines (not backtested)"})
+        drivers.append({"name": "UK inflation (non-commodity costs)", "value": 3.0, "contribution_pct": extra_cpi * 50,
+                        "source": "3% CPI on the non-commodity share"})
+    resid = fc["change_6m_pct"] - sum(d["contribution_pct"] for d in drivers)
+    drivers[0]["contribution_pct"] += resid
+    for d in drivers:
+        d["contribution_pct"] = round(d["contribution_pct"], 2)
+    fc["drivers"] = drivers
+    fc["orbit_overlay"] = {"params": params, "news_pressure": round(news, 3), "satellite_stress": round(f["stress"], 3),
+                           "trend_24m_pct_per_year": round(f["slope"] * 1200, 2),
+                           "ai_drift_12m_pct": round(f["ai12"] * 100, 2) if ai else None,
+                           "extra_12m_pct": round(extra * 100, 2), "tuned_on": "cutoffs < 2023 (see eval/summary.json)",
+                           "method": "TimesFM band re-centred by the tuned Orbit shift (trend blend, damping, satellite "
+                                     "tilt, AI-era drivers) -> retail pass-through -> x (1 + h/12 x (Jev news + CPI))"}
+    if ai:
+        tl = be._ai_timeline()
+        sig_ai = sig.get("ai_index") or {}
+        fc["ai_era"] = {"ai_index_now": (sig_ai.get("now") or {}).get("index"),
+                        "ai_index_baseline": (sig_ai.get("baseline") or {}).get("index"),
+                        "baseline_window": sig_ai.get("baseline_window"),
+                        "timeline": [{k: t[k] for k in ("month", "index", "ai_demand", "supply_constraint", "export_controls")}
+                                     for t in tl.values()],
+                        "buildout_sites": ai["buildout_sites"], "water_sites": ai["water_sites"]}
+    fc["model"] = f"{(fc.get('model') or 'TimesFM').split(' (')[0].split(' + ')[0]} + Orbit (tuned)"
+    print(f"overlay {iid:<13} 6m TimesFM {fc.get('model_change_6m_pct')}% -> Orbit {fc['change_6m_pct']:+.1f}%  "
+          f"p_up {fc['prob_up_6m']}  | " + ", ".join(f"{d['name'].split(' (')[0]} {d['contribution_pct']:+.1f}"
+                                                   for d in drivers if abs(d["contribution_pct"]) >= 0.05))
+
+
+def overlay(params: dict):
+    sigs = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (BUILT / "signals").glob("*.json")
+            if not p.name.startswith("_")}
     for it in ITEMS:
         fp = BUILT / "forecast" / f"{it['id']}.json"
         if not fp.exists():
@@ -83,93 +128,65 @@ def overlay():
         fc["model_forecast"] = base
         fc.setdefault("model_prob_up_6m", fc.get("prob_up_6m"))
         fc.setdefault("model_change_6m_pct", fc.get("change_6m_pct"))
-        sig = sigs.get(it["module"]) or {}
-        news = (sig.get("item_pressure") or {}).get(it["id"], sig.get("net_supply_pressure") or 0.0)
-        risks = []
-        for rj in sig.get("region_judgments") or []:
-            if rj.get("item_id", (REGIONS_BY.get(rj.get("region_id")) or {}).get("item")) == it["id"]:
-                hr = rj.get("harvest_risk") or {}
-                sc = hr.get("score")
-                risks.append(sc if isinstance(sc, (int, float)) else RISK.get(hr.get("label"), 1.0))
-        sat = (sum(risks) / len(risks) - 1.0) / 2.0 if risks else 0.0   # medium risk = neutral
-        share = it["commodity_share"]
-        if it["id"] == "rent_1bed":  # rent model already carries its own trend
-            drift, news, sat = 0.0, 0.0, 0.0
+        if it["id"] == "rent_1bed" or not fc.get("model_driver"):  # rent model carries its own trend
+            fc["forecast"] = base
+            print(f"overlay {it['id']:<13} kept model path")
         else:
-            drift = share * SCALE * (NEWS_W * news + SAT_W * sat) + (1 - share) * CPI
-        out = []
-        for h, row in enumerate(base, 1):
-            f = 1 + drift * h / 12
-            out.append({"month": row["month"], **{k: round(row[k] * f, 2) for k in ("p10", "p50", "p90")}})
-        fc["forecast"] = out
-        now = (fc.get("history") or [{}])[-1].get("price") or it["retail_now"]
-        r6 = out[min(5, len(out) - 1)]
-        fc["change_6m_pct"] = round((r6["p50"] / now - 1) * 100, 1)
-        sigma = max((r6["p90"] - r6["p10"]) / 2.563, 1e-6)
-        fc["prob_up_6m"] = round(min(0.97, max(0.03, _phi((r6["p50"] - now) / sigma))), 3)
-        fc["orbit_overlay"] = {"news_pressure": round(news, 3), "satellite_risk": round(sat, 3),
-                               "drift_12m_pct": round(drift * 100, 2), "cpi_pct": CPI * 100,
-                               "method": "TimesFM path x (1 + h/12 x drift); drift = share x 40% x (0.6 news + 0.4 satellite) + (1-share) x CPI"}
-        if "Orbit" not in (fc.get("model") or ""):
-            fc["model"] = f"{(fc.get('model') or 'TimesFM').split(' (')[0]} + Orbit signal"
+            live_overlay(it, fc, sigs.get(it["module"]) or {}, params)
         fp.write_text(json.dumps(fc, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"overlay {it['id']:<13} news {news:+.2f} sat {sat:+.2f} drift12 {drift*100:+.1f}%  "
-              f"6m {fc['model_change_6m_pct']:+.1f}% -> {fc['change_6m_pct']:+.1f}%  p_up {fc['prob_up_6m']}")
 
 
-REGIONS_BY = {r["id"]: r for r in REGIONS}
+def ndvi_regions(item_id: str, as_of: str) -> list[dict]:
+    out = []
+    for r in REGIONS:
+        if r.get("item") != item_id or r.get("signal") != "crop":
+            continue
+        a = be.region_anomaly(r, as_of)
+        if a is not None:
+            out.append({"region_id": r["id"], "ndvi_anomaly_pct": round(a * 100, 1)})
+    return out
 
 
-def main():
-    overlay()
-    rows = []
+def backtests(params: dict):
     for bt in BACKTESTS:
         fp = BUILT / "forecast" / f"{bt['item_id']}.json"
-        if not fp.exists():
+        ep = BUILT / "eval" / f"{bt['item_id']}.json"
+        if not fp.exists() or not ep.exists():
             continue
         fc = json.loads(fp.read_text(encoding="utf-8"))
         b = fc.get("backtest")
-        if not b:
+        ev = json.loads(ep.read_text(encoding="utf-8"))
+        row = next((x for x in ev["backtests"] if x["cutoff"] == (b or {}).get("as_of") and x["h"] == 6
+                    and x["method"] == "orbit"), None)
+        if not b or not row:
             continue
-        regs = [r for r in REGIONS if r["item"] == bt["item_id"] and r["signal"] == "crop"]
-        anoms = [a for a in (ndvi_anomaly(r["id"], b["as_of"]) for r in regs) if a]
-        if not anoms:
-            continue
-        stress = -st.mean(a["ndvi_anomaly_pct"] for a in anoms)
-        rows.append((fp, fc, b, anoms, stress))
-
-    # single weight, least squares on residual (actual - model)
-    num = sum(s * (b["actual_change_pct"] - b["predicted_change_pct"]) for _, _, b, _, s in rows)
-    den = sum(s * s for *_, s in rows) or 1.0
-    w = max(0.0, num / den)
-    print(f"fitted weight w = {w:.3f} (per % NDVI stress)")
-
-    for fp, fc, b, anoms, stress in rows:
-        pred = b["predicted_change_pct"] + w * stress
-        pressure = round(100 / (1 + math.exp(-pred / 6)))
-        flagged = pressure >= 65 and b["actual_change_pct"] > 5
-        worst = min(anoms, key=lambda a: a["ndvi_anomaly_pct"])
-        name = next(r["name"] for r in REGIONS if r["id"] == worst["region_id"]).split(",")[0]
-        if stress > 0:
-            story = (f"Satellites saw {name} {abs(worst['ndvi_anomaly_pct']):.0f}% less green than normal "
-                     f"in the 6 months before {b['as_of']}.")
-        else:
-            story = (f"Crop canopy looked normal-to-greener before {b['as_of']} "
-                     f"(NDVI {-stress:+.0f}%) - the shock wasn't visible from orbit.")
-        b["orbit_signal"] = {
-            "satellite_stress_pct": round(stress, 1),
-            "regions": anoms,
-            "weight": round(w, 3),
-            "predicted_change_pct": round(pred, 1),
-            "pressure": pressure,
-            "flagged": flagged,
-            "in_sample": True,
-            "story": story,
-            "method": f"model + {w:.2f} x NDVI stress ({WINDOW}m vs prior years), 1 weight fit in-sample",
-        }
+        s = ITEM_BY_ID[bt["item_id"]]["commodity_share"]
+        pred = s * (row["p50"] / row["base"] - 1) * 100
+        pressure = round(100 * (row.get("prob_up") or 0.5))
+        anoms = ndvi_regions(bt["item_id"], b["as_of"])
+        stress = -st.mean(a["ndvi_anomaly_pct"] for a in anoms) if anoms else 0.0
+        name = ""
+        if anoms:
+            worst = min(anoms, key=lambda a: a["ndvi_anomaly_pct"])
+            name = next(r["name"] for r in REGIONS if r["id"] == worst["region_id"]).split(",")[0]
+        story = (f"Satellites saw {name} {stress:.0f}% less green than normal in the 6 months before {b['as_of']}."
+                 if stress > 0 else f"Crop canopy looked normal-to-greener before {b['as_of']} "
+                                    f"(NDVI {-stress:+.0f}%): the shock wasn't visible from orbit.")
+        b["orbit_signal"] = {"satellite_stress_pct": round(stress, 1), "regions": anoms,
+                             "predicted_change_pct": round(pred, 1), "prob_up_6m": row.get("prob_up"),
+                             "pressure": pressure, "flagged": pred >= 2 and (b.get("actual_change_pct") or 0) > 5,
+                             "in_sample": False, "split": row.get("split"), "params": params, "story": story,
+                             "method": "tuned Orbit method (fit on cutoffs < 2023) at as_of; retail = share x driver change"}
         fp.write_text(json.dumps(fc, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"{fc['item_id']}: stress {stress:+.1f}%  model {b['predicted_change_pct']:+.1f}% -> orbit {pred:+.1f}% "
-              f"(pressure {pressure}, actual {b['actual_change_pct']:+.1f}%, flagged={flagged})")
+        print(f"backtest {bt['item_id']} {b['as_of']}: orbit {pred:+.1f}% (p_up {row.get('prob_up')}) "
+              f"vs actual {b.get('actual_change_pct')}%  [{row.get('split')}]")
+
+
+def main():
+    params = be.load_params()
+    print("Orbit params (eval/summary.json tuned):", params)
+    overlay(params)
+    backtests(params)
 
 
 if __name__ == "__main__":

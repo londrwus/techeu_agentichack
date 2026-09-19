@@ -35,6 +35,7 @@ Modal (heavy work, writes to Volume "orbit-data" at /data)
   modal_app/signals.py     app "orbit-signals":   GDELT news headlines → Jev typed judgments at scale; Jev judges region stats JSON
   modal_app/forecast.py    app "orbit-forecast":  price history (FRED/World Bank or synthetic) → GPU time-series model (TimesFM or Chronos) → 12-month forecast + backtest
   modal_app/rent.py        app "orbit-rent":      London boroughs: Sentinel-2 built-up change + synthetic rents → 3D radar data
+  modal_app/evaluate.py  app "orbit-eval":     point-in-time TimesFM backtests on 10 L4 GPUs → scripts/build_eval.py tunes (train <2023) + scores (test 2023+)
   modal_app/scan.py        app "orbit-scan":      "Scan now" live fan-out used during the demo (reuses functions above via modal.Function.from_name)
 Local
   orbit/config.py          SINGLE SOURCE OF TRUTH: modules, regions, items, prices, series ids
@@ -52,6 +53,9 @@ All JSON. Months are `"YYYY-MM"`. Prices are in GBP.
 - `tiles/{region_id}/{YYYY-MM}.png`
 - `signals/{module_id}.json` → `{module_id, n_headlines, n_judgments, headlines:[{title, url, date, source, relevant_p, item_id, supply_effect:{label, probs}, severity:{label, probs}, confidence}], net_supply_pressure (-1..1), region_judgments:[{region_id, harvest_risk:{label, probs}, confidence}]}`
 - `forecast/{item_id}.json` → `{item_id, unit, history:[{month, price}], forecast:[{month, p10, p50, p90}], prob_up_6m, change_6m_pct, model, backtest:{as_of, predicted_change_pct, actual_change_pct}|null}`
+  plus `drivers:[{name, value, contribution_pct, source}]` (contributions sum to `change_6m_pct`), `model_forecast` (raw TimesFM retail path), `model_driver:{months, values, quantiles, commodity_share, retail_now}` (driver-space input for the tuned overlay), `orbit_overlay:{params, ...}`; gpu/laptop also `ai_era:{ai_index_now, ai_index_baseline, timeline, buildout_sites, water_sites}`, gpu `anchors`, `context`, `sources`. `backtest.orbit_signal` = tuned method at as_of (out-of-sample).
+- `eval/summary.json` → `{generated_at, n_forecasts, model, gpu:{type, seconds, containers}, cutoffs:{from,to}, orbit_weights, items:[{item_id, name, series, by_method:{naive|drift|timesfm|orbit:{h3,h6,h12:{mape, dir_acc, coverage80, skill, n, big_move_recall?}}}, test:{same}}], overall:{same}, test_overall:{same}, tuned:{train_period, test_period, objective, params, before_params, before:{h3,h6,h12}, after, timesfm_test, naive_test, drift_test, ai_ablation_test}, reliability_test_h6:[{bin, n, predicted, observed}], highlights:[{item_id, cutoff, kind: hit|miss, story, predicted_change_pct, actual_change_pct, split}]}` (driver-series space; train = cutoff+h <= 2022-12, test = cutoffs >= 2023-01)
+- `eval/{item_id}.json` → `{item_id, name, series, unit, history:[{month, price}], satellite_stress:[{cutoff, stress}], ai_drift_12m?:[{cutoff, drift12_pct}], backtests:[{cutoff, h, method, base, p10, p50, p90, actual, prob_up, split}]}` (h6 every cutoff; all horizons every 6th cutoff). Served at `/api/eval` and `/api/eval/{item_id}`.
 - `rent/london.json` → GeoJSON FeatureCollection of boroughs with properties `{name, rent_now, rent_12m, change_pct, built_change_pct, pressure (0..100)}`
 - `insights/{module_id}.json` → `{module_id, headline, cards:[{title, text}], vision_notes:[{region_id, text}]}` (Gemini)
 - `summary.json` → `{generated_at, modules:[{module_id, name, emoji, pressure (0..100), prob_up_6m, top_item, change_6m_pct}], stats:{tiles_processed, jev_judgments, modal_containers_peak, gpu_model, gemini_calls}}`

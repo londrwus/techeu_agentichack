@@ -1,21 +1,32 @@
 // Orbit SPA: hash router + shared shell.
+// Routes: #/earth (default) #/overview #/groceries #/latte #/beer_wine #/gpu #/rent #/mission #/ask #/track
+// Legacy #/module/{id} links map onto the per-module views.
 import { icons, $$, api, hideTip } from './lib.js';
+import * as earth from './views/earth.js';
 import * as overview from './views/overview.js';
-import * as module from './views/module.js';
+import * as groceries from './views/groceries.js';
+import * as latte from './views/latte.js';
+import * as beer_wine from './views/beer_wine.js';
+import * as gpu from './views/gpu.js';
 import * as rent from './views/rent.js';
 import * as mission from './views/mission.js';
 import * as ask from './views/ask.js';
+import * as track from './views/track.js';
+
+const VIEWS = { earth, overview, groceries, latte, beer_wine, gpu, rent, mission, ask, track };
+// Views that take over the whole viewport (sidebar collapses to a glass rail).
+const FULL_BLEED = new Set(['earth']);
 
 const view = document.getElementById('view');
 let cleanup = null, seq = 0;
 
 function parse() {
-  const parts = (location.hash.replace(/^#\/?/, '') || 'overview').split('/');
-  const [name, arg] = parts;
-  if (name === 'module' && arg === 'rent') return { name: 'rent', key: 'rent' };
-  if (name === 'module' && arg) return { name: 'module', arg, key: `module/${arg}` };
-  if (['overview', 'rent', 'mission', 'ask'].includes(name)) return { name, key: name, arg: arg && decodeURIComponent(parts.slice(1).join('/')) };
-  return { name: 'overview', key: 'overview' };
+  const parts = (location.hash.replace(/^#\/?/, '') || 'earth').split('/');
+  let [name, ...rest] = parts;
+  if (name === 'module' && rest[0]) { name = rest[0]; rest = rest.slice(1); }
+  if (!VIEWS[name]) name = 'earth';
+  const arg = rest.length ? decodeURIComponent(rest.join('/')) : undefined;
+  return { name, key: name, arg };
 }
 
 async function route() {
@@ -24,16 +35,17 @@ async function route() {
   try { cleanup?.(); } catch (e) { console.warn(e); }
   cleanup = null;
   $$('.nav-item').forEach(a => a.classList.toggle('active', a.dataset.route === r.key));
+  document.body.classList.toggle('rail', FULL_BLEED.has(r.name));
+  document.body.dataset.view = r.name;
   view.innerHTML = '';
   view.scrollTop = 0;
   const page = document.createElement('div');
-  page.className = 'page';
+  page.className = FULL_BLEED.has(r.name) ? 'page full' : 'page';
   view.appendChild(page);
-  const mod = { overview, module, rent, mission, ask }[r.name];
   const token = ++seq;
   try {
-    const c = (await mod.render(page, r.arg)) || null;
-    if (token === seq) cleanup = c; else c?.();
+    const c = (await VIEWS[r.name].render(page, r.arg)) || null;
+    if (token === seq) cleanup = typeof c === 'function' ? c : null; else if (typeof c === 'function') c();
   } catch (e) {
     console.error('[render]', e);
     page.insertAdjacentHTML('beforeend', `<div class="empty">This view hit a snag. Data may still be building.</div>`);
@@ -45,7 +57,7 @@ window.addEventListener('hashchange', route);
 route();
 
 // Sidebar footer: live region count.
-api('/api/summary').then(s => {
-  const n = s?.stats?.regions_watched;
-  if (n) document.getElementById('side-regions').textContent = `${n} satellite regions watched`;
+Promise.all(['groceries', 'latte', 'beer_wine', 'gpu'].map(m => api(`/api/modules/${m}`).catch(() => null))).then(ms => {
+  const ids = new Set(ms.flatMap(m => (m?.regions || []).map(r => r.region_id)));
+  if (ids.size) document.getElementById('side-regions').textContent = `${ids.size} satellite regions watched`;
 });

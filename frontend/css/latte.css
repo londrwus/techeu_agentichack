@@ -1,0 +1,29 @@
+/* Latte Index screen (views/latte.js) */
+.lt-page { display: flex; flex-direction: column; gap: 16px; }
+.lt-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); gap: 16px; height: 500px; }
+@media (max-width: 1100px) { .lt-hero { grid-template-columns: 1fr; height: auto; } .lt-sat { height: 480px; } }
+.lt-hero > .card { min-height: 0; display: flex; flex-direction: column; animation: lt-in .5s cubic-bezier(.2,.7,.2,1) both; }
+.lt-hero > .card + .card { animation-delay: .08s; }
+.lt-page .sig-row { animation: lt-in .5s .16s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes lt-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.lt-fc { padding: 24px; gap: 10px; }
+.lt-fc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.lt-fc-head .k { font-size: 15px; font-weight: 500; color: var(--text-2); }
+.lt-fc-head .hero-price { margin-top: 4px; }
+.lt-fc-head .hero-price span { font-size: 15px; font-weight: 500; color: var(--text-3); }
+.lt-chart { flex: 1; min-height: 220px; }
+
+.lt-sat { padding: 24px; }
+.lt-sat-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.lt-sat-head h3 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.lt-sat-head .sub { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+.lt-sat .pill { padding: 4px 10px; font-size: 12px; font-weight: 700; }
+.lt-sat .pill svg.lucide { width: 13px; height: 13px; }
+.lt-sat .compare { cursor: ew-resize; }
+.lt-sat .compare img { transition: opacity .4s; }
+.lt-sat .compare .tag { font-size: 12px; }
+
+a.backtest { text-decoration: none; }
+a.backtest.muted:hover { color: var(--text-1); }
+.lt-fc .stat-strip { gap: 40px; }

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-19T12:03:34+00:00",
+ "generated_at": "2026-09-19T12:48:07+00:00",
  "modules": [
   {
    "module_id": "groceries",
@@ -7,10 +7,10 @@
    "emoji": "🛒",
    "color": "#F97316",
    "pressure": 50,
-   "prob_up_6m": 0.575,
-   "top_item": "Chocolate bar (100g)",
-   "top_item_id": "chocolate",
-   "change_6m_pct": 3.2
+   "prob_up_6m": 0.665,
+   "top_item": "Loaf of bread",
+   "top_item_id": "bread",
+   "change_6m_pct": 2.1
   },
   {
    "module_id": "latte",
@@ -18,7 +18,7 @@
    "emoji": "☕",
    "color": "#A16207",
    "pressure": 58,
-   "prob_up_6m": 0.71,
+   "prob_up_6m": 0.716,
    "top_item": "Latte (London café)",
    "top_item_id": "latte",
    "change_6m_pct": 2.0
@@ -28,38 +28,38 @@
    "name": "Beer & Wine",
    "emoji": "🍺",
    "color": "#EAB308",
-   "pressure": 80,
+   "pressure": 79,
    "prob_up_6m": 0.97,
    "top_item": "Bottle of wine",
    "top_item_id": "wine",
-   "change_6m_pct": 2.8
+   "change_6m_pct": 1.8
   },
   {
    "module_id": "gpu",
    "name": "GPU & Gadgets",
    "emoji": "🖥️",
    "color": "#6366F1",
-   "pressure": 66,
-   "prob_up_6m": 0.97,
-   "top_item": "Laptop",
-   "top_item_id": "laptop",
-   "change_6m_pct": 3.9
+   "pressure": 68,
+   "prob_up_6m": 0.665,
+   "top_item": "High-end GPU",
+   "top_item_id": "gpu",
+   "change_6m_pct": 9.2
   },
   {
    "module_id": "rent",
    "name": "Rent Radar",
    "emoji": "🏠",
    "color": "#10B981",
-   "pressure": 59,
-   "prob_up_6m": 0.611,
+   "pressure": 60,
+   "prob_up_6m": 0.62,
    "top_item": "1-bed flat rent (London avg, /month)",
    "top_item_id": "rent_1bed",
    "change_6m_pct": 0.4
   }
  ],
  "stats": {
-  "tiles_processed": 1472,
-  "jev_judgments": 66964,
+  "tiles_processed": 1840,
+  "jev_judgments": 142016,
   "modal_containers_peak": 101,
   "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
   "gemini_calls": 42,

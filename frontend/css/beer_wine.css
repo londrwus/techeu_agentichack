@@ -1,0 +1,41 @@
+/* Beer & Wine screen: crop-health heatmap + Pint/Wine forecast card. */
+.bw-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 16px; min-height: 500px; }
+.bw-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; min-width: 0; }
+.bw-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.bw-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.bw-sub { font-size: 13px; font-weight: 500; color: var(--text-3); margin-top: 4px; }
+.bw-scale { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); padding-top: 4px; }
+.bw-scale i { width: 16px; height: 10px; border-radius: 3px; display: inline-block; }
+.bw-scale span { margin: 0 4px; }
+
+.bw-grid { flex: 1; display: grid; gap: 6px; margin-top: 22px; min-height: 0; }
+.bw-yr { font-size: 12px; font-weight: 500; color: var(--text-3); text-align: center; align-self: end; padding-bottom: 2px; font-variant-numeric: tabular-nums; }
+.bw-yr.now { font-weight: 700; color: var(--text-1); }
+.bw-row { display: flex; flex-direction: column; justify-content: center; min-width: 0; transition: opacity .25s; }
+.bw-row b { font-size: 14px; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw-row small { font-size: 11px; font-weight: 500; color: var(--text-3); display: flex; align-items: center; gap: 5px; }
+.bw-row small i { width: 6px; height: 6px; border-radius: 50%; background: var(--c, transparent); display: none; }
+.bw-row.on small i { display: inline-block; }
+.bw-cell {
+  border-radius: 6px; display: flex; align-items: center; justify-content: center; min-height: 44px;
+  font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: default;
+  opacity: 0; transform: translateY(4px); transition: opacity .35s ease-out, transform .35s ease-out, box-shadow .15s;
+}
+.bw-cell.in { opacity: 1; transform: none; }
+.bw-cell.now { box-shadow: inset 0 0 0 1.5px #1C1917; }
+.bw-cell.na { background: repeating-linear-gradient(45deg, #F5F5F4 0 4px, #FAFAF9 4px 8px); color: var(--text-3); }
+.bw-cell:hover { box-shadow: inset 0 0 0 2px rgba(28,25,23,.55); }
+.bw-cell.now:hover { box-shadow: inset 0 0 0 2px #1C1917; }
+
+.bw-tip { display: flex; gap: 12px; align-items: center; }
+.bw-tip img, .bw-tip .sat-img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex: none; background: #E7E5E4; }
+.bw-tip .v { font-size: 20px; font-weight: 700; letter-spacing: -.3px; margin-top: 2px; }
+
+.bw-fc { gap: 10px; }
+.bw-fc .seg { align-self: flex-start; }
+.bw-fc .lbl { font-size: 15px; font-weight: 500; color: var(--text-2); margin-top: 16px; }
+.bw-fc .fc-host { flex: 1; min-height: 230px; }
+.bw-fc .stat-strip { margin-top: 4px; }
+
+@media (max-width: 1100px) { .bw-hero { grid-template-columns: 1fr; } .bw-fc .fc-host { min-height: 260px; } }
+@media (max-width: 640px) { .bw-grid { gap: 4px; } .bw-cell { font-size: 10px; min-height: 36px; } .bw-row small { display: none; } }

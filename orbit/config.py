@@ -13,14 +13,16 @@ MODULES = [
     {"id": "beer_wine", "name": "Beer & Wine", "emoji": "🍺", "color": "#EAB308",
      "news_query": '(barley OR hops OR vineyard OR grape OR wine) (harvest OR drought OR heatwave OR crop)'},
     {"id": "gpu", "name": "GPU & Gadgets", "emoji": "🖥️", "color": "#6366F1",
-     "news_query": '(TSMC OR semiconductor OR "chip shortage" OR GPU OR DRAM) (water OR drought OR supply OR prices OR shipping)'},
+     "tagline": "AI data-centre build-out is eating the world's GPUs and memory",
+     "news_query": '(GPU OR Nvidia OR HBM OR DRAM OR TSMC OR "data center" OR "AI chips") (shortage OR demand OR supply OR prices OR capex OR "export controls")'},
     {"id": "rent", "name": "Rent Radar", "emoji": "🏠", "color": "#10B981",
      "news_query": 'London (rent OR rents OR housing OR "new homes" OR construction)'},
 ]
 
 # Satellite regions. bbox = [min_lon, min_lat, max_lon, max_lat] (~0.1°, small reads).
 # signal: "crop" -> NDVI (vegetation health), "water" -> NDWI (reservoir extent),
-#         "built" -> NDBI (construction), "port" -> activity proxy.
+#         "built" -> NDBI (construction), "port" -> activity proxy,
+#         "datacenter"/"fab" -> NDBI + built-up share (AI data-centre / chip-fab build-out).
 REGIONS = [
     # Groceries
     {"id": "jaen_olives", "module": "groceries", "item": "olive_oil", "name": "Jaén olive groves, Spain", "lat": 37.85, "lon": -3.75, "signal": "crop"},
@@ -37,15 +39,21 @@ REGIONS = [
     {"id": "zatec_hops", "module": "beer_wine", "item": "pint", "name": "Žatec hops, Czechia", "lat": 50.33, "lon": 13.55, "signal": "crop"},
     {"id": "bordeaux_vines", "module": "beer_wine", "item": "wine", "name": "Bordeaux vineyards, France", "lat": 44.90, "lon": -0.30, "signal": "crop"},
     {"id": "rioja_vines", "module": "beer_wine", "item": "wine", "name": "Rioja vineyards, Spain", "lat": 42.45, "lon": -2.60, "signal": "crop"},
-    # GPU & gadgets
-    {"id": "baoshan_reservoir", "module": "gpu", "item": "gpu", "name": "Baoshan reservoir (Hsinchu fabs), Taiwan", "lat": 24.72, "lon": 121.06, "signal": "water"},
-    {"id": "tsengwen_reservoir", "module": "gpu", "item": "gpu", "name": "Tsengwen reservoir (Tainan fabs), Taiwan", "lat": 23.25, "lon": 120.53, "signal": "water"},
-    {"id": "hsinchu_park", "module": "gpu", "item": "laptop", "name": "Hsinchu Science Park, Taiwan", "lat": 24.78, "lon": 121.00, "signal": "built"},
+    # GPU & gadgets: AI-era demand (data centres, fabs) + Taiwan supply chain.
+    # d = bbox half-width in degrees (default 0.05). Coordinates verified against OSM/Wikipedia and
+    # Sentinel-2 NDWI (reservoir boxes sit on the water body).
+    {"id": "stargate_abilene", "module": "gpu", "item": "gpu", "name": "Stargate AI campus, Abilene TX", "lat": 32.503, "lon": -99.788, "d": 0.015, "signal": "datacenter"},
+    {"id": "xai_colossus", "module": "gpu", "item": "gpu", "name": "xAI Colossus, Memphis TN", "lat": 35.060, "lon": -90.157, "d": 0.015, "signal": "datacenter"},
+    {"id": "loudoun_dc_alley", "module": "gpu", "item": "gpu", "name": "Data Center Alley, Loudoun County VA", "lat": 39.010, "lon": -77.470, "d": 0.03, "signal": "datacenter"},
+    {"id": "tsmc_arizona", "module": "gpu", "item": "gpu", "name": "TSMC Arizona fabs, Phoenix AZ", "lat": 33.772, "lon": -112.162, "d": 0.02, "signal": "fab"},
+    {"id": "hsinchu_park", "module": "gpu", "item": "laptop", "name": "Hsinchu Science Park (TSMC HQ), Taiwan", "lat": 24.78, "lon": 121.00, "signal": "built"},
+    {"id": "baoshan_reservoir", "module": "gpu", "item": "gpu", "name": "Baoshan II reservoir (Hsinchu fabs), Taiwan", "lat": 24.723, "lon": 121.044, "d": 0.006, "signal": "water"},
+    {"id": "tsengwen_reservoir", "module": "gpu", "item": "gpu", "name": "Tsengwen reservoir (Tainan fabs), Taiwan", "lat": 23.286, "lon": 120.572, "d": 0.008, "signal": "water"},
     {"id": "kaohsiung_port", "module": "gpu", "item": "laptop", "name": "Port of Kaohsiung, Taiwan", "lat": 22.60, "lon": 120.28, "signal": "port"},
 ]
 
 for _r in REGIONS:
-    d = 0.05
+    d = _r.get("d", 0.05)
     _r.setdefault("bbox", [_r["lon"] - d, _r["lat"] - d, _r["lon"] + d, _r["lat"] + d])
 
 # Consumer items shown in the UI. fred_series = monthly commodity benchmark (None -> synthetic).
@@ -57,8 +65,11 @@ ITEMS = [
     {"id": "latte", "module": "latte", "name": "Latte (London café)", "unit": "£", "retail_now": 3.95, "commodity_share": 0.12, "fred_series": "PCOFFOTMUSDM"},
     {"id": "pint", "module": "beer_wine", "name": "Pint of lager", "unit": "£", "retail_now": 6.40, "commodity_share": 0.08, "fred_series": "PBARLUSDM"},
     {"id": "wine", "module": "beer_wine", "name": "Bottle of wine", "unit": "£", "retail_now": 9.00, "commodity_share": 0.25, "fred_series": None},
-    {"id": "gpu", "module": "gpu", "name": "High-end GPU", "unit": "£", "retail_now": 1650.0, "commodity_share": 0.60, "fred_series": "PCU334413334413"},
-    {"id": "laptop", "module": "gpu", "name": "Laptop", "unit": "£", "retail_now": 1150.0, "commodity_share": 0.40, "fred_series": None},
+    # GPU: curated UK street-price index of an x080-class card (anchors + sources in modal_app/forecast.py),
+    # so the series *is* the retail price (share 1.0). Laptop: US CPI "Computers, peripherals & smart home
+    # assistants" (BLS via FRED), which catches the 2026 memory-cost pass-through.
+    {"id": "gpu", "module": "gpu", "name": "High-end GPU", "unit": "£", "retail_now": 1650.0, "commodity_share": 1.0, "fred_series": None, "curated": "gpu_street"},
+    {"id": "laptop", "module": "gpu", "name": "Laptop", "unit": "£", "retail_now": 1150.0, "commodity_share": 0.85, "fred_series": "CUSR0000SEEE01"},
     {"id": "rent_1bed", "module": "rent", "name": "1-bed flat rent (London avg, /month)", "unit": "£", "retail_now": 2250.0, "commodity_share": 1.0, "fred_series": None},
 ]
 

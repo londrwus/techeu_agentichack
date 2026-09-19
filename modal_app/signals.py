@@ -2,6 +2,7 @@
 
   modal run modal_app/signals.py              # fetch + judge -> /data/built/signals/{module}.json (+ _stats.json)
   modal run modal_app/signals.py --force      # refetch headlines and rejudge
+  modal run modal_app/signals.py::ai          # gpu: AI-era headlines + Jev AI demand/supply/export judgments -> ai_index
   modal run modal_app/signals.py::regions     # Jev judges /data/built/satellite/*.json -> region_judgments
   modal deploy modal_app/signals.py           # exposes judge_headlines / fetch_latest / judge_regions for the live scan
 """
@@ -36,8 +37,10 @@ RSS_QUERIES = {
               "coffee harvest"],
     "beer_wine": ["barley harvest", "hops harvest", "wine harvest heatwave", "vineyard drought",
                   "beer prices", "grape harvest"],
-    "gpu": ["TSMC water drought", "chip shortage", "DRAM prices", "GPU prices", "semiconductor supply chain",
-            "Taiwan shipping"],
+    "gpu": ["GPU prices", "graphics card prices", "Nvidia Blackwell supply", "HBM shortage", "DRAM prices",
+            "memory chip shortage", "data center capex", "hyperscaler AI capex", "TSMC CoWoS capacity",
+            "AI chip export controls", "Nvidia China export", "AI data center construction", "TSMC water drought",
+            "chip shortage"],
     "rent": ["London rents", "London housing supply", "London new homes", "London construction",
              "UK rental market"],
 }
@@ -133,13 +136,13 @@ def fetch_gdelt(n_months: int = 24) -> dict:
 
 
 @app.function(image=image, timeout=600)
-def fetch_rss(module_id: str, n_windows: int = 8) -> list[dict]:
+def fetch_rss(module_id: str, n_windows: int = 8, queries: list[str] | None = None) -> list[dict]:
     """Google News RSS: several queries x quarterly windows (~100 items each)."""
     import httpx
     from concurrent.futures import ThreadPoolExecutor
 
     m = next(x for x in MODULES if x["id"] == module_id)
-    queries = [m["news_query"]] + RSS_QUERIES.get(module_id, [])
+    queries = queries or ([m["news_query"]] + RSS_QUERIES.get(module_id, []))
     now = datetime.now(timezone.utc).date()
     windows = [(now - timedelta(days=91 * (i + 1)), now - timedelta(days=91 * i)) for i in range(n_windows)]
     jobs = [f"{q} after:{a} before:{b}" for q in queries for a, b in windows]
@@ -356,9 +359,17 @@ def compact():
 def _region_questions(sig: str) -> dict:
     from typesafe_sdk import Score
 
-    if sig == "water":
-        instr = ("Based on the reservoir water-index (NDWI) history in `satellite` for the region in `region`, "
-                 "how high is the risk of water shortage constraining chip/semiconductor production in the next months?")
+    if sig in ("datacenter", "fab"):
+        instr = ("Based on the land-transformation share (change_frac = share of the site changed vs 2019-20) and "
+                 "built-up index (NDBI) history in `satellite` for the "
+                 "AI data-centre / chip-fab site in `region`, how intense is the construction build-out, i.e. how much "
+                 "new demand for GPUs, memory and chips does this site signal?")
+        crit = ["Low: little or no visible new construction", "Medium: steady expansion",
+                "High: rapid build-out, large new halls or fabs", "Severe: explosive build-out, site transformed"]
+    elif sig == "water":
+        instr = ("Based on the reservoir water extent (water_frac = share of the box that is open water) and NDWI "
+                 "history in `satellite` for the region in `region`, how high is the risk of water shortage "
+                 "constraining chip/semiconductor production in the next months?")
         crit = ["Low: water extent normal or above normal", "Medium: somewhat below normal",
                 "High: clearly below normal, rationing plausible", "Severe: drought-level lows, production at risk"]
     elif sig in ("built", "port"):
@@ -376,7 +387,7 @@ def _region_questions(sig: str) -> dict:
 
 
 @app.function(image=image, secrets=secrets, volumes={"/data": vol}, timeout=600)
-def judge_regions() -> dict:
+def judge_regions(module: str = "") -> dict:
     """Jev reads each region's satellite stats JSON -> harvest/water/disruption risk, merged into signals files."""
     from concurrent.futures import ThreadPoolExecutor
 
@@ -386,6 +397,8 @@ def judge_regions() -> dict:
     sat_dir = Path("/data/built/satellite")
     todo = []
     for reg in REGIONS:
+        if module and reg["module"] != module:
+            continue
         p = sat_dir / f"{reg['id']}.json"
         if p.exists():
             todo.append((reg, json.loads(p.read_text(encoding="utf-8"))))
@@ -393,7 +406,9 @@ def judge_regions() -> dict:
 
     def one(arg):
         reg, sat = arg
-        series = [{k: s.get(k) for k in ("month", "ndvi", "ndwi", "ndbi", "cloud_pct")} for s in sat.get("series", [])]
+        keys = ("month", "ndvi", "ndwi", "ndbi", "water_frac", "built_frac", "change_frac", "cloud_pct")
+        series = [{k: s.get(k) for k in keys if k in s} for s in sat.get("series", [])
+                  if (s.get("cloud_pct") or 0) <= 40]  # cloudy scenes fake "low water" / odd indices
         state = {"region": {"name": reg["name"], "signal": reg["signal"], "item": reg["item"]},
                  "satellite": {"anomaly": sat.get("anomaly"), "series": series[-48:]}}
         with TypeSafeClient() as c:
@@ -419,12 +434,208 @@ def judge_regions() -> dict:
         _write(p, doc)
     sp = OUT / "_stats.json"
     stats = json.loads(sp.read_text()) if sp.exists() else {}
-    stats["region_judgments"] = n
+    stats["region_judgments"] = n if not module else len(REGIONS)
     stats["region_input_tokens"] = tok
     _write(sp, stats)
     vol.commit()
     return {"region_judgments": n, "input_tokens": tok,
             "risks": {j["region_id"]: j["harvest_risk"]["label"] for v in by_mod.values() for j in v}}
+
+
+# ---------------------------------------------------------------- AI-era demand layer (gpu module)
+AI_WINDOWS = 16  # quarterly Google-News windows -> ~4 years, covers the ChatGPT moment (late 2022) onward
+AI_QUERIES = ["GPU prices", "Nvidia Blackwell supply", "Nvidia H100 shortage", "HBM shortage", "DRAM prices",
+              "memory chip shortage", "data center capex", "hyperscaler AI capex", "TSMC CoWoS capacity",
+              "AI chip export controls", "Nvidia China export ban", "AI data center construction",
+              "graphics card prices", "GDDR7 shortage"]
+AI_LEVELS = ["strongly_down", "down", "neutral", "up", "strongly_up"]
+AI_KEYS = ("ai_demand", "supply_constraint", "export_controls", "index")
+
+
+def _key(title: str) -> str:
+    return " ".join((title or "").lower().split())[:120]
+
+
+def _ai_questions(i: int) -> dict:
+    from typesafe_sdk import Noul, Score
+
+    h = f"`headlines.h{i}`"
+    return {
+        f"arel{i}": Noul(instructions=f"Headline {h} is about AI compute, data centres, GPUs, memory chips (DRAM/HBM), "
+                                      f"chip manufacturing capacity or chip trade policy."),
+        f"dem{i}": Score(instructions=f"What does headline {h} imply for demand for AI compute (GPUs, data-centre "
+                                      f"chips, memory)?",
+                         criteria=["Much weaker demand (capex cuts, AI bubble bursting, orders cancelled)",
+                                   "Somewhat weaker demand", "No clear change in demand",
+                                   "Stronger demand (new capex, new data centres, bigger models)",
+                                   "Much stronger demand (record capex, massive new AI campuses, sold-out GPUs)"]),
+        f"sup{i}": Score(instructions=f"What does headline {h} imply for supply of GPUs and memory (HBM/DRAM/GDDR "
+                                      f"output, TSMC CoWoS packaging, fab capacity)?",
+                         criteria=["Supply easing strongly (glut, big new capacity online)", "Supply easing somewhat",
+                                   "No clear change in supply",
+                                   "Supply tightening (shortage, allocation, capacity sold out)",
+                                   "Supply severely constrained (acute shortage, production cuts, rationing)"]),
+        f"exp{i}": Score(instructions=f"What does headline {h} imply for export controls and trade restrictions "
+                                      f"on AI chips (and hence global GPU supply and prices)?",
+                         criteria=["Restrictions loosened a lot", "Restrictions loosened somewhat",
+                                   "No change in restrictions / not about trade policy",
+                                   "Restrictions tightened (new controls, tariffs, bans)",
+                                   "Restrictions tightened a lot (sweeping bans or tariffs)"]),
+    }
+
+
+@app.function(image=image, secrets=secrets, timeout=300, max_containers=20,
+              retries=modal.Retries(max_retries=2, initial_delay=2.0))
+def judge_ai(batch: list[dict]) -> dict:
+    """One Jev system_one call: 4 AI-era typed questions per headline (relevance, demand, supply, export controls)."""
+    from typesafe_sdk import RetryPolicy, TypeSafeClient
+
+    state = {"context": "Consumer GPU, laptop and AI-accelerator prices in the AI era",
+             "headlines": {f"h{i}": h["title"] for i, h in enumerate(batch)}}
+    qs = {}
+    for i in range(len(batch)):
+        qs.update(_ai_questions(i))
+    with TypeSafeClient(retry=RetryPolicy(max_retries=4)) as c:
+        r = c.system_one(state, qs)
+    out = {}
+    for i, h in enumerate(batch):
+        d, s_, e = r.scores[f"dem{i}"], r.scores[f"sup{i}"], r.scores[f"exp{i}"]
+        out[_key(h["title"])] = {
+            "ai_relevant_p": round(float(r.nouls[f"arel{i}"].noul), 4),
+            "ai_demand": {**_dist(d, AI_LEVELS), "value": round((float(d.score) - 2) / 2, 3)},
+            "supply_constraint": {**_dist(s_, AI_LEVELS), "value": round((float(s_.score) - 2) / 2, 3)},
+            "export_controls": {**_dist(e, AI_LEVELS), "value": round((float(e.score) - 2) / 2, 3)},
+        }
+    return {"ai": out, "n_judgments": len(qs), "input_tokens": r.usage.input_tokens,
+            "output_tokens": r.usage.output_tokens}
+
+
+def _ai_timeline(rows: list[dict]) -> list[dict]:
+    """Point-in-time monthly index: relevance-weighted mean of each Jev score (-1..1) over that month's headlines."""
+    tl = {}
+    for r in rows:
+        mo, a = (r.get("date") or "")[:7], r.get("ai")
+        if len(mo) != 7 or not a:
+            continue
+        w = a["ai_relevant_p"]
+        t = tl.setdefault(mo, {"n": 0, "w": 0.0, "d": 0.0, "s": 0.0, "e": 0.0})
+        t["n"] += 1
+        t["w"] += w
+        t["d"] += w * a["ai_demand"]["value"]
+        t["s"] += w * a["supply_constraint"]["value"]
+        t["e"] += w * a["export_controls"]["value"]
+    out = []
+    for mo, t in sorted(tl.items()):
+        if t["w"] < 3:  # too little signal that month
+            continue
+        d, s_, e = t["d"] / t["w"], t["s"] / t["w"], t["e"] / t["w"]
+        out.append({"month": mo, "n": t["n"], "relevant": round(t["w"], 1), "ai_demand": round(d, 3),
+                    "supply_constraint": round(s_, 3), "export_controls": round(e, 3),
+                    "index": round(50 + 50 * max(-1.0, min(1.0, 0.55 * d + 0.35 * s_ + 0.10 * e)), 1)})
+    return out
+
+
+def _wavg(rows: list[dict], k: str):
+    w = sum(t["relevant"] for t in rows)
+    return round(sum(t[k] * t["relevant"] for t in rows) / w, 3) if w else None
+
+
+@app.function(image=image, secrets=secrets, volumes={"/data": vol}, timeout=2400)
+def build_ai(refetch: bool = False) -> dict:
+    """gpu module: add AI-era targeted headlines + AI demand/supply/export-control judgments.
+
+    Reuses the judged headlines in /data/cache/signals: the standard 4 questions are only asked for new
+    headlines, and the AI questions are cached per headline title so each headline is judged once.
+    """
+    t0 = time.time()
+    vol.reload()
+    m = "gpu"
+    jpath = CACHE / f"judged_{m}.json"
+    judged = json.loads(jpath.read_text(encoding="utf-8")) if jpath.exists() else []
+    known = {_key(r["title"]) for r in judged}
+
+    # 1) targeted AI-era headlines (cached on the volume)
+    tpath = CACHE / "headlines_gpu_ai.json"
+    if tpath.exists() and not refetch:
+        extra = json.loads(tpath.read_text(encoding="utf-8"))
+    else:
+        parts = list(fetch_rss.map([m] * len(AI_QUERIES), [AI_WINDOWS] * len(AI_QUERIES),
+                                   [[q] for q in AI_QUERIES]))
+        extra = _dedupe([r for p in parts for r in p])
+        _write(tpath, extra)
+        vol.commit()
+    new = [r for r in extra if _key(r["title"]) not in known]
+    print("judged cache", len(judged), "targeted", len(extra), "new", len(new))
+
+    # 2) standard judgments for new headlines only
+    n_std = tok_in = tok_out = 0
+    jobs = [(new[i:i + BATCH], m) for i in range(0, len(new), BATCH)]
+    for res in judge_headlines.starmap(jobs, return_exceptions=True):
+        if isinstance(res, Exception):
+            print("std batch failed", res)
+            continue
+        judged += res["rows"]
+        n_std += res["n_judgments"]
+        tok_in += res["input_tokens"]
+        tok_out += res["output_tokens"]
+
+    # 3) AI-era judgments, cached by title
+    apath = CACHE / "judged_gpu_ai.json"
+    ai = json.loads(apath.read_text(encoding="utf-8")) if apath.exists() else {}
+    todo = [r for r in judged if _key(r["title"]) not in ai]
+    n_ai = 0
+    for res in judge_ai.map([todo[i:i + BATCH] for i in range(0, len(todo), BATCH)], return_exceptions=True):
+        if isinstance(res, Exception):
+            print("ai batch failed", res)
+            continue
+        ai.update(res["ai"])
+        n_ai += res["n_judgments"]
+        tok_in += res["input_tokens"]
+        tok_out += res["output_tokens"]
+    _write(apath, ai)
+    for r in judged:
+        if _key(r["title"]) in ai:
+            r["ai"] = ai[_key(r["title"])]
+            r["ai_score"] = round(r["ai"]["ai_relevant_p"] * (r["ai"]["ai_demand"]["value"]
+                                                            + r["ai"]["supply_constraint"]["value"]), 3)
+    _write(jpath, judged)
+
+    # 4) assemble the built gpu signals file (+ ai_index)
+    out = OUT / f"{m}.json"
+    prev = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
+    doc = _assemble(m, judged, prev.get("n_judgments", 0) + n_std + n_ai, len(judged))
+    doc["region_judgments"] = prev.get("region_judgments", [])
+    tl = _ai_timeline(judged)
+    base = [t for t in tl if t["month"] < "2025-01"] or tl
+    doc["ai_index"] = {
+        "timeline": tl,
+        "now": {k: _wavg(tl[-3:], k) for k in AI_KEYS},
+        "trend_6m": {k: _wavg(tl[-6:], k) for k in AI_KEYS},
+        "baseline": {k: _wavg(base, k) for k in AI_KEYS},
+        "baseline_window": f"{base[0]['month']}..{base[-1]['month']}" if base else None,
+        "n_relevant": sum(1 for r in judged if r.get("ai") and r["ai"]["ai_relevant_p"] >= 0.5),
+        "n_judged": sum(1 for r in judged if r.get("ai")),
+        "method": "Jev scores each headline (5-level Score -> -1..1) for AI compute demand, GPU/memory supply "
+                  "constraint and export-control tightening; monthly relevance-weighted mean by headline date "
+                  "(point-in-time). index = 50 + 50 x (0.55 demand + 0.35 supply + 0.10 export).",
+    }
+    _write(out, doc)
+    sp = OUT / "_stats.json"
+    stats = json.loads(sp.read_text()) if sp.exists() else {}
+    stats["jev_judgments"] = stats.get("jev_judgments", 0) + n_std + n_ai
+    stats["ai_layer"] = {"new_headlines": len(new), "std_judgments": n_std, "ai_judgments": n_ai,
+                         "input_tokens": tok_in, "output_tokens": tok_out, "seconds": round(time.time() - t0, 1)}
+    _write(sp, stats)
+    vol.commit()
+    return {"headlines": len(judged), "new": len(new), "std_judgments": n_std, "ai_judgments": n_ai,
+            "months": len(tl), "ai_index": {k: doc["ai_index"][k] for k in ("now", "trend_6m", "baseline")},
+            "net_supply_pressure": doc["net_supply_pressure"], "item_pressure": doc["item_pressure"],
+            "tokens_in": tok_in, "seconds": round(time.time() - t0, 1)}
+
+
+@app.local_entrypoint()
+def ai(refetch: bool = False):
+    print(json.dumps(build_ai.remote(refetch), indent=2))
 
 
 @app.local_entrypoint()
@@ -433,8 +644,9 @@ def main(force: bool = False):
 
 
 @app.local_entrypoint()
-def regions():
-    print(json.dumps(judge_regions.remote(), indent=2))
+def regions(module: str = ""):
+    """--module gpu re-judges only that module's regions."""
+    print(json.dumps(judge_regions.remote(module), indent=2))
 
 
 @app.local_entrypoint()

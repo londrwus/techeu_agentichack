@@ -97,6 +97,20 @@ def rent():
     return data.read_json("rent/london.json") or {"type": "FeatureCollection", "features": []}
 
 
+@app.get("/api/eval")
+def eval_summary():
+    """Track record: rolling-origin backtest summary (data/built/eval/summary.json)."""
+    return data.read_json("eval/summary.json") or {}
+
+
+@app.get("/api/eval/{item_id}")
+def eval_item(item_id: str):
+    v = data.read_json(f"eval/{item_id}.json") if item_id.replace("_", "").isalnum() else None
+    if not v:
+        raise HTTPException(404, f"no evaluation for {item_id}")
+    return v
+
+
 class AskIn(BaseModel):
     question: str
 

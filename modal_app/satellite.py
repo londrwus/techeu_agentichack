@@ -11,6 +11,7 @@ import io
 import json
 import os
 import time
+import warnings
 from datetime import date
 from pathlib import Path
 
@@ -19,6 +20,8 @@ import modal
 APP_NAME = "orbit-satellite"
 DATA = Path("/data/built")
 PX = 256
+GRID = 64                                        # change-detection grid (GRID x GRID cells)
+GRID_SIGNALS = ("datacenter", "fab", "built")    # regions where we track land transformation
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -175,7 +178,16 @@ def process_tile(region_id: str, month: str, force: bool = False, include_png: b
         v = v[clear & np.isfinite(v)]
         return round(float(v.mean()), 4) if v.size > 50 else None
 
+    def frac(a, b, thr=0.0):  # share of clear pixels with index > thr (water extent / built-up share)
+        a, b = bands[a], bands[b]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            v = (a - b) / (a + b)
+        v = v[clear & np.isfinite(v)]
+        return round(float((v > thr).mean()), 4) if v.size > 50 else None
+
     res.update({
+        "water_frac": frac("B03", "B08"),
+        "built_frac": frac("B11", "B08"),
         "ndvi": nd("B08", "B04"),
         "ndwi": nd("B03", "B08"),
         "ndbi": nd("B11", "B08"),
@@ -184,6 +196,23 @@ def process_tile(region_id: str, month: str, force: bool = False, include_png: b
         "scene_cloud_cover": item.properties.get("eo:cloud_cover"),
         "datetime": item.properties.get("datetime"),
     })
+
+    if region.get("signal") in GRID_SIGNALS:  # 64x64 NDVI + brightness grid for per-pixel change detection
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ndvi_px = (bands["B08"] - bands["B04"]) / (bands["B08"] + bands["B04"])
+        bright = (bands["B02"] + bands["B03"] + bands["B04"]) / 3
+        k = PX // GRID
+
+        def pool(a):
+            a = np.where(clear, a, np.nan).reshape(GRID, k, GRID, k)
+            n = np.isfinite(a).sum(axis=(1, 3))
+            s = np.nansum(a, axis=(1, 3))
+            return np.where(n > k * k // 2, s / np.maximum(n, 1), np.nan).astype("float16")
+
+        buf = io.BytesIO()
+        np.savez_compressed(buf, ndvi=pool(ndvi_px), bright=pool(bright))
+        (DATA / f"tiles/{region_id}/{month}.grid.npz").parent.mkdir(parents=True, exist_ok=True)
+        (DATA / f"tiles/{region_id}/{month}.grid.npz").write_bytes(buf.getvalue())
 
     # True-colour thumbnail with a joint percentile stretch on clear pixels + mild gamma.
     rgb = np.stack([bands["B04"], bands["B03"], bands["B02"]], axis=-1)
@@ -223,6 +252,43 @@ def _anomaly(series: list[dict], key: str):
     return round(max(-100.0, min(100.0, 100.0 * (now - b) / abs(b))), 1)  # clamp: indices near 0 explode
 
 
+def _change_series(region_id: str, months: list[str]) -> dict:
+    """Per-pixel land transformation vs a same-season 2019-2020 baseline -> {month: changed share of the site}.
+
+    A cell counts as transformed when NDVI moved > 0.15 or brightness moved > 35% vs the median of the same
+    calendar months (+-1) in the first two years. Seasonal greening is mostly cancelled by the seasonal baseline.
+    """
+    import numpy as np
+
+    grids = {}
+    for m in months:
+        p = DATA / f"tiles/{region_id}/{m}.grid.npz"
+        if p.exists():
+            z = np.load(p)
+            grids[m] = (z["ndvi"].astype("float32"), z["bright"].astype("float32"))
+    if len(grids) < 12:
+        return {}
+    first_year = int(min(grids)[:4])
+    base_months = [m for m in grids if int(m[:4]) < first_year + 2]
+    out = {}
+    for m, (nd, br) in grids.items():
+        mo = int(m[5:])
+        near = {(mo - 2) % 12 + 1, mo, mo % 12 + 1}
+        ref = [grids[b] for b in base_months if int(b[5:]) in near and np.isfinite(grids[b][0]).mean() > 0.7]
+        if not ref or np.isfinite(nd).mean() < 0.6:
+            continue
+        with np.errstate(invalid="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            bn = np.nanmedian(np.stack([r[0] for r in ref]), axis=0)
+            bb = np.nanmedian(np.stack([r[1] for r in ref]), axis=0)
+        ok = np.isfinite(nd) & np.isfinite(bn) & np.isfinite(br) & np.isfinite(bb)
+        if ok.mean() < 0.5:
+            continue
+        chg = (np.abs(nd - bn) > 0.15) | (np.abs(br - bb) / np.maximum(bb, 0.02) > 0.35)
+        out[m] = round(float(chg[ok].mean()), 4)
+    return out
+
+
 @app.function(volumes={"/data": vol}, timeout=300)
 def write_outputs(results: list[dict], stats: dict) -> list[str]:
     from orbit.config import REGIONS
@@ -235,8 +301,15 @@ def write_outputs(results: list[dict], stats: dict) -> list[str]:
         by_region.setdefault(r["region_id"], []).append(r)
     written = []
     for reg in REGIONS:
+        if reg["id"] not in by_region:  # subset run (--regions): leave other regions' files untouched
+            continue
         rows = sorted(by_region.get(reg["id"], []), key=lambda r: r["month"])
-        series = [{k: r.get(k) for k in ("month", "ndvi", "ndwi", "ndbi", "cloud_pct", "thumb")} for r in rows]
+        series = [{k: r.get(k) for k in ("month", "ndvi", "ndwi", "ndbi", "water_frac", "built_frac", "cloud_pct", "thumb")}
+                  for r in rows]
+        if reg.get("signal") in GRID_SIGNALS:
+            chg = _change_series(reg["id"], [s["month"] for s in series])
+            for s in series:
+                s["change_frac"] = chg.get(s["month"])
         doc = {
             "region_id": reg["id"], "module": reg["module"], "item": reg.get("item"),
             "name": reg["name"], "lat": reg["lat"], "lon": reg["lon"], "bbox": reg["bbox"],
@@ -244,22 +317,37 @@ def write_outputs(results: list[dict], stats: dict) -> list[str]:
             "series": series,
             "anomaly": {"ndvi_vs_5yr_pct": _anomaly(series, "ndvi"),
                         "ndwi_vs_5yr_pct": _anomaly(series, "ndwi"),
-                        "ndbi_vs_5yr_pct": _anomaly(series, "ndbi")},
+                        "ndbi_vs_5yr_pct": _anomaly(series, "ndbi"),
+                        "water_frac_vs_5yr_pct": _anomaly(series, "water_frac"),
+                        "built_frac_vs_5yr_pct": _anomaly(series, "built_frac")},
         }
         (out_dir / f"{reg['id']}.json").write_text(json.dumps(doc))
         written.append(reg["id"])
     stats_path = out_dir / "_stats.json"
-    if stats.get("fresh", 0) > 0 or not stats_path.exists():  # an all-cached rerun keeps the real run's stats
+    if stats.pop("subset", False) and stats_path.exists():  # merge a partial run into the full-run stats
+        prev = json.loads(stats_path.read_text())
+        for k in ("tiles_processed", "tiles_total"):
+            prev[k] = prev.get(k, 0) + stats.get("add_" + k, 0)
+        prev["containers_peak"] = max(prev.get("containers_peak", 0), stats.get("containers_peak", 0))
+        prev["last_subset_run"] = stats
+        stats = prev
+        stats_path.write_text(json.dumps(stats))
+    elif stats.get("fresh", 0) > 0 or not stats_path.exists():  # an all-cached rerun keeps the real run's stats
         stats_path.write_text(json.dumps(stats))
     vol.commit()
     return written
 
 
 @app.local_entrypoint()
-def main(force: bool = False, start: str = "", end: str = ""):
+def main(force: bool = False, start: str = "", end: str = "", regions: str = ""):
+    """--regions a,b,c limits the run (and --force) to those regions; other regions' files are kept."""
     from orbit.config import HISTORY_START, REGIONS
 
     months = _month_range(start or HISTORY_START, end or _latest_complete_month())
+    keep = {x.strip() for x in regions.split(",") if x.strip()}
+    if keep - {r["id"] for r in REGIONS}:
+        raise SystemExit(f"unknown regions: {keep - {r['id'] for r in REGIONS}}")
+    REGIONS = [r for r in REGIONS if not keep or r["id"] in keep]
     jobs = [(r["id"], m) for r in REGIONS for m in months]
     print(f"Fanning out {len(jobs)} tiles ({len(REGIONS)} regions x {len(months)} months) ...")
     t0 = time.time()
@@ -281,6 +369,11 @@ def main(force: bool = False, start: str = "", end: str = ""):
     stats = {"tiles_processed": ok, "tiles_total": len(jobs), "containers_peak": len(tasks),
              "seconds": secs, "errors": len(errs),
              "fresh": sum(1 for r in results if r.get("thumb") and not r.get("cached"))}
+    if keep:  # regions already on disk were counted by the full run: only add tiles of brand-new regions
+        old = {r["id"] for r in REGIONS if Path(f"data/built/satellite/{r['id']}.json").exists()}
+        stats.update(subset=True, regions=sorted(keep),
+                     add_tiles_processed=sum(1 for r in results if r["region_id"] not in old and r.get("thumb")),
+                     add_tiles_total=sum(1 for r in results if r["region_id"] not in old))
     written = write_outputs.remote(results, stats)
     print(f"Tiles with imagery: {ok}/{len(jobs)} | containers used: {len(tasks)} | {secs}s | errors: {len(errs)}")
     for e in errs[:5]:
