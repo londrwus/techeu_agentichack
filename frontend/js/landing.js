@@ -41,7 +41,8 @@
   const getJSON = u => fetch(u).then(r => (r.ok ? r.json() : null)).catch(() => null);
   Promise.all([getJSON('/api/summary'), getJSON('/api/leaderboard')]).then(([s, lb]) => {
     const st = s?.stats || {};
-    const v2 = (lb?.rows || []).find(r => r.method === 'orbit_v2')?.test?.h6 || {};
+    const best = lb?.final?.name || 'orbit_v2';
+    const v2 = (lb?.rows || []).find(r => r.method === best)?.test?.h6 || {};
     const dir = typeof v2.dir_acc === 'number' ? v2.dir_acc : lb?.improvement_vs_v1?.dir_acc?.[1];
     const vals = { tiles: st.tiles_processed, jev: st.jev_judgments, dir: typeof dir === 'number' ? dir * 100 : null };
     document.querySelectorAll('.ld-stat b').forEach(b => { const v = vals[b.dataset.k]; if (typeof v === 'number' && v > 0) countUp(b, v, b.dataset.k); });

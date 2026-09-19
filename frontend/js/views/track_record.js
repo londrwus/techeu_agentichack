@@ -22,8 +22,13 @@ const METHODS = {
   exog_ridge: ['Weather + FX signals', 'outside data'],
   learner: ['Boosted-tree learner', 'machine learning'],
   bigmove_clf: ['Big-move detector', 'classifier'],
-  orbit_v2: ['Orbit v2', 'final stack'],
+  dir_clf: ['Direction classifier', 'momentum · CFTC positioning'],
+  xasset: ['Cross-market signals', 'FX · oil · El Niño'],
+  orbit_v2: ['Orbit v2', 'previous version'],
+  orbit_v3: ['Orbit v3', 'final stack'],
 };
+// The best model is whatever the leaderboard marks as final; compare it with the version before.
+let FINAL = 'orbit_v3', PREV = 'orbit_v2';
 
 function css() {
   if (document.getElementById('track-record-css')) return;
@@ -48,8 +53,12 @@ export async function render(el) {
   if (!lb && !ev) { el.innerHTML = head + `<div class="empty">Track record is being computed.</div>`; wireScan(el); return; }
 
   const rows = lb?.rows || [];
-  const v2 = rows.find(r => r.method === 'orbit_v2')?.test?.h6 || ev?.test_overall?.orbit_v2?.h6 || ev?.orbit_v2?.test?.h6 || {};
-  const imp = lb?.improvement_vs_v1 || ev?.orbit_v2?.improvement_vs_v1 || {};
+  FINAL = lb?.final?.name && METHODS[lb.final.name] ? lb.final.name : (rows.some(r => r.method === 'orbit_v3') ? 'orbit_v3' : 'orbit_v2');
+  PREV = FINAL === 'orbit_v3' ? 'orbit_v2' : 'orbit_v1';
+  if (METHODS[FINAL]) METHODS[FINAL][1] = 'final stack';
+  const v2 = rows.find(r => r.method === FINAL)?.test?.h6 || ev?.test_overall?.[FINAL]?.h6 || ev?.[FINAL]?.test?.h6 || {};
+  const impRaw = lb?.[`improvement_vs_${PREV.slice(6)}`] || lb?.improvement_vs_v1 || {};
+  const imp = impRaw.h6 || impRaw;
   const n = v2.n;
   const tagline = isNum(n) ? `${n} forecasts on 2023–26 data the model never saw` : 'Forecasts on 2023–26 data the model never saw';
 
@@ -110,7 +119,7 @@ export async function render(el) {
   }));
 
   // Calibration
-  const rel = (ev?.reliability_test_h6 || []).filter(r => isNum(r?.predicted) && isNum(r?.observed) && !(r.n < 5)); // tiny buckets are noise
+  const rel = ((FINAL === 'orbit_v3' && ev?.reliability_test_h6_v3) || ev?.reliability_test_h6 || []).filter(r => isNum(r?.predicted) && isNum(r?.observed) && !(r.n < 5)); // tiny buckets are noise
   if (rel.length) {
     mk(el.querySelector('[data-calchart]'))?.setOption(calibrationOption(rel));
     const near = rel.filter(r => r.n >= 10).reduce((a, b) => (Math.abs(b.predicted - 0.6) < Math.abs(a.predicted - 0.6) ? b : a), rel[0]);
@@ -164,7 +173,7 @@ function statCards(t, imp) {
   ].filter(Boolean);
   return cards.map((c, i) => `<div class="card tr-stat" style="animation-delay:${i * 60}ms">
     <div class="tr-stat-top"><span class="tr-stat-ic">${icon(c.ic, { size: 15 })}</span><span class="tr-stat-label">${esc(c.label)}</span></div>
-    <div class="tr-stat-v"><span data-count="${c.v.toFixed(c.digits || 0)}" data-digits="${c.digits || 0}" data-prefix="${c.pre || ''}" data-suffix="${c.suf}">0${c.suf}</span>${c.was ? `<span class="tr-was${c.was.up ? ' better' : ''}">${c.was.up ? icon('arrow-up-right', { size: 13, stroke: 2.25 }) : ''}v1 was ${esc(c.was.t)}</span>` : ''}</div>
+    <div class="tr-stat-v"><span data-count="${c.v.toFixed(c.digits || 0)}" data-digits="${c.digits || 0}" data-prefix="${c.pre || ''}" data-suffix="${c.suf}">0${c.suf}</span>${c.was ? `<span class="tr-was${c.was.up ? ' better' : ''}">${c.was.up ? icon('arrow-up-right', { size: 13, stroke: 2.25 }) : ''}${PREV.slice(6)} was ${esc(c.was.t)}</span>` : ''}</div>
     ${isNum(c.bar) ? `<div class="tr-meter"><i style="width:${Math.max(0, Math.min(1, c.bar)) * 100}%"></i>${isNum(c.mark) ? `<b style="left:${c.mark * 100}%" title="${esc(c.markLab)}"></b><em style="left:${c.mark * 100}%">${esc(c.markLab)}</em>` : ''}</div>` : `<div class="tr-meter zero"><i style="width:${Math.min(100, Math.abs(c.v) * 10)}%;left:50%"></i><b style="left:50%"></b><em style="left:50%">no-change guess</em></div>`}
     <div class="tr-stat-sub">${esc(c.sub)}</div>
   </div>`).join('');
@@ -176,19 +185,19 @@ function leaderboardOption(rows, final, key) {
   const used = new Set([...Object.keys(h6.weights || {}), ...(h6.band_members || []), ...(h6.prob_up_members || []), ...(h6.prob_bigup_members || [])]);
   const list = Object.keys(METHODS).map(id => rows.find(r => r.method === id)).filter(Boolean).map(r => {
     const t = r.test?.h6 || {};
-    const notUsed = !['naive', 'orbit_v2'].includes(r.method) && used.size > 0 && !used.has(r.method);
+    const notUsed = !['naive', 'orbit_v1', 'orbit_v2', 'orbit_v3'].includes(r.method) && used.size > 0 && !used.has(r.method);
     return { id: r.method, name: METHODS[r.method][0], tag: notUsed ? 'tested, not used' : METHODS[r.method][1], notUsed, t, v: isNum(t[key]) ? t[key] * 100 : null };
   });
-  list.sort((a, b) => (a.id === 'orbit_v2' ? -1 : b.id === 'orbit_v2' ? 1 : (b.v ?? -1e9) - (a.v ?? -1e9)));
+  list.sort((a, b) => (a.id === FINAL ? -1 : b.id === FINAL ? 1 : (b.v ?? -1e9) - (a.v ?? -1e9)));
   const isSkill = key === 'skill';
-  const color = d => (d.id === 'orbit_v2' ? ACC : d.notUsed ? '#E7E5E4' : d.id === 'naive' ? SLATE_D : SLATE);
+  const color = d => (d.id === FINAL ? ACC : d.notUsed ? '#E7E5E4' : d.id === 'naive' ? SLATE_D : SLATE);
   const data = list.map(d => ({
     value: d.v ?? (isSkill ? 0 : null), raw: d,
     itemStyle: { color: color(d), borderRadius: (d.v ?? 0) < 0 ? [4, 0, 0, 4] : [0, 4, 4, 0], ...(d.notUsed ? { decal: { symbol: 'rect', dashArrayX: [1, 0], dashArrayY: [2, 4], rotation: -Math.PI / 4, color: '#D6D3D1' } } : {}) },
     label: {
       show: true, position: (d.v ?? 0) < 0 ? 'left' : 'right', distance: 6,
       formatter: () => (d.v == null ? 'makes no up/down call' : d.id === 'naive' && isSkill ? '0 · the benchmark' : isSkill ? sgn(d.v, 1) : `${Math.round(d.v)}%`),
-      color: d.id === 'orbit_v2' ? '#C2410C' : '#57534E', fontWeight: d.id === 'orbit_v2' ? 800 : 600, fontSize: 12, fontFamily: 'Inter',
+      color: d.id === FINAL ? '#C2410C' : '#57534E', fontWeight: d.id === FINAL ? 800 : 600, fontSize: 12, fontFamily: 'Inter',
     },
   }));
   const vals = list.map(d => d.v).filter(isNum);
@@ -200,7 +209,7 @@ function leaderboardOption(rows, final, key) {
     tooltip: itemTooltip(p => {
       const d = p.data.raw, t = d.t;
       return tipHtml({
-        title: d.name, tag: d.id === 'orbit_v2' ? 'Final' : d.notUsed ? 'Not used' : '',
+        title: d.name, tag: d.id === FINAL ? 'Final' : d.notUsed ? 'Not used' : '',
         rows: [
           { label: "Error cut vs 'stays the same'", value: sgn(t.skill * 100, 1) },
           { label: 'Direction right', value: pc(t.dir_acc) },
@@ -209,7 +218,7 @@ function leaderboardOption(rows, final, key) {
           { label: 'Average error', value: isNum(t.mape) ? `${t.mape.toFixed(1)}%` : '–' },
           { label: 'Test forecasts', value: isNum(t.n) ? String(t.n) : '–' },
         ],
-        note: d.notUsed ? 'Tried, but left out of the final stack (validation rules).' : d.id === 'orbit_v2' ? 'Blends the members that beat the benchmark on the tuning period.' : METHODS[d.id][1],
+        note: d.notUsed ? 'Tried, but left out of the final stack (validation rules).' : d.id === FINAL ? 'Blends the members that beat the benchmark on the tuning period.' : METHODS[d.id][1],
       });
     }),
     xAxis: {
@@ -219,7 +228,7 @@ function leaderboardOption(rows, final, key) {
     yAxis: {
       type: 'category', inverse: true, data: list.map(d => d.id), axisLine: { show: false }, axisTick: { show: false },
       axisLabel: {
-        margin: 12, formatter: id => { const d = list.find(x => x.id === id); return `{n${d.id === 'orbit_v2' ? 'b' : ''}|${d.name}}\n{${d.notUsed ? 'x' : 't'}|${d.tag}}`; },
+        margin: 12, formatter: id => { const d = list.find(x => x.id === id); return `{n${d.id === FINAL ? 'b' : ''}|${d.name}}\n{${d.notUsed ? 'x' : 't'}|${d.tag}}`; },
         rich: {
           n: { fontSize: 13, fontWeight: 600, color: '#1C1917', fontFamily: 'Inter', align: 'right', lineHeight: 17 },
           nb: { fontSize: 13, fontWeight: 800, color: '#C2410C', fontFamily: 'Inter', align: 'right', lineHeight: 17 },
@@ -243,7 +252,7 @@ function leaderboardOption(rows, final, key) {
 /* ---------- 3. history backtests ---------- */
 function backtests(d) {
   const all = (d?.backtests || []).filter(b => b.h === 6 && isNum(b.p50) && isNum(b.actual));
-  const method = all.some(b => b.method === 'orbit_v2') ? 'orbit_v2' : 'orbit';
+  const method = all.some(b => b.method === FINAL) ? FINAL : all.some(b => b.method === 'orbit_v2') ? 'orbit_v2' : 'orbit';
   const byT = new Map();
   for (const b of all.filter(b => b.method === method)) {
     const tm = addM(b.cutoff, 6);
