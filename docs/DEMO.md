@@ -48,6 +48,6 @@ Presenter shortcuts:
 
 ## Pitch lines to remember
 
-- "Satellites see prices rising months before you pay them."
+- "Satellite intelligence for commodities. Fully agentic."
 - "Every tile is real Sentinel-2. Every headline was judged by Jev. Every forecast ran on a Modal GPU."
 - "We show our misses."

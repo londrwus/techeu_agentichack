@@ -43,7 +43,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 PLACEHOLDER = """<!doctype html><title>Orbit</title><body style="font-family:system-ui;background:#05070d;color:#e6ecff;
 display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:center"><h1>🛰️ Orbit</h1>
-<p>Satellites see prices rising months before you pay them.</p><p><a style="color:#8ab4ff" href="/api/summary">/api/summary</a></p></div>"""
+<p>Satellite intelligence for commodities. Fully agentic.</p><p><a style="color:#8ab4ff" href="/api/summary">/api/summary</a></p></div>"""
 
 
 @app.get("/", response_class=HTMLResponse)

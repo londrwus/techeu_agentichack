@@ -1,6 +1,6 @@
-# Orbit — the AI Operating System for Tomorrow's Prices
+# Orbit — satellite intelligence for commodities. Fully agentic.
 
-> *Satellites see prices rising months before you pay them.*
+> *AI agents watch farms, reservoirs and data centres from orbit and forecast commodity prices before markets move.*
 > **Gemini sees · Jev judges · Modal scales**
 
 Hackathon project for the {Tech: Europe} Agentic AI Hack in London (co-hosted with Google DeepMind; partners Modal, Pydantic). Build day: one Saturday, demos at 20:00, opt-in deadline 19:00.

@@ -17,7 +17,7 @@ export async function render(page) {
   loadCss();
   page.innerHTML = topbar({
     title: 'Overview', pill: `<span class="pill live" id="ov-live">Live</span>`,
-    tagline: 'Satellites see prices rising months before you pay them.',
+    tagline: 'Satellite intelligence for commodities. Fully agentic.',
     right: `<button class="btn" id="share"><i data-lucide="share-2"></i>Share</button>`,
   }) + `
   <section class="ov-kpis" id="kpis">${MOD_ORDER.map(() => `<div class="kc skeleton"></div>`).join('')}</section>

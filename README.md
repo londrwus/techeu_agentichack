@@ -1,6 +1,6 @@
-# 🛰️ Orbit: the AI operating system for tomorrow's prices
+# 🛰️ Orbit: satellite intelligence for commodities
 
-> **Satellites see prices rising months before you pay them.**
+> **Satellite intelligence for commodities. Fully agentic.** AI agents watch farms, reservoirs and data centres from orbit, judge the world's news with Jev, and forecast commodity prices before markets move.
 > **Gemini sees · Jev judges · Modal scales**
 
 Built in one day at the **{Tech: Europe} Agentic AI Hack London**, co-hosted by Conduct and Google DeepMind (partners Modal and Pydantic).
@@ -13,7 +13,7 @@ Built in one day at the **{Tech: Europe} Agentic AI Hack London**, co-hosted by 
 
 **The problem.** Price shocks start far from the till: a drought in Spain's olive groves, a dry reservoir next to Taiwan's chip fabs, a new AI campus in Texas buying up GPUs. By the time a Londoner pays more for olive oil, a latte or a graphics card, the cause is months old. Nobody connects those dots for ordinary people.
 
-**The solution.** Orbit watches those places **from orbit**, reads the world's news, and turns both into a price forecast for things Londoners buy:
+**The solution.** Orbit watches those places **from orbit**, reads the world's news, and turns both into commodity price forecasts, plus what they mean for everyday prices in London:
 
 1. **Sees.** Real **Sentinel-2** satellite imagery for 20 farms, reservoirs, fabs and data centres (1,840 tiles), processed on **Modal**. **Gemini** looks at "then vs now" images and says what changed.
 2. **Judges.** **Jev** (TypeSafe) turns 24,390 headlines and every region's satellite history into **142,016 typed judgments with calibrated probabilities**.
