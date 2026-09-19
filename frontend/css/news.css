@@ -14,7 +14,7 @@
 .nh-scan .ic { display: inline-flex; }
 .nh-scan .tm { color: rgba(255,255,255,.72); font-variant-numeric: tabular-nums; font-weight: 600; }
 .nh-scan .tm:empty { display: none; }
-.nh-scan.running { opacity: 1; pointer-events: none; }
+.btn.primary.nh-scan.running { opacity: 1; pointer-events: none; }
 
 /* counter strip: one card, six cells split by hairlines */
 .nh-kpis { flex: none; height: 96px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 0; }
