@@ -64,7 +64,7 @@ function itemHtml(it, fresh) {
     </div>
     <div class="nh-rel"><span>REL ${rel ?? '–'}</span><div class="bar"><i class="${rel > 80 ? 'hi' : ''}" style="width:${rel ?? 0}%"></i></div></div>
     <div class="nh-sevcell">${sev ? `<span class="nh-sev ${esc(sev)}">${esc(sev)}</span>` : ''}</div>
-    <div class="nh-verdict ${vc}">${icon(vi, { size: 14, stroke: 2.2 })}${vp != null ? Math.round(vp * 100) + '%' : ''}</div>
+    <div class="nh-verdict ${vc}" title="Jev price pressure (−1 cheaper … +1 pricier)${vp != null ? ` · P(direction) ${Math.round(vp * 100)}%` : ''}">${icon(vi, { size: 14, stroke: 2.2 })}${vc === 'none' ? '' : (pressureOf(it) > 0 ? '+' : pressureOf(it) < 0 ? '−' : '') + Math.abs(pressureOf(it)).toFixed(2)}</div>
   </div>`;
 }
 
