@@ -352,7 +352,7 @@
    "month": "2026-09",
    "p10": 3.92,
    "p50": 3.98,
-   "p90": 4.05
+   "p90": 4.06
   },
   {
    "month": "2026-10",
@@ -362,62 +362,62 @@
   },
   {
    "month": "2026-11",
-   "p10": 3.92,
+   "p10": 3.9,
    "p50": 4.01,
-   "p90": 4.15
+   "p90": 4.19
   },
   {
    "month": "2026-12",
-   "p10": 3.92,
+   "p10": 3.9,
    "p50": 4.02,
-   "p90": 4.2
+   "p90": 4.28
   },
   {
    "month": "2027-01",
-   "p10": 3.93,
+   "p10": 3.89,
    "p50": 4.03,
-   "p90": 4.25
+   "p90": 4.37
   },
   {
    "month": "2027-02",
-   "p10": 3.92,
+   "p10": 3.88,
    "p50": 4.04,
-   "p90": 4.32
+   "p90": 4.49
   },
   {
    "month": "2027-03",
-   "p10": 3.92,
+   "p10": 3.88,
    "p50": 4.06,
-   "p90": 4.4
+   "p90": 4.62
   },
   {
    "month": "2027-04",
-   "p10": 3.91,
+   "p10": 3.87,
    "p50": 4.07,
-   "p90": 4.48
+   "p90": 4.76
   },
   {
    "month": "2027-05",
-   "p10": 3.91,
+   "p10": 3.86,
    "p50": 4.08,
-   "p90": 4.57
+   "p90": 4.92
   },
   {
    "month": "2027-06",
-   "p10": 3.9,
+   "p10": 3.86,
    "p50": 4.09,
-   "p90": 4.66
+   "p90": 5.11
   },
   {
    "month": "2027-07",
-   "p10": 3.9,
+   "p10": 3.85,
    "p50": 4.11,
-   "p90": 4.77
+   "p90": 5.31
   }
  ],
- "prob_up_6m": 0.577,
+ "prob_up_6m": 0.585,
  "change_6m_pct": 2.0,
- "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
+ "model": "Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)",
  "backtest": {
   "as_of": "2024-03",
   "story": "Brazil 2024 drought → coffee at record highs",
@@ -537,6 +537,16 @@
    "driver_change_pct": 0.7,
    "prob_up_6m": 0.5335,
    "prob_bigup_6m": 0.2613,
+   "confidence": null,
+   "in_sample": false,
+   "split": "test"
+  },
+  "orbit_v3_signal": {
+   "predicted_change_pct": 0.2,
+   "driver_change_pct": 1.7,
+   "prob_up_6m": 0.5434,
+   "prob_bigup_6m": 0.2658,
+   "confidence": "high",
    "in_sample": false,
    "split": "test"
   }
@@ -1139,19 +1149,20 @@
    "source": "3% CPI on the non-commodity share"
   }
  ],
- "prob_bigup_6m": 0.334,
+ "prob_bigup_6m": 0.338,
  "driver_change_6m_pct": 3.0,
  "big_move_alert": true,
  "recommendation": "hold",
- "method": "orbit_v2",
+ "method": "orbit_v3",
  "orbit_v2": {
   "as_of": "2026-07",
   "driver_base": 359.1622727272727,
   "weights_h6": {
-   "orbit_v1": 0.25,
-   "stat_combo": 0.25,
-   "quant_tsmom": 0.25,
-   "exog_ridge": 0.25
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
   },
   "members_6m_pct": {
    "orbit_v1": 2.11,
@@ -1161,10 +1172,46 @@
    "exog_ridge": 3.12
   },
   "driver_band_6m_pct": [
-   -18.5,
-   48.1
+   -25.7,
+   73.9
   ],
   "big_alert_threshold": 0.22,
-  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+ },
+ "confidence": "high",
+ "confidence_score": 0.0852,
+ "direction_overridden": false,
+ "confidence_note": "high = P(up) at least 2.5 pts from 50% and the price path agrees; on unseen 2023-26 data such calls were right 66% of the time (66% of forecasts)",
+ "orbit_v3": {
+  "as_of": "2026-07",
+  "driver_base": 359.1622727272727,
+  "weights_h6": {
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
+  },
+  "members_6m_pct": {
+   "orbit_v1": 2.11,
+   "timesfm": 3.44,
+   "stat_combo": 3.05,
+   "quant_tsmom": 3.9,
+   "exog_ridge": 3.12
+  },
+  "driver_band_6m_pct": [
+   -25.7,
+   73.9
+  ],
+  "big_alert_threshold": 0.22,
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

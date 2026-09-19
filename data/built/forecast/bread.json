@@ -358,66 +358,66 @@
    "month": "2026-10",
    "p10": 1.42,
    "p50": 1.48,
-   "p90": 1.55
+   "p90": 1.56
   },
   {
    "month": "2026-11",
-   "p10": 1.42,
-   "p50": 1.48,
-   "p90": 1.57
-  },
-  {
-   "month": "2026-12",
-   "p10": 1.42,
+   "p10": 1.41,
    "p50": 1.48,
    "p90": 1.6
   },
   {
-   "month": "2027-01",
-   "p10": 1.42,
-   "p50": 1.49,
-   "p90": 1.62
-  },
-  {
-   "month": "2027-02",
-   "p10": 1.42,
-   "p50": 1.49,
+   "month": "2026-12",
+   "p10": 1.41,
+   "p50": 1.48,
    "p90": 1.65
   },
   {
-   "month": "2027-03",
-   "p10": 1.41,
+   "month": "2027-01",
+   "p10": 1.4,
    "p50": 1.49,
-   "p90": 1.68
+   "p90": 1.7
+  },
+  {
+   "month": "2027-02",
+   "p10": 1.39,
+   "p50": 1.49,
+   "p90": 1.76
+  },
+  {
+   "month": "2027-03",
+   "p10": 1.39,
+   "p50": 1.49,
+   "p90": 1.81
   },
   {
    "month": "2027-04",
-   "p10": 1.41,
+   "p10": 1.38,
    "p50": 1.5,
-   "p90": 1.71
+   "p90": 1.88
   },
   {
    "month": "2027-05",
-   "p10": 1.4,
+   "p10": 1.37,
    "p50": 1.5,
-   "p90": 1.74
+   "p90": 1.94
   },
   {
    "month": "2027-06",
-   "p10": 1.4,
+   "p10": 1.37,
    "p50": 1.5,
-   "p90": 1.77
+   "p90": 2.02
   },
   {
    "month": "2027-07",
-   "p10": 1.4,
+   "p10": 1.36,
    "p50": 1.5,
-   "p90": 1.81
+   "p90": 2.1
   }
  ],
- "prob_up_6m": 0.619,
+ "prob_up_6m": 0.628,
  "change_6m_pct": 2.8,
- "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
+ "model": "Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)",
  "backtest": null,
  "model_driver": {
   "months": [
@@ -1017,19 +1017,20 @@
    "source": "3% CPI on the non-commodity share"
   }
  ],
- "prob_bigup_6m": 0.353,
+ "prob_bigup_6m": 0.362,
  "driver_change_6m_pct": 5.2,
  "big_move_alert": true,
  "recommendation": "stock_up",
- "method": "orbit_v2",
+ "method": "orbit_v3",
  "orbit_v2": {
   "as_of": "2026-07",
   "driver_base": 228.73884495,
   "weights_h6": {
-   "orbit_v1": 0.25,
-   "stat_combo": 0.25,
-   "quant_tsmom": 0.25,
-   "exog_ridge": 0.25
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
   },
   "members_6m_pct": {
    "orbit_v1": 1.4,
@@ -1039,10 +1040,46 @@
    "exog_ridge": 8.56
   },
   "driver_band_6m_pct": [
-   -16.4,
-   50.2
+   -24.3,
+   78.3
   ],
   "big_alert_threshold": 0.22,
-  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+ },
+ "confidence": "high",
+ "confidence_score": 0.1284,
+ "direction_overridden": false,
+ "confidence_note": "high = P(up) at least 2.5 pts from 50% and the price path agrees; on unseen 2023-26 data such calls were right 66% of the time (66% of forecasts)",
+ "orbit_v3": {
+  "as_of": "2026-07",
+  "driver_base": 228.73884495,
+  "weights_h6": {
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
+  },
+  "members_6m_pct": {
+   "orbit_v1": 1.4,
+   "timesfm": 3.02,
+   "stat_combo": 1.81,
+   "quant_tsmom": 9.32,
+   "exog_ridge": 8.56
+  },
+  "driver_band_6m_pct": [
+   -24.3,
+   78.3
+  ],
+  "big_alert_threshold": 0.22,
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

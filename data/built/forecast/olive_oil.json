@@ -344,80 +344,80 @@
  "forecast": [
   {
    "month": "2026-08",
-   "p10": 9.26,
+   "p10": 9.24,
    "p50": 9.53,
-   "p90": 9.85
+   "p90": 9.89
   },
   {
    "month": "2026-09",
-   "p10": 9.03,
+   "p10": 9.0,
    "p50": 9.56,
-   "p90": 10.23
+   "p90": 10.29
   },
   {
    "month": "2026-10",
-   "p10": 8.82,
+   "p10": 8.76,
    "p50": 9.59,
-   "p90": 10.62
+   "p90": 10.72
   },
   {
    "month": "2026-11",
-   "p10": 8.78,
+   "p10": 8.59,
    "p50": 9.64,
-   "p90": 10.98
+   "p90": 11.42
   },
   {
    "month": "2026-12",
-   "p10": 8.74,
+   "p10": 8.43,
    "p50": 9.7,
-   "p90": 11.36
+   "p90": 12.18
   },
   {
    "month": "2027-01",
-   "p10": 8.7,
+   "p10": 8.27,
    "p50": 9.75,
-   "p90": 11.76
+   "p90": 13.01
   },
   {
    "month": "2027-02",
-   "p10": 8.43,
-   "p50": 9.7,
-   "p90": 12.29
+   "p10": 7.97,
+   "p50": 9.71,
+   "p90": 13.98
   },
   {
    "month": "2027-03",
-   "p10": 8.18,
-   "p50": 9.66,
-   "p90": 12.84
+   "p10": 7.68,
+   "p50": 9.67,
+   "p90": 15.04
   },
   {
    "month": "2027-04",
-   "p10": 7.94,
-   "p50": 9.61,
-   "p90": 13.43
+   "p10": 7.42,
+   "p50": 9.63,
+   "p90": 16.2
   },
   {
    "month": "2027-05",
-   "p10": 7.72,
-   "p50": 9.57,
-   "p90": 14.05
+   "p10": 7.16,
+   "p50": 9.59,
+   "p90": 17.47
   },
   {
    "month": "2027-06",
-   "p10": 7.5,
-   "p50": 9.52,
-   "p90": 14.71
+   "p10": 6.93,
+   "p50": 9.56,
+   "p90": 18.87
   },
   {
    "month": "2027-07",
-   "p10": 7.29,
-   "p50": 9.48,
-   "p90": 15.4
+   "p10": 6.7,
+   "p50": 9.52,
+   "p90": 20.39
   }
  ],
- "prob_up_6m": 0.551,
+ "prob_up_6m": 0.572,
  "change_6m_pct": 2.6,
- "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
+ "model": "Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)",
  "backtest": {
   "as_of": "2023-03",
   "story": "Spain's 2023 drought → olive oil price doubled",
@@ -529,6 +529,16 @@
    "driver_change_pct": -0.9,
    "prob_up_6m": 0.4853,
    "prob_bigup_6m": 0.2038,
+   "confidence": null,
+   "in_sample": false,
+   "split": "test"
+  },
+  "orbit_v3_signal": {
+   "predicted_change_pct": -0.8,
+   "driver_change_pct": -1.1,
+   "prob_up_6m": 0.4692,
+   "prob_bigup_6m": 0.1991,
+   "confidence": "high",
    "in_sample": false,
    "split": "test"
   }
@@ -1131,19 +1141,20 @@
    "source": "3% CPI on the non-commodity share"
   }
  ],
- "prob_bigup_6m": 0.217,
+ "prob_bigup_6m": 0.233,
  "driver_change_6m_pct": 1.7,
- "big_move_alert": false,
+ "big_move_alert": true,
  "recommendation": "hold",
- "method": "orbit_v2",
+ "method": "orbit_v3",
  "orbit_v2": {
   "as_of": "2026-07",
   "driver_base": 6185.217099456522,
   "weights_h6": {
-   "orbit_v1": 0.25,
-   "stat_combo": 0.25,
-   "quant_tsmom": 0.25,
-   "exog_ridge": 0.25
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
   },
   "members_6m_pct": {
    "orbit_v1": -2.22,
@@ -1153,10 +1164,46 @@
    "exog_ridge": 4.5
   },
   "driver_band_6m_pct": [
-   -13.9,
-   31.5
+   -20.2,
+   50.0
   ],
   "big_alert_threshold": 0.22,
-  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+ },
+ "confidence": "high",
+ "confidence_score": 0.0725,
+ "direction_overridden": false,
+ "confidence_note": "high = P(up) at least 2.5 pts from 50% and the price path agrees; on unseen 2023-26 data such calls were right 66% of the time (66% of forecasts)",
+ "orbit_v3": {
+  "as_of": "2026-07",
+  "driver_base": 6185.217099456522,
+  "weights_h6": {
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
+  },
+  "members_6m_pct": {
+   "orbit_v1": -2.22,
+   "timesfm": -0.88,
+   "stat_combo": -1.26,
+   "quant_tsmom": 5.88,
+   "exog_ridge": 4.5
+  },
+  "driver_band_6m_pct": [
+   -20.2,
+   50.0
+  ],
+  "big_alert_threshold": 0.22,
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

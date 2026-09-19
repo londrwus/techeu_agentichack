@@ -282,44 +282,60 @@ def apply_v2():
         for d in drivers:
             d["contribution_pct"] = round(d["contribution_pct"], 2)
         fc["drivers"] = drivers
-        fc["model"] = "Orbit v2 (validated stack: TimesFM + stats + quant + macro)"
-        fc["method"] = "orbit_v2"
-        fc["orbit_v2"] = {"as_of": L["month"], "driver_base": L["base"], "weights_h6": w6,
+        fin = lb.get("final") or {}
+        gate = lb.get("confidence_gate") or {}
+        fc["confidence"] = x6.get("confidence")
+        fc["confidence_score"] = x6.get("confidence_score")
+        fc["direction_overridden"] = x6.get("direction_overridden", False)
+        if gate:
+            fc["confidence_note"] = (f"high = P(up) at least {gate['threshold'] * 100:.1f} pts from 50% and the price path agrees; "
+                                     f"on unseen 2023-26 data such calls were right {gate['test']['acc'] * 100:.0f}% of the time "
+                                     f"({gate['test']['coverage'] * 100:.0f}% of forecasts)")
+        is_v3 = fin.get("name") == "orbit_v3"
+        fc["model"] = ("Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)" if is_v3
+                       else "Orbit v2 (validated stack: TimesFM + stats + quant + macro)")
+        fc["method"] = fin.get("name") or "orbit_v2"
+        fc["orbit_v3" if is_v3 else "orbit_v2"] = {"as_of": L["month"], "driver_base": L["base"], "weights_h6": w6,
                           "members_6m_pct": {m: round((math.exp(v) - 1) * 100, 2) for m, v in x6["members"].items()},
                           "driver_band_6m_pct": [round((math.exp(x6["q10"]) - 1) * 100, 1), round((math.exp(x6["q90"]) - 1) * 100, 1)],
-                          "big_alert_threshold": thr,
-                          "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"}
+                          "big_alert_threshold": thr, "confidence": x6.get("confidence"),
+                          "missing_live_members": x6.get("missing_members", []),
+                          "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"}
+        if is_v3:
+            fc["orbit_v2"] = fc["orbit_v3"]   # backward-compatible key
         fp.write_text(json.dumps(fc, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"v2 {it['id']:<13} 6m {fc['change_6m_pct_v1']:+.1f}% -> {fc['change_6m_pct']:+.1f}%  p_up {fc['prob_up_6m']}  "
+        print(f"{fc['method']} {it['id']:<13} {fc['confidence']:<6} 6m {fc['change_6m_pct_v1']:+.1f}% -> {fc['change_6m_pct']:+.1f}%  p_up {fc['prob_up_6m']}  "
               f"p_big {fc['prob_bigup_6m']}  {fc['recommendation']}  | " +
               ", ".join(f"{d['name'].split(' (')[0]} {d['contribution_pct']:+.1f}" for d in drivers if abs(d["contribution_pct"]) >= 0.1))
 
 
 def backtests_v2():
-    """Attach the Orbit v2 backtest (out-of-sample at every as_of in 2023+) next to the v1 orbit_signal."""
-    cp = be.CACHE / "candidates" / "orbit_v2.json"
-    if not cp.exists():
-        return
-    rows = {(x["item_id"], x["cutoff"], x["h"]): x for x in json.loads(cp.read_text())["rows"]}
+    """Attach the Orbit v2/v3 backtests (out-of-sample at every as_of in 2023+) next to the v1 orbit_signal."""
     hists = json.loads((be.CACHE / "histories.json").read_text())
-    for bt in BACKTESTS:
-        fp = BUILT / "forecast" / f"{bt['item_id']}.json"
-        if not fp.exists():
+    for name in ("orbit_v2", "orbit_v3"):
+        cp = be.CACHE / "candidates" / f"{name}.json"
+        if not cp.exists():
             continue
-        fc = json.loads(fp.read_text(encoding="utf-8"))
-        b = fc.get("backtest")
-        x = rows.get((bt["item_id"], (b or {}).get("as_of"), 6))
-        if not b or not x:
-            continue
-        h = hists[bt["item_id"]]
-        base = h["values"][h["months"].index(b["as_of"])]
-        s = ITEM_BY_ID[bt["item_id"]]["commodity_share"]
-        b["orbit_v2_signal"] = {"predicted_change_pct": round(s * (x["p50"] / base - 1) * 100, 1),
-                                "driver_change_pct": round((x["p50"] / base - 1) * 100, 1),
-                                "prob_up_6m": x["prob_up"], "prob_bigup_6m": x["prob_bigup"],
-                                "in_sample": False, "split": "test" if b["as_of"] >= be.TEST_START else "train"}
-        fp.write_text(json.dumps(fc, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"backtest v2 {bt['item_id']} {b['as_of']}: {b['orbit_v2_signal']}")
+        rows = {(x["item_id"], x["cutoff"], x["h"]): x for x in json.loads(cp.read_text())["rows"]}
+        for bt in BACKTESTS:
+            fp = BUILT / "forecast" / f"{bt['item_id']}.json"
+            if not fp.exists():
+                continue
+            fc = json.loads(fp.read_text(encoding="utf-8"))
+            b = fc.get("backtest")
+            x = rows.get((bt["item_id"], (b or {}).get("as_of"), 6))
+            if not b or not x:
+                continue
+            h = hists[bt["item_id"]]
+            base = h["values"][h["months"].index(b["as_of"])]
+            s = ITEM_BY_ID[bt["item_id"]]["commodity_share"]
+            b[f"{name}_signal"] = {"predicted_change_pct": round(s * (x["p50"] / base - 1) * 100, 1),
+                                   "driver_change_pct": round((x["p50"] / base - 1) * 100, 1),
+                                   "prob_up_6m": x["prob_up"], "prob_bigup_6m": x["prob_bigup"],
+                                   "confidence": x.get("confidence"),
+                                   "in_sample": False, "split": "test" if b["as_of"] >= be.TEST_START else "train"}
+            fp.write_text(json.dumps(fc, ensure_ascii=False, indent=1), encoding="utf-8")
+            print(f"backtest {name} {bt['item_id']} {b['as_of']}: {b[f'{name}_signal']}")
 
 
 def main():

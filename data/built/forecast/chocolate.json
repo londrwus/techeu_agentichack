@@ -356,68 +356,68 @@
   },
   {
    "month": "2026-10",
-   "p10": 1.68,
+   "p10": 1.69,
    "p50": 1.89,
    "p90": 2.24
   },
   {
    "month": "2026-11",
-   "p10": 1.68,
+   "p10": 1.66,
    "p50": 1.9,
-   "p90": 2.36
+   "p90": 2.47
   },
   {
    "month": "2026-12",
-   "p10": 1.68,
+   "p10": 1.63,
    "p50": 1.92,
-   "p90": 2.49
+   "p90": 2.75
   },
   {
    "month": "2027-01",
-   "p10": 1.68,
+   "p10": 1.61,
    "p50": 1.93,
-   "p90": 2.63
+   "p90": 3.09
   },
   {
    "month": "2027-02",
-   "p10": 1.63,
+   "p10": 1.57,
    "p50": 1.93,
-   "p90": 2.87
+   "p90": 3.53
   },
   {
    "month": "2027-03",
-   "p10": 1.6,
+   "p10": 1.54,
    "p50": 1.93,
-   "p90": 3.16
+   "p90": 4.07
   },
   {
    "month": "2027-04",
-   "p10": 1.56,
-   "p50": 1.92,
-   "p90": 3.5
+   "p10": 1.51,
+   "p50": 1.93,
+   "p90": 4.73
   },
   {
    "month": "2027-05",
-   "p10": 1.53,
-   "p50": 1.92,
-   "p90": 3.89
+   "p10": 1.48,
+   "p50": 1.93,
+   "p90": 5.56
   },
   {
    "month": "2027-06",
-   "p10": 1.5,
-   "p50": 1.92,
-   "p90": 4.36
+   "p10": 1.46,
+   "p50": 1.93,
+   "p90": 6.57
   },
   {
    "month": "2027-07",
-   "p10": 1.48,
-   "p50": 1.92,
-   "p90": 4.9
+   "p10": 1.44,
+   "p50": 1.93,
+   "p90": 7.82
   }
  ],
- "prob_up_6m": 0.574,
+ "prob_up_6m": 0.591,
  "change_6m_pct": 4.3,
- "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
+ "model": "Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)",
  "backtest": {
   "as_of": "2023-09",
   "story": "West Africa 2024 cocoa crisis → cocoa tripled",
@@ -533,6 +533,16 @@
    "driver_change_pct": 3.4,
    "prob_up_6m": 0.5662,
    "prob_bigup_6m": 0.2538,
+   "confidence": null,
+   "in_sample": false,
+   "split": "test"
+  },
+  "orbit_v3_signal": {
+   "predicted_change_pct": 1.4,
+   "driver_change_pct": 3.9,
+   "prob_up_6m": 0.5746,
+   "prob_bigup_6m": 0.2622,
+   "confidence": "high",
    "in_sample": false,
    "split": "test"
   }
@@ -1135,19 +1145,20 @@
    "source": "3% CPI on the non-commodity share"
   }
  ],
- "prob_bigup_6m": 0.432,
+ "prob_bigup_6m": 0.44,
  "driver_change_6m_pct": 5.8,
  "big_move_alert": true,
  "recommendation": "hold",
- "method": "orbit_v2",
+ "method": "orbit_v3",
  "orbit_v2": {
   "as_of": "2026-07",
   "driver_base": 5619.189873586655,
   "weights_h6": {
-   "orbit_v1": 0.25,
-   "stat_combo": 0.25,
-   "quant_tsmom": 0.25,
-   "exog_ridge": 0.25
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
   },
   "members_6m_pct": {
    "orbit_v1": -1.51,
@@ -1157,10 +1168,46 @@
    "exog_ridge": 6.89
   },
   "driver_band_6m_pct": [
-   -32.3,
-   111.1
+   -42.5,
+   180.4
   ],
   "big_alert_threshold": 0.22,
-  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+ },
+ "confidence": "high",
+ "confidence_score": 0.0915,
+ "direction_overridden": false,
+ "confidence_note": "high = P(up) at least 2.5 pts from 50% and the price path agrees; on unseen 2023-26 data such calls were right 66% of the time (66% of forecasts)",
+ "orbit_v3": {
+  "as_of": "2026-07",
+  "driver_base": 5619.189873586655,
+  "weights_h6": {
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
+  },
+  "members_6m_pct": {
+   "orbit_v1": -1.51,
+   "timesfm": 2.03,
+   "stat_combo": 2.8,
+   "quant_tsmom": 15.68,
+   "exog_ridge": 6.89
+  },
+  "driver_band_6m_pct": [
+   -42.5,
+   180.4
+  ],
+  "big_alert_threshold": 0.22,
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

@@ -344,80 +344,80 @@
  "forecast": [
   {
    "month": "2026-09",
-   "p10": 1582.89,
+   "p10": 1577.37,
    "p50": 1655.99,
-   "p90": 1744.52
+   "p90": 1753.74
   },
   {
    "month": "2026-10",
-   "p10": 1518.51,
+   "p10": 1507.94,
    "p50": 1662.01,
-   "p90": 1844.45
+   "p90": 1864.01
   },
   {
    "month": "2026-11",
-   "p10": 1456.75,
+   "p10": 1441.57,
    "p50": 1668.05,
-   "p90": 1950.11
+   "p90": 1981.21
   },
   {
    "month": "2026-12",
-   "p10": 1458.55,
+   "p10": 1403.94,
    "p50": 1697.56,
-   "p90": 2072.2
+   "p90": 2214.03
   },
   {
    "month": "2027-01",
-   "p10": 1460.35,
+   "p10": 1367.3,
    "p50": 1727.59,
-   "p90": 2201.94
+   "p90": 2474.22
   },
   {
    "month": "2027-02",
-   "p10": 1462.15,
+   "p10": 1331.61,
    "p50": 1758.16,
-   "p90": 2339.8
+   "p90": 2764.97
   },
   {
    "month": "2027-03",
-   "p10": 1456.73,
-   "p50": 1790.55,
-   "p90": 2470.44
+   "p10": 1286.03,
+   "p50": 1768.95,
+   "p90": 3004.7
   },
   {
    "month": "2027-04",
-   "p10": 1451.32,
-   "p50": 1823.53,
-   "p90": 2608.37
+   "p10": 1242.02,
+   "p50": 1779.81,
+   "p90": 3265.22
   },
   {
    "month": "2027-05",
-   "p10": 1445.94,
-   "p50": 1857.13,
-   "p90": 2754.01
+   "p10": 1199.5,
+   "p50": 1790.74,
+   "p90": 3548.32
   },
   {
    "month": "2027-06",
-   "p10": 1440.57,
-   "p50": 1891.34,
-   "p90": 2907.78
+   "p10": 1158.45,
+   "p50": 1801.73,
+   "p90": 3855.96
   },
   {
    "month": "2027-07",
-   "p10": 1435.22,
-   "p50": 1926.18,
-   "p90": 3070.13
+   "p10": 1118.8,
+   "p50": 1812.79,
+   "p90": 4190.28
   },
   {
    "month": "2027-08",
-   "p10": 1429.9,
-   "p50": 1961.67,
-   "p90": 3241.55
+   "p10": 1080.5,
+   "p50": 1823.92,
+   "p90": 4553.58
   }
  ],
- "prob_up_6m": 0.66,
+ "prob_up_6m": 0.671,
  "change_6m_pct": 6.6,
- "model": "Orbit v2 (validated stack: TimesFM + stats + quant + macro)",
+ "model": "Orbit v3 (validated stack + direction classifier: TimesFM + stats + quant + macro)",
  "backtest": null,
  "model_driver": {
   "months": [
@@ -1016,37 +1016,37 @@
   {
    "name": "Price trend (24-month momentum)",
    "value": 25.358,
-   "contribution_pct": 0.78,
+   "contribution_pct": 1.08,
    "source": "Orbit v1 member: 24m log-trend blend (weight 0.25 in the v2 stack)"
   },
   {
    "name": "AI data-centre demand",
    "value": 0.378,
-   "contribution_pct": 0.59,
+   "contribution_pct": 0.47,
    "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "HBM / memory & CoWoS supply squeeze",
    "value": 0.3,
-   "contribution_pct": 0.54,
+   "contribution_pct": 0.43,
    "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Export controls & tariffs",
    "value": 0.035,
-   "contribution_pct": 0.02,
+   "contribution_pct": 0.01,
    "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Data-centre build-out (satellite)",
    "value": 17.3,
-   "contribution_pct": 0.45,
+   "contribution_pct": 0.36,
    "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
    "name": "Taiwan fab water stress (satellite)",
    "value": 22.8,
-   "contribution_pct": -0.1,
+   "contribution_pct": -0.08,
    "source": "AI-era driver inside the Orbit v1 member (Jev news / Sentinel-2)"
   },
   {
@@ -1646,19 +1646,20 @@
    "source": "Sentinel-2 reservoir water extent vs normal, %"
   }
  ],
- "prob_bigup_6m": 0.319,
+ "prob_bigup_6m": 0.344,
  "driver_change_6m_pct": 6.6,
  "big_move_alert": true,
  "recommendation": "stock_up",
- "method": "orbit_v2",
+ "method": "orbit_v3",
  "orbit_v2": {
   "as_of": "2026-08",
   "driver_base": 1650.0,
   "weights_h6": {
-   "orbit_v1": 0.25,
-   "stat_combo": 0.25,
-   "quant_tsmom": 0.25,
-   "exog_ridge": 0.25
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
   },
   "members_6m_pct": {
    "orbit_v1": 9.2,
@@ -1668,10 +1669,46 @@
    "exog_ridge": 9.58
   },
   "driver_band_6m_pct": [
-   -11.4,
-   41.8
+   -19.3,
+   67.6
   ],
   "big_alert_threshold": 0.22,
-  "note": "weights/bands/probabilities selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
+ },
+ "confidence": "high",
+ "confidence_score": 0.1712,
+ "direction_overridden": false,
+ "confidence_note": "high = P(up) at least 2.5 pts from 50% and the price path agrees; on unseen 2023-26 data such calls were right 66% of the time (66% of forecasts)",
+ "orbit_v3": {
+  "as_of": "2026-08",
+  "driver_base": 1650.0,
+  "weights_h6": {
+   "orbit_v1": 0.2,
+   "stat_combo": 0.2,
+   "quant_tsmom": 0.2,
+   "exog_ridge": 0.2,
+   "xasset": 0.2
+  },
+  "members_6m_pct": {
+   "orbit_v1": 9.2,
+   "timesfm": 0.08,
+   "stat_combo": 2.57,
+   "quant_tsmom": 5.04,
+   "exog_ridge": 9.58
+  },
+  "driver_band_6m_pct": [
+   -19.3,
+   67.6
+  ],
+  "big_alert_threshold": 0.22,
+  "confidence": "high",
+  "missing_live_members": [
+   "xasset"
+  ],
+  "note": "weights/bands/probabilities/gate selected on 2020-07..2022-06 validation; see eval/leaderboard.json"
  }
 }

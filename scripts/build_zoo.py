@@ -38,7 +38,9 @@ CAND = be.CACHE / "candidates"
 HS = [3, 6, 12]
 BIG = math.log(1 + be.BIG_MOVE)
 VAL = ("2020-07", "2022-06")
-CANDIDATES = ["stat_combo", "ets", "arima", "theta", "quant_tsmom", "bigmove_clf", "exog_ridge", "learner"]
+CANDIDATES_V2 = ["stat_combo", "ets", "arima", "theta", "quant_tsmom", "bigmove_clf", "exog_ridge", "learner"]
+# v3 adds the three September candidates (modal_app/zoo_dir.py, modal_app/zoo_xasset.py, scripts/zoo_meta.py)
+CANDIDATES = CANDIDATES_V2 + ["dir_clf", "xasset", "meta_vote"]
 # learner's hyper-parameters were chosen on 2019-2022, i.e. on our VAL window: its VAL scores are not a fair basis
 # for stacking weights, so it is scored on the leaderboard but kept out of the v2 stack.
 # bigmove_clf: its probability recalibration grid was narrowed after its builder saw TEST once (audit), so it is
@@ -48,7 +50,9 @@ FAMILY = {"naive": "baseline", "drift": "baseline", "climatology": "baseline", "
           "orbit_v1": "Orbit v1 (tuned overlay)", "stat_combo": "statistical ensemble", "ets": "statistical",
           "arima": "statistical", "theta": "statistical", "quant_tsmom": "quant (ridge TSMOM)",
           "bigmove_clf": "quant classifier", "exog_ridge": "exogenous ridge (macro/weather)",
-          "learner": "LightGBM stacked on TimesFM", "orbit_v2": "Orbit v2 (stack)"}
+          "learner": "LightGBM stacked on TimesFM", "orbit_v2": "Orbit v2 (stack)",
+          "dir_clf": "direction classifier (panel logit, COT)", "xasset": "cross-asset / macro ridge",
+          "meta_vote": "meta vote over zoo members", "orbit_v3": "Orbit v3 (stack + direction layer)"}
 THRS = [round(x, 2) for x in np.arange(0.10, 0.61, 0.025)]
 
 
@@ -263,20 +267,20 @@ def sig(z):
     return 1 / (1 + math.exp(-z))
 
 
-def build_v2(truth, preds, board):
+def build_v2(truth, preds, board, cands=CANDIDATES_V2, no_stack=NO_STACK, point_excl=()):
     final, rows = {"horizons": {}}, {}
     for h in HS:
         hk = f"h{h}"
-        pts = [m for m in ["timesfm", "orbit_v1", *CANDIDATES] if m in preds
-               and (board[m]["val"][hk].get("skill") or -1) > 0 and m != "bigmove_clf" and m not in NO_STACK]
+        pts = [m for m in ["timesfm", "orbit_v1", *cands] if m in preds and m not in point_excl
+               and (board[m]["val"][hk].get("skill") or -1) > 0 and m != "bigmove_clf" and m not in no_stack]
         if not pts:
             pts = ["stat_combo"]
         info, lrp = point_stack(truth, preds, h, pts)
-        bmem = [m for m in pts if m in CANDIDATES or m in ("timesfm", "orbit_v1")] or ["stat_combo"]
+        bmem = [m for m in pts if m in cands or m in ("timesfm", "orbit_v1")] or ["stat_combo"]
         # probability members: classifier-like probs that beat point-in-time climatology on VAL Brier
-        prm = [m for m in [*CANDIDATES, "timesfm", "orbit_v1"] if m in preds and m not in NO_STACK and board[m]["val"][hk].get("brier_up")
+        prm = [m for m in [*cands, "timesfm", "orbit_v1"] if m in preds and m not in no_stack and board[m]["val"][hk].get("brier_up")
                and board[m]["val"][hk]["brier_up"] < board["climatology"]["val"][hk]["brier_up"]]
-        pbm = [m for m in [*CANDIDATES, "timesfm", "orbit_v1"] if m in preds and m not in NO_STACK and board[m]["val"][hk].get("brier_bigup")
+        pbm = [m for m in [*cands, "timesfm", "orbit_v1"] if m in preds and m not in no_stack and board[m]["val"][hk].get("brier_bigup")
                and board[m]["val"][hk]["brier_bigup"] < board["climatology"]["val"][hk]["brier_bigup"]]
         best = None
         for window in (0, 60, 36):
@@ -319,6 +323,107 @@ def build_v2(truth, preds, board):
     return final, rows
 
 
+# ------------------------------------------------------------------ Orbit v3 = v2 recipe on the extended zoo + direction layer
+# Pre-registered before any v3 number was computed (the three new candidates' own reports, incl. their TEST rows,
+# were visible to the v3 author; disclosed in the leaderboard notes):
+#   * meta_vote is a vote over zoo members -> not a stack member itself (double counting)
+#   * dir_clf is the dedicated direction model -> it enters P(up)/P(>15%) and the sign override, not the p50 magnitude
+#   * override: when |P(up)-0.5| >= tau and p50 points the other way, p50 := base*exp(sign*1%) (smallest counted move);
+#     tau from V3_TAUS by max VAL direction accuracy s.t. VAL skill >= no-override skill - 0.005
+#   * confidence = |P(up)-0.5| if p50 agrees with P(up), else 0; "high" gate = the V3_GATES value with the best VAL
+#     accuracy among gates covering >= 50% of VAL forecasts; "medium" = half that gate; else "low"
+#   * 80% band: conformal band x scale from V3_BAND_SCALES, scale picked by |VAL coverage - 0.80|
+V3_NO_STACK = NO_STACK | {"meta_vote"}
+V3_POINT_EXCL = {"dir_clf"}
+V3_TAUS = [None, 0.02, 0.05, 0.08, 0.10, 0.15, 0.20]
+V3_GATES = [round(float(x), 3) for x in np.arange(0.025, 0.301, 0.025)]
+OVR_STEP = 0.01
+V3_BAND_SCALES = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
+
+
+def conf_of(v, base):
+    p50, pu = v[1], v[3]
+    if pu is None or abs(p50 / base - 1) <= 1e-6:
+        return 0.0
+    return max(0.0, (pu - 0.5) * (1 if p50 > base else -1))
+
+
+def gate_stats(truth, pred, keys, g):
+    """(accuracy on confident & direction-eligible rows, coverage = confident share of all forecasts, n_confident)."""
+    ks = [k for k in keys if k in pred]
+    conf = [k for k in ks if conf_of(pred[k], truth[k]["base"]) >= g]
+    ok = [(pred[k][1] - truth[k]["base"]) * (truth[k]["actual"] - truth[k]["base"]) > 0 for k in conf
+          if abs(truth[k]["actual"] / truth[k]["base"] - 1) >= be.DIR_MIN]
+    return (be.r(sum(ok) / len(ok), 3) if ok else None), (be.r(len(conf) / len(ks), 3) if ks else None), len(conf)
+
+
+def pick_gate(truth, pred, vkeys):
+    best = None
+    for g in V3_GATES:
+        acc, cov, _ = gate_stats(truth, pred, vkeys, g)
+        if acc is None or cov < 0.5:
+            continue
+        if best is None or acc > best[1] + 1e-9:
+            best = (g, acc, cov)
+    return best[0] if best else V3_GATES[0]
+
+
+def _dir_skill(truth, rows, keys):
+    sel = [{"item": k[0], "cutoff": k[1], "h": k[2], **truth[k], "p10": rows[k][0], "p50": rows[k][1], "p90": rows[k][2]}
+           for k in keys]
+    nv = [{**x, "p50": x["base"]} for x in sel]
+    m = be.metrics(sel, nv)
+    return m["dir_acc"] or 0, m["skill"] or 0
+
+
+def build_v3(truth, preds, board):
+    final, base_rows = build_v2(truth, preds, board, CANDIDATES, V3_NO_STACK, V3_POINT_EXCL)
+    preds["_v3_base"] = base_rows   # stack before override/band scale: its residuals are the live conformal pool
+    rows = {}
+    for h in HS:
+        hk = f"h{h}"
+        keys = [k for k in base_rows if k[2] == h]
+        vk = [k for k in keys if is_val({"cutoff": k[1], "h": h})]
+
+        def apply(tau, ks=1.0):
+            out = {}
+            for k in keys:
+                p10, p50, p90, pu, pb = base_rows[k]
+                c = math.log(p50)                                   # band scaled around the stack centre
+                p10, p90 = math.exp(c + ks * (math.log(p10) - c)), math.exp(c + ks * (math.log(p90) - c))
+                b = truth[k]["base"]
+                s = 1 if pu >= 0.5 else -1
+                if tau is not None and abs(pu - 0.5) >= tau and (p50 - b) * s <= 0:
+                    p50 = b * math.exp(s * OVR_STEP)
+                out[k] = (min(p10, p50), p50, max(p90, p50), pu, pb)
+            return out
+
+        trials = {tau: _dir_skill(truth, apply(tau), vk) for tau in V3_TAUS}
+        sk0 = trials[None][1]
+        ok = [t for t in V3_TAUS if trials[t][1] >= sk0 - 0.005]
+        tau = max(ok, key=lambda t: (trials[t][0], 1.0 if t is None else t))  # ties -> fewest overrides
+        # band scale (task spec: 80% band targeted on VALIDATION): |VAL coverage - 0.80|, ties -> narrower
+        def vcov(ks):
+            r_ = apply(tau, ks)
+            return st.mean(r_[k][0] <= truth[k]["actual"] <= r_[k][2] for k in vk)
+        covs = {ks: vcov(ks) for ks in V3_BAND_SCALES}
+        ks = min(V3_BAND_SCALES, key=lambda x: (round(abs(covs[x] - 0.8), 3), x))
+        rows.update(apply(tau, ks))
+        g = pick_gate(truth, rows, vk)
+        final["horizons"][hk].update({
+            "direction_override_tau": tau, "override_step_pct": OVR_STEP * 100,
+            "override_val_trials": {str(t): {"dir_acc": v[0], "skill": v[1]} for t, v in trials.items()},
+            "band_scale": ks, "band_scale_val_coverage": {str(x): round(v, 3) for x, v in covs.items()},
+            "confidence_gate": {"high": g, "medium": round(g / 2, 4)}})
+    return final, rows
+
+
+def confidence_label(v, base, gate):
+    c = conf_of(v, base)
+    return "high" if c >= gate["high"] else ("medium" if c >= gate["medium"] else "low")
+
+
+
 # ------------------------------------------------------------------ main
 def main():
     hists, truth, preds = load()
@@ -333,6 +438,31 @@ def main():
     thr["orbit_v2"] = pick_thr(rows_for(truth, v2, lambda x: x["h"] == 6 and is_val(x)))
     board["orbit_v2"] = score_method(truth, preds, "orbit_v2", thr["orbit_v2"])
     methods.append("orbit_v2")
+    final3, v3 = build_v3(truth, preds, board)
+    preds["orbit_v3"] = v3
+    thr["orbit_v3"] = pick_thr(rows_for(truth, v3, lambda x: x["h"] == 6 and is_val(x)))
+    board["orbit_v3"] = score_method(truth, preds, "orbit_v3", thr["orbit_v3"])
+    methods.append("orbit_v3")
+    # confidence gate: direction accuracy on the confident subset + coverage (v3: its VAL gate; v2: same rule, own VAL gate)
+    gates = {}
+    for m, fin in (("orbit_v2", None), ("orbit_v3", final3)):
+        gates[m] = {}
+        for h in HS:
+            hk = f"h{h}"
+            ks = {sp: [k for k in preds[m] if k[2] == h and cond({"cutoff": k[1], "h": h})] for sp, cond in
+                  (("val", is_val), ("test", is_test))}
+            g = fin["horizons"][hk]["confidence_gate"]["high"] if fin else pick_gate(truth, preds[m], ks["val"])
+            gates[m][hk] = {"threshold": g, "rule": "|P(up)-0.5| >= threshold and p50 agrees with P(up)"}
+            for sp in ("val", "test"):
+                acc, cov, n = gate_stats(truth, preds[m], ks[sp], g)
+                gates[m][hk][sp] = {"acc": acc, "coverage": cov, "n": n}
+                board[m][sp][hk]["dir_acc_confident"], board[m][sp][hk]["confident_coverage"] = acc, cov
+    CAND.joinpath("orbit_v3.json").write_text(json.dumps({
+        "name": "orbit_v3", "description": "Orbit v3 stack (see scripts/build_zoo.py build_v3)",
+        "rows": [{"item_id": k[0], "cutoff": k[1], "h": k[2], "p10": be.r(v[0], 4), "p50": be.r(v[1], 4),
+                  "p90": be.r(v[2], 4), "prob_up": be.r(v[3], 4), "prob_bigup": be.r(v[4], 4),
+                  "confidence": confidence_label(v, truth[k]["base"], final3["horizons"][f"h{k[2]}"]["confidence_gate"])}
+                 for k, v in sorted(v3.items())]}))
 
     # candidate file for v2 (same format as the others)
     CAND.joinpath("orbit_v2.json").write_text(json.dumps({
@@ -351,6 +481,22 @@ def main():
         if key == "coverage80" and a is not None and b is not None:
             better = abs(b - 0.8) < abs(a - 0.8)
         imp[key] = [a, b, better]
+    lower2 = lower | set()
+    imp_v2 = {}
+    for hk in ("h3", "h6", "h12"):
+        imp_v2[hk] = {}
+        for key in keys + ["dir_acc_confident", "confident_coverage"]:
+            a, b = board["orbit_v2"]["test"][hk].get(key), board["orbit_v3"]["test"][hk].get(key)
+            better = None if a is None or b is None else (b < a if key in lower2 else b > a)
+            if key == "coverage80" and a is not None and b is not None:
+                better = abs(b - 0.8) < abs(a - 0.8)
+            imp_v2[hk][key] = [a, b, better]
+    imp_v2 = {"h6": imp_v2["h6"], "by_horizon": imp_v2}
+    final3.update({"name": "orbit_v3", "big_alert_threshold_h6": thr["orbit_v3"],
+                   "description": "Orbit v2 recipe re-run on the extended zoo (+ cross-asset ridge as point member; "
+                                  "+ direction classifier and cross-asset probabilities as P(up)/P(>15%) members), "
+                                  "plus a VAL-picked direction override, VAL-picked band scale (80% target) and a "
+                                  "VAL-picked confidence gate (high/medium/low). Nothing tuned on TEST."})
     final.update({"name": "orbit_v2", "big_alert_threshold_h6": thr["orbit_v2"],
                   "description": "Per-horizon non-negative stack of members that beat naive on VALIDATION (NNLS or "
                                  "equal-weight x shrink, chosen by leave-one-item-out CV on VAL); split-conformal 80% band "
@@ -373,7 +519,8 @@ def main():
                       {"key": "big_f1", "label": "big-rise alert F1", "better": "higher"}],
           "rows": [{"method": m, "family": FAMILY.get(m, m), "big_threshold": thr.get(m), "val": board[m]["val"],
                     "test": board[m]["test"]} for m in methods],
-          "final": final, "improvement_vs_v1": imp,
+          "final": final3, "final_v2": final, "improvement_vs_v1": imp,
+          "improvement_vs_v2": imp_v2, "confidence_gate": gates["orbit_v3"]["h6"], "confidence_gates": gates,
           "notes": ["learner hyper-parameters were picked on 2019-2022 (overlaps VAL): its VAL numbers are optimistic",
                     "bigmove_clf: its builder fixed probability recalibration after seeing test once",
                     "extra FRED panel series (quant) are today's vintage, rarely revised",
@@ -383,7 +530,13 @@ def main():
                     "The pre-registered design (no weight cap, drift + learner allowed) scores TEST h6 skill +0.018, dir 0.604, "
                     "h12 skill -0.19; block-bootstrap (6-month cutoff blocks) 90% CI of TEST h6 v2 skill 0.005..0.040, dir 0.54..0.73",
                     "audit: orbit_v1 params were tuned on cutoff+h <= 2022-12 (overlaps VAL), so its VAL numbers are in-sample; "
-                    "TimesFM pretraining corpus and Jev/LLM news scores for gpu/laptop may contain post-cutoff knowledge (not controllable)"]}
+                    "TimesFM pretraining corpus and Jev/LLM news scores for gpu/laptop may contain post-cutoff knowledge (not controllable)",
+                    "v3: the design (members, override, band scale, gate rule) was fixed and checked on VAL only, then TEST "
+                    "scored once. The v3 author had seen the three new candidates' own TEST reports; the a-priori rules "
+                    "(meta_vote not a member, dir_clf only in the direction path) are the ones those builders suggested.",
+                    "v3: dir_clf's model/step were chosen on a VAL panel that includes the items, so its VAL probabilities are "
+                    "partly in-sample; it enters v3 only as one of ~10 equal-weight probability members",
+                    "v3: no honest route to 70% direction accuracy was found on TEST (see confidence_gate)"]}
     be.OUT.joinpath("leaderboard.json").write_text(json.dumps(lb, indent=1))
     update_eval(truth, preds, board, lb)
     return lb, truth, preds, board
@@ -393,27 +546,37 @@ def update_eval(truth, preds, board, lb):
     """eval/summary.json + eval/{item}.json: add method orbit_v2 (backward compatible) + out-of-sample v2 highlights."""
     sp = be.OUT / "summary.json"
     s = json.loads(sp.read_text())
-    if "orbit_v2" not in s["methods"]:
-        s["methods"].append("orbit_v2")
-    t = board["orbit_v2"]["test"]
-    s["test_overall"]["orbit_v2"] = t
-    s["tuned"]["orbit_v2_test"] = t
-    s["orbit_v2"] = {"final": lb["final"], "leaderboard": "/api/leaderboard", "improvement_vs_v1": lb["improvement_vs_v1"],
-                     "val": board["orbit_v2"]["val"], "test": t}
-    v2 = rows_for(truth, preds["orbit_v2"], lambda x: True)
+    for m in ("orbit_v2", "orbit_v3"):
+        if m not in s["methods"]:
+            s["methods"].append(m)
+        s["test_overall"][m] = board[m]["test"]
+        s["tuned"][f"{m}_test"] = board[m]["test"]
+    s["orbit_v2"] = {"final": lb["final_v2"], "leaderboard": "/api/leaderboard", "improvement_vs_v1": lb["improvement_vs_v1"],
+                     "val": board["orbit_v2"]["val"], "test": board["orbit_v2"]["test"]}
+    s["orbit_v3"] = {"final": lb["final"], "leaderboard": "/api/leaderboard", "improvement_vs_v2": lb["improvement_vs_v2"],
+                     "confidence_gate": lb["confidence_gate"], "val": board["orbit_v3"]["val"], "test": board["orbit_v3"]["test"]}
     nv = rows_for(truth, preds["naive"], lambda x: True)
+    for mname in ("orbit_v2", "orbit_v3"):
+        _item_backtests(s, truth, preds, mname, nv)
+    v2 = rows_for(truth, preds["orbit_v3"], lambda x: True)
+    _highlights(s, lb, v2)
+    sp.write_text(json.dumps(s, indent=1))
+
+
+def _item_backtests(s, truth, preds, mname, nv):
+    v2 = rows_for(truth, preds[mname], lambda x: True)
     for it in s["items"]:
         iid = it["item_id"]
-        it["test"]["orbit_v2"] = {f"h{h}": full_metrics([x for x in v2 if x["item"] == iid and x["h"] == h and is_test(x)],
+        it["test"][mname] = {f"h{h}": full_metrics([x for x in v2 if x["item"] == iid and x["h"] == h and is_test(x)],
                                                       [x for x in nv if x["item"] == iid and x["h"] == h and is_test(x)])
                                   for h in HS}
         ep = be.OUT / f"{iid}.json"
         if ep.exists():
             doc = json.loads(ep.read_text())
-            doc["backtests"] = [b for b in doc["backtests"] if b["method"] != "orbit_v2"]
+            doc["backtests"] = [b for b in doc["backtests"] if b["method"] != mname]
             cuts = sorted({x["cutoff"] for x in v2 if x["item"] == iid})
             sub = set(cuts[::6])
-            doc["backtests"] += [{"cutoff": x["cutoff"], "h": x["h"], "method": "orbit_v2", "base": be.r(x["base"], 4),
+            doc["backtests"] += [{"cutoff": x["cutoff"], "h": x["h"], "method": mname, "base": be.r(x["base"], 4),
                                   "p10": be.r(x["p10"], 4), "p50": be.r(x["p50"], 4), "p90": be.r(x["p90"], 4),
                                   "actual": be.r(x["actual"], 4), "prob_up": be.r(x["prob_up"], 3),
                                   "prob_bigup": be.r(x["prob_bigup"], 3),
@@ -421,6 +584,9 @@ def update_eval(truth, preds, board, lb):
                                  for x in v2 if x["item"] == iid and (x["h"] == 6 or x["cutoff"] in sub)]
             doc["backtests"].sort(key=lambda b: (b["cutoff"], b["h"], b["method"]))
             ep.write_text(json.dumps(doc, separators=(",", ":")))
+
+
+def _highlights(s, lb, v2):
 
     # highlights: TEST cutoffs only. Hits = real 6m rise > 15% that v2 flagged (P(>15%) >= VAL threshold, p50 up).
     thr = lb["final"]["big_alert_threshold_h6"]
@@ -431,8 +597,8 @@ def update_eval(truth, preds, board, lb):
         if hits:
             x = max(hits, key=lambda x: x["prob_bigup"] * min(x["actual"] / x["base"] - 1, 1.0))
             pc, ac = (x["p50"] / x["base"] - 1) * 100, (x["actual"] / x["base"] - 1) * 100
-            hl.append({"item_id": iid, "cutoff": x["cutoff"], "kind": "hit", "method": "orbit_v2", "split": "test",
-                       "story": f"{ITEM_BY_ID[iid]['name']}: in {x['cutoff']} Orbit v2 gave a {x['prob_bigup'] * 100:.0f}% chance "
+            hl.append({"item_id": iid, "cutoff": x["cutoff"], "kind": "hit", "method": "orbit_v3", "split": "test",
+                       "story": f"{ITEM_BY_ID[iid]['name']}: in {x['cutoff']} Orbit v3 gave a {x['prob_bigup'] * 100:.0f}% chance "
                                 f"of a >15% rise (said {pc:+.0f}%); it rose {ac:+.0f}%.",
                        "predicted_change_pct": be.r(pc, 1), "actual_change_pct": be.r(ac, 1),
                        "prob_up": be.r(x["prob_up"], 2), "prob_bigup": be.r(x["prob_bigup"], 2)})
@@ -441,13 +607,12 @@ def update_eval(truth, preds, board, lb):
     if miss:
         x = max(miss, key=lambda x: x["actual"] / x["base"])
         pc, ac = (x["p50"] / x["base"] - 1) * 100, (x["actual"] / x["base"] - 1) * 100
-        hl.append({"item_id": x["item"], "cutoff": x["cutoff"], "kind": "miss", "method": "orbit_v2", "split": "test",
-                   "story": f"Honest miss: {ITEM_BY_ID[x['item']]['name']} from {x['cutoff']}: v2 said {pc:+.0f}% "
+        hl.append({"item_id": x["item"], "cutoff": x["cutoff"], "kind": "miss", "method": "orbit_v3", "split": "test",
+                   "story": f"Honest miss: {ITEM_BY_ID[x['item']]['name']} from {x['cutoff']}: v3 said {pc:+.0f}% "
                             f"(P(>15%) {x['prob_bigup'] * 100:.0f}%), it went {ac:+.0f}%.",
                    "predicted_change_pct": be.r(pc, 1), "actual_change_pct": be.r(ac, 1)})
     s.setdefault("highlights_v1", s.get("highlights"))
     s["highlights"] = hl
-    sp.write_text(json.dumps(s, indent=1))
 
 
 def _p(lb):
@@ -553,10 +718,10 @@ def _members_live(hists):
     return out
 
 
-def _conf_pool(truth, preds, cfg, h):
-    """Normalised v2 residuals (outcome month, e) at horizon h (normaliser = band members' mean half log-band)."""
+def _conf_pool(truth, preds, cfg, h, src="_v3_base"):
+    """Normalised stack residuals (outcome month, e) at horizon h (normaliser = band members' mean half log-band)."""
     pool = []
-    for k, v in preds["orbit_v2"].items():
+    for k, v in preds[src].items():
         if k[2] == h:
             w = band_width(k, cfg["band_members"], preds)
             if w:
@@ -565,9 +730,15 @@ def _conf_pool(truth, preds, cfg, h):
 
 
 def live(truth, preds, lb, hists):
-    """Orbit v2 driver-space forecast at the latest month for every backtested item -> data/cache/eval/live_v2.json."""
+    """Orbit v3 driver-space forecast at the latest month for every backtested item -> data/cache/eval/live_v2.json
+    (file name kept for build_orbit_signal). Members without a live row (xasset) are dropped and the rest rescaled;
+    probability members without a live classifier fall back to the conformal probability."""
     final = lb["final"]
     mem = _members_live(hists)
+    dc = {(x["item_id"], x["cutoff"], x["h"]): x for x in json.loads((CAND / "dir_clf.json").read_text())["rows"]}
+    for it, L in mem.items():
+        L["prob"]["dir_clf"] = {h: (dc[(it, L["month"], h)]["prob_up"], dc[(it, L["month"], h)]["prob_bigup"])
+                                for h in HS if (it, L["month"], h) in dc}
     out = {}
     for it, L in mem.items():
         res = {"month": L["month"], "base": L["base"], "h": {}}
@@ -581,7 +752,7 @@ def live(truth, preds, lb, hists):
             # band: live-reproducible members' width, rescaled to the full band-member width on recent backtest rows
             rep = [m for m in ("orbit_v1", "quant_tsmom") if h in L["width"].get(m, {})]
             wl = st.mean(L["width"][m][h] for m in rep)
-            recent = sorted((k for k in preds["orbit_v2"] if k[0] == it and k[2] == h), key=lambda k: k[1])[-24:]
+            recent = sorted((k for k in preds["_v3_base"] if k[0] == it and k[2] == h), key=lambda k: k[1])[-24:]
             rat = [band_width(k, cfg["band_members"], preds) / band_width(k, rep, preds) for k in recent
                    if band_width(k, rep, preds)]
             wl *= st.median(rat) if rat else 1.0
@@ -590,15 +761,26 @@ def live(truth, preds, lb, hists):
             e = np.array([x for m_, x in _conf_pool(truth, preds, cfg, h) if lo < m_ <= L["month"]])
             q10, q90 = float(np.quantile(e, 0.1)), float(np.quantile(e, 0.9))
             du, db = cprob(e, wl, -lr), cprob(e, wl, BIG - lr)
-            cu_m = [L["prob"][m][h][0] for m in cfg["prob_up_members"] if m in L["prob"]]
-            cb_m = [L["prob"][m][h][1] for m in cfg["prob_bigup_members"] if m in L["prob"]]
+            cu_m = [L["prob"][m][h][0] for m in cfg["prob_up_members"] if h in L["prob"].get(m, {})]
+            cb_m = [L["prob"][m][h][1] for m in cfg["prob_bigup_members"] if h in L["prob"].get(m, {})]
             n_u, n_b = len(cfg["prob_up_members"]), len(cfg["prob_bigup_members"])
             cu = (sum(cu_m) + (n_u - len(cu_m)) * du) / max(n_u, 1)   # members with no live classifier -> conformal
             cb = (sum(cb_m) + (n_b - len(cb_m)) * db) / max(n_b, 1)
             a, T, ab = cfg["prob_up_mix_conformal"], cfg["prob_up_temperature"], cfg["prob_bigup_mix_conformal"]
-            res["h"][h] = {"lr": lr, "q10": lr + q10 * wl, "q90": lr + q90 * wl,
-                           "prob_up": sig(T * logit(a * du + (1 - a) * cu)), "prob_bigup": ab * db + (1 - ab) * cb,
-                           "parts": parts, "members": {m: L["lr"][m][h] for m in L["lr"] if h in L["lr"][m]}}
+            pu = sig(T * logit(a * du + (1 - a) * cu))
+            ks, tau = cfg.get("band_scale", 1.0), cfg.get("direction_override_tau")
+            q10l, q90l = lr + ks * q10 * wl, lr + ks * q90 * wl
+            sgn = 1 if pu >= 0.5 else -1
+            overridden = tau is not None and abs(pu - 0.5) >= tau and lr * sgn <= 0
+            lr_f = sgn * OVR_STEP if overridden else lr
+            v = (None, math.exp(lr_f), None, pu, None)
+            res["h"][h] = {"lr": lr_f, "lr_stack": lr, "q10": min(q10l, lr_f), "q90": max(q90l, lr_f),
+                           "prob_up": pu, "prob_bigup": ab * db + (1 - ab) * cb, "direction_overridden": overridden,
+                           "confidence": confidence_label(v, 1.0, cfg["confidence_gate"]),
+                           "confidence_score": round(conf_of(v, 1.0), 4),
+                           "parts": {m: x * (lr_f / lr if lr else 0) for m, x in parts.items()} if overridden else parts,
+                           "members": {m: L["lr"][m][h] for m in L["lr"] if h in L["lr"][m]},
+                           "missing_members": [m for m in w if m not in avail]}
         res["exog_parts_h6"] = (L.get("exog_parts") or {}).get(6)
         res["tfm_in_stat_h6"] = L["tfm_in_stat"][6]
         res["v1"] = {"trend_h6": L["params"]["blend"] * L["f"]["slope"] * 6, "stress": L["f"]["stress"],
