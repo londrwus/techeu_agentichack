@@ -1,0 +1,51 @@
+{
+ "module_id": "groceries",
+ "headline": "London olive oil prices falling towards £9.03 as harvests recover",
+ "cards": [
+  {
+   "title": "Satellites and news",
+   "text": "Spanish olive canopy greenness jumped 14.5% above normal, signaling recovered yields as headlines report falling prices across the European Union."
+  },
+  {
+   "title": "London price impact",
+   "text": "Olive oil drops from £9.50 to £9.37 in six months, falling to £9.03 at twelve months."
+  },
+  {
+   "title": "Shopping advice",
+   "text": "Wait to buy olive oil as prices decline, but buy chocolate now before it climbs from £1.85 to £1.91."
+  }
+ ],
+ "vision_notes": [
+  {
+   "region_id": "jaen_olives",
+   "text": "Vegetation greenness across the olive groves has noticeably increased (+14.5% NDVI vs normal) despite slightly reduced surface water extents. This improved canopy health signals higher olive yields, pointing to increased olive oil supply.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "soubre_cocoa",
+   "text": "Cloud cover clears to reveal Soubré's canopy, but vegetation greenness is down nearly 9% versus normal. Reduced crop vigor signals lower cocoa yields, pointing to tighter supply and upward pressure on chocolate prices.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "ashanti_cocoa",
+   "text": "Dense, unbroken cloud cover completely obscures the cocoa farms in both images. Ground-level vegetation and canopy health cannot be visually confirmed, leaving cocoa supply conditions unobservable from these scenes.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "saopaulo_oranges",
+   "text": "Vegetation greenness across citrus groves has surged significantly, backed by a 16.9% NDVI rise above normal. This healthier canopy indicates robust crop recovery and increased orange yields, boosting orange juice supply.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "poltava_wheat",
+   "text": "Vegetation greenness slightly increased across surrounding fields with stable urban cover and clear skies. This healthy crop vigor indicates steady wheat yields, supporting stable local bread supply and pricing.",
+   "then": "2021-08",
+   "now": "2026-08"
+  }
+ ],
+ "model": "gemini-3.8-flash"
+}

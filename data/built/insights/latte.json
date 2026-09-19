@@ -1,0 +1,39 @@
+{
+ "module_id": "latte",
+ "headline": "London Latte Prices Rising to £4.10 Within 12 Months",
+ "cards": [
+  {
+   "title": "Satellite And News",
+   "text": "Minas canopy greenness shows an 8.6% surplus, but news highlights coffee near record highs with a 0.22 net supply pressure."
+  },
+  {
+   "title": "London Price Impact",
+   "text": "London lattes cost £3.95 today. Our forecast predicts a 2.0% rise to £4.03 in 6 months and £4.10 in 12 months."
+  },
+  {
+   "title": "Buy Now Advice",
+   "text": "Buy now or pre-pay cafe subscriptions: there is a 0.71 probability that latte prices climb higher over the next 6 months."
+  }
+ ],
+ "vision_notes": [
+  {
+   "region_id": "minas_coffee",
+   "text": "Widespread greenness has recovered across coffee fields, reflected in an 8.6% NDVI surplus over historical norms. Healthier crop conditions indicate robust yield prospects, signaling increased coffee supply and downward pressure on retail prices.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "daklak_coffee",
+   "text": "Despite persistent heavy cloud cover, coffee canopy greenness remains slightly above the five-year average with stable plantation coverage. Robust vegetative health indicates steady robusta yields and a stable coffee supply.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "huila_coffee",
+   "text": "Heavy cloud cover cleared to reveal healthy, green coffee terrain matching five-year norms. This confirms stable crop conditions and steady coffee supply for markets.",
+   "then": "2021-08",
+   "now": "2026-08"
+  }
+ ],
+ "model": "gemini-3.8-flash"
+}

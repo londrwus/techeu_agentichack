@@ -6,3 +6,6 @@ data/cache/
 *.tif
 node_modules/
 .DS_Store
+
+# large: restore with `python scripts/pull_data.py tiles`
+data/built/tiles/

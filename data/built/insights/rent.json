@@ -1,0 +1,20 @@
+{
+ "module_id": "rent",
+ "headline": "London 1-Bed Rents to Hit £2,335 Within a Year",
+ "cards": [
+  {
+   "title": "Scarce Rental Supply",
+   "text": "News headlines track falling supply and record rents, with net supply pressure at 0.053 as Elizabeth line demand surges."
+  },
+  {
+   "title": "London Rent Trajectory",
+   "text": "Average 1-bed flat rents rise from £2,250 today to £2,260 in six months, reaching £2,335 in 12 months."
+  },
+  {
+   "title": "Lock In Now",
+   "text": "Sign a tenancy now. With a 61.1% probability of increases over six months, waiting will lead to higher monthly costs."
+  }
+ ],
+ "vision_notes": [],
+ "model": "gemini-3.8-flash"
+}

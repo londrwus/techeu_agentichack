@@ -1,0 +1,119 @@
+{
+ "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
+ "gpu_type": "CPU x8 (TimesFM on Modal CPU)",
+ "gpu_seconds": 5.1,
+ "seconds": 21.0,
+ "series": 13,
+ "items": [
+  {
+   "item_id": "chocolate",
+   "source": "FRED:PCOCOUSDM",
+   "last": "2026-07",
+   "now": 1.85,
+   "p50_6m": 1.86,
+   "change_6m_pct": 0.5,
+   "prob_up_6m": 0.517,
+   "bt": [
+    0.0,
+    25.9
+   ]
+  },
+  {
+   "item_id": "olive_oil",
+   "source": "FRED:POLVOILUSDM",
+   "last": "2026-07",
+   "now": 9.5,
+   "p50_6m": 9.44,
+   "change_6m_pct": -0.6,
+   "prob_up_6m": 0.467,
+   "bt": [
+    -2.2,
+    39.1
+   ]
+  },
+  {
+   "item_id": "orange_juice",
+   "source": "FRED:PORANGUSDM",
+   "last": "2026-07",
+   "now": 2.3,
+   "p50_6m": 2.28,
+   "change_6m_pct": -0.9,
+   "prob_up_6m": 0.467,
+   "bt": null
+  },
+  {
+   "item_id": "bread",
+   "source": "FRED:PWHEAMTUSDM",
+   "last": "2026-07",
+   "now": 1.45,
+   "p50_6m": 1.46,
+   "change_6m_pct": 0.7,
+   "prob_up_6m": 0.55,
+   "bt": null
+  },
+  {
+   "item_id": "latte",
+   "source": "FRED:PCOFFOTMUSDM",
+   "last": "2026-07",
+   "now": 3.95,
+   "p50_6m": 3.97,
+   "change_6m_pct": 0.5,
+   "prob_up_6m": 0.567,
+   "bt": [
+    0.0,
+    2.4
+   ]
+  },
+  {
+   "item_id": "pint",
+   "source": "FRED:PBARLUSDM",
+   "last": "2026-07",
+   "now": 6.4,
+   "p50_6m": 6.4,
+   "change_6m_pct": 0.0,
+   "prob_up_6m": 0.5,
+   "bt": null
+  },
+  {
+   "item_id": "wine",
+   "source": "synthetic",
+   "last": "2026-08",
+   "now": 9.0,
+   "p50_6m": 9.06,
+   "change_6m_pct": 0.7,
+   "prob_up_6m": 0.9,
+   "bt": null
+  },
+  {
+   "item_id": "gpu",
+   "source": "FRED:PCU334413334413",
+   "last": "2026-08",
+   "now": 1650.0,
+   "p50_6m": 1617.55,
+   "change_6m_pct": -2.0,
+   "prob_up_6m": 0.194,
+   "bt": null
+  },
+  {
+   "item_id": "laptop",
+   "source": "synthetic",
+   "last": "2026-08",
+   "now": 1150.0,
+   "p50_6m": 1151.92,
+   "change_6m_pct": 0.2,
+   "prob_up_6m": 0.547,
+   "bt": null
+  },
+  {
+   "item_id": "rent_1bed",
+   "source": "synthetic",
+   "last": "2026-08",
+   "now": 2250.0,
+   "p50_6m": 2259.9,
+   "change_6m_pct": 0.4,
+   "prob_up_6m": 0.62,
+   "bt": null
+  }
+ ],
+ "generated_at": "2026-09-19T11:08:24Z"
+}

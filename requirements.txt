@@ -1,9 +1,12 @@
 fastapi==0.141.1
+feedparser==6.0.14
 google-genai==2.24.0
 httpx==0.28.1
 modal==1.5.5
 numpy==2.5.3
 pandas==3.0.6
+pydantic==2.13.5
 python-dotenv==1.2.3
 typesafe-sdk==0.7.0
 uvicorn==0.53.0
+# optional, only for headless screenshots of the UI: playwright==1.63.0

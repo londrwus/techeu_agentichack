@@ -1,0 +1,106 @@
+/* Orbit design tokens. Source: design/orbit.pen (Pencil). Import first:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="/tokens.css"> */
+:root {
+  /* Surfaces */
+  --bg: #F5F5F4;            /* app background (stone-100) */
+  --card: #FFFFFF;
+  --border: #E7E5E4;        /* 1px card borders, dividers */
+  --muted: #E7E5E4;         /* empty waffle squares, bar tracks */
+  --ink: #0C0A09;           /* logo tile, dark buttons, user bubble */
+  --map-dark: #0B0F14;      /* 3D map card background */
+  --map-light: #EEF2F6;     /* world map card background */
+
+  /* Text */
+  --text-1: #1C1917;
+  --text-2: #57534E;
+  --text-3: #A8A29E;
+
+  /* Accent (brand orange) */
+  --accent: #F97316;
+  --accent-light: #FDBA74;  /* "rising" (secondary), forecast bars */
+  --accent-soft: #FFEDD5;   /* active nav bg, processing tile */
+  --accent-ink: #C2410C;    /* text on accent-soft */
+
+  /* Semantics: prices going UP is bad news (red), DOWN is good (green) */
+  --up: #DC2626;
+  --up-soft: #FEE2E2;
+  --up-light: #FCA5A5;
+  --down: #16A34A;
+  --down-soft: #DCFCE7;
+  --down-ink: #15803D;
+
+  /* Modules (match orbit/config.py) */
+  --m-groceries: #F97316;
+  --m-latte: #A16207;
+  --m-beer: #EAB308;
+  --m-gpu: #6366F1;
+  --m-rent: #10B981;
+  /* Module tint = module colour at ~13% alpha, e.g. #A1620722 */
+
+  /* Providers (Mission Control / Ask Orbit trace) */
+  --p-modal: #16A34A;
+  --p-gemini: #2563EB;
+  --p-jev: #7C3AED;
+  --p-jev-soft: #EDE9FE;
+  --p-jev-ink: #6D28D9;
+
+  /* Rent pressure ramp (0 -> 50 -> 100) */
+  --ramp-0: #FDE68A;
+  --ramp-50: #F97316;
+  --ramp-100: #991B1B;
+
+  /* Type */
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-11: 11px;  /* sidebar section labels, uppercase, +0.8px tracking */
+  --fs-12: 12px;  /* chips, axis labels, secondary meta */
+  --fs-13: 13px;  /* pills, legends, sublabels */
+  --fs-14: 14px;  /* card subtitles, body small */
+  --fs-15: 15px;  /* card heads, buttons */
+  --fs-16: 16px;  /* page tagline, insight text */
+  --fs-18: 18px;  /* chat text, small card titles */
+  --fs-20: 20px;  /* card titles */
+  --fs-24: 24px;  /* stat tiles */
+  --fs-32: 32px;  /* page titles, secondary big numbers */
+  --fs-44: 44px;  /* KPI numbers */
+  --fs-52: 52px;  /* Mission Control counters */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heavy: 800;
+  --tracking-tight: -0.02em; /* for >= 32px numbers/titles */
+
+  /* Radii */
+  --r-xs: 4px;    /* waffle squares (headline grid) */
+  --r-sm: 8px;    /* tiles, chips */
+  --r-md: 10px;   /* icon squares, nav items, segmented items */
+  --r-lg: 12px;   /* buttons, inner panels, stat tiles */
+  --r-xl: 16px;   /* cards */
+  --r-pill: 999px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;  /* grid gap between cards */
+  --s-5: 20px;  /* KPI card padding, vertical gap between rows */
+  --s-6: 24px;  /* card padding */
+  --s-8: 32px;  /* main content padding */
+
+  /* Layout */
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --btn-h: 44px;
+  --icon-square: 36px;
+
+  /* Shadows */
+  --shadow-card: none; /* cards use 1px border, no shadow */
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.12);    /* map callouts */
+  --shadow-tooltip: 0 8px 24px rgba(0, 0, 0, 0.35); /* tooltip over dark map */
+  --shadow-primary: 0 4px 12px rgba(249, 115, 22, 0.25); /* Scan now button */
+  --shadow-seg: 0 1px 3px rgba(0, 0, 0, 0.10);     /* active segment */
+  --glass: rgba(12, 10, 9, 0.70);                  /* chips over dark map, + backdrop-filter: blur(12px) */
+  --glass-border: rgba(255, 255, 255, 0.12);
+}

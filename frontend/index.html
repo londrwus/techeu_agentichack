@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit · Tomorrow's prices</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/app.css">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/deck.gl@9.0.38/dist.min.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-tile"><i data-lucide="orbit"></i></div>
+    <div><div class="brand-name">Orbit</div><div class="brand-sub">Tomorrow's prices</div></div>
+  </div>
+  <nav>
+    <div class="nav-label">Workspace</div>
+    <a class="nav-item" href="#/overview" data-route="overview"><i data-lucide="layout-dashboard"></i><span>Overview</span></a>
+    <div class="nav-label">Modules</div>
+    <a class="nav-item" href="#/module/groceries" data-route="module/groceries"><i data-lucide="shopping-cart"></i><span>Groceries</span><b class="dot" style="background:var(--m-groceries)"></b></a>
+    <a class="nav-item" href="#/module/latte" data-route="module/latte"><i data-lucide="coffee"></i><span>Latte Index</span><b class="dot" style="background:var(--m-latte)"></b></a>
+    <a class="nav-item" href="#/module/beer_wine" data-route="module/beer_wine"><i data-lucide="beer"></i><span>Beer &amp; Wine</span><b class="dot" style="background:var(--m-beer)"></b></a>
+    <a class="nav-item" href="#/module/gpu" data-route="module/gpu"><i data-lucide="cpu"></i><span>GPU &amp; Gadgets</span><b class="dot" style="background:var(--m-gpu)"></b></a>
+    <a class="nav-item" href="#/rent" data-route="rent"><i data-lucide="building-2"></i><span>Rent Radar</span><b class="dot" style="background:var(--m-rent)"></b></a>
+    <div class="nav-label">Agents</div>
+    <a class="nav-item" href="#/ask" data-route="ask"><i data-lucide="sparkles"></i><span>Ask Orbit</span></a>
+    <a class="nav-item" href="#/mission" data-route="mission"><i data-lucide="satellite"></i><span>Mission Control</span><b class="dot live-dot" id="nav-scan-dot" hidden></b></a>
+  </nav>
+  <div class="side-foot">
+    <div class="side-foot-title">Gemini sees · Jev judges · Modal scales</div>
+    <div class="side-foot-sub" id="side-regions">16 satellite regions watched</div>
+  </div>
+</aside>
+<main id="view" class="main"></main>
+<div id="toast" class="toast" hidden></div>
+<div id="tooltip" class="tooltip" hidden></div>
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+ "module_id": "beer_wine",
+ "headline": "London Beer and Wine Prices to Rise Within Six Months",
+ "cards": [
+  {
+   "title": "Satellites Detect Stressed Crops",
+   "text": "Satellites show vegetative vigor down 10.5% in Bordeaux and 7.2% in Žatec, while news confirms rising alcohol duties tightening supplies."
+  },
+  {
+   "title": "London Drinks Head Higher",
+   "text": "A pint of lager rises from £6.40 to £6.51 in six months, while wine climbs from £9.00 to £9.25."
+  },
+  {
+   "title": "Stock Up Now",
+   "text": "Buy now rather than wait: GPU models show a 97% probability of higher beer and wine prices over the next six months."
+  }
+ ],
+ "vision_notes": [
+  {
+   "region_id": "hallertau_hops",
+   "text": "Crop greenness declined significantly across Hallertau fields, showing widespread browning and lower NDVI. This reduced vegetative vigor indicates stressed hop yields, threatening beer ingredient supplies and driving up lager prices.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "zatec_hops",
+   "text": "Clearing cloud cover reveals extensive browning across agricultural parcels, with NDVI dropping 7.2% below normal. Reduced vegetative vigor signals a diminished Žatec hop harvest, likely restricting supply and pressuring beer prices upward.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "bordeaux_vines",
+   "text": "Vineyard greenness drops sharply into widespread browning and bare soil across the valley, showing severe vegetative stress. This indicates diminished grape yields and tighter wine supply, putting upward pressure on bottle prices.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "rioja_vines",
+   "text": "Vineyard greenness declined slightly amid drier soil conditions and minor built-up expansion, indicating minor heat stress. This will marginally constrain grape yields and tighten wine supply.",
+   "then": "2021-08",
+   "now": "2026-08"
+  }
+ ],
+ "model": "gemini-3.8-flash"
+}

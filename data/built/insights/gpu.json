@@ -1,0 +1,45 @@
+{
+ "module_id": "gpu",
+ "headline": "London Laptop Prices Set to Rise 3.9% Within Months",
+ "cards": [
+  {
+   "title": "Satellites and Supply",
+   "text": "Taiwan reservoirs show stable water supplies and fab expansion, yet severe chip shortages and AI demand drive strong supply pressure of 0.394."
+  },
+  {
+   "title": "London Price Impact",
+   "text": "Laptops jump from £1,150 to £1,194 in six months and £1,235 in twelve. High-end GPUs rise from £1,650 to £1,684."
+  },
+  {
+   "title": "Buy Now Advised",
+   "text": "Buy now. With a 0.97 probability of laptop increases and a 0.674 chance for GPUs, prices will only climb higher."
+  }
+ ],
+ "vision_notes": [
+  {
+   "region_id": "baoshan_reservoir",
+   "text": "Clearer views reveal robust green vegetation and stable reservoir water levels near 5-year norms. Stable water availability ensures uninterrupted cooling for Hsinchu fabs, supporting steady high-end GPU production.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "tsengwen_reservoir",
+   "text": "Heavy cloud cover obscures the reservoir, though indices indicate stable water levels consistent with the five-year normal. Water supply to Tainan semiconductor fabs remains secure, posing no immediate disruption to high-end GPU manufacturing.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "hsinchu_park",
+   "text": "Dense cloud cover dominates both scenes, but a 6.8% increase in built-up density (NDBI) indicates continued semiconductor fab expansion, signaling steady or growing long-term laptop component supply.",
+   "then": "2021-08",
+   "now": "2026-08"
+  },
+  {
+   "region_id": "kaohsiung_port",
+   "text": "Increased cloud cover obscures parts of the harbor, while expanding built infrastructure (elevated NDBI) and dense vessel traffic point to robust port operations, supporting steady export throughput for laptops.",
+   "then": "2021-08",
+   "now": "2026-08"
+  }
+ ],
+ "model": "gemini-3.8-flash"
+}
