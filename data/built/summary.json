@@ -60,7 +60,7 @@
  "stats": {
   "tiles_processed": 1840,
   "jev_judgments": 142016,
-  "modal_containers_peak": 101,
+  "modal_containers_peak": 100,
   "gpu_model": "TimesFM 3.0 (google/timesfm-3.0-pytorch)",
   "gemini_calls": 42,
   "gpu_type": "NVIDIA L4"

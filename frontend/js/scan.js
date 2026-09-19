@@ -7,6 +7,7 @@ export const scan = {
   listeners: new Set(),
 };
 let es = null, jpsTimer = null, lastJev = 0;
+export const MAX_CONTAINERS = 100; // Modal account limit (process_tile 75 + judge 20 + fetch 5)
 
 function emit() { scan.listeners.forEach(fn => { try { fn(scan); } catch (e) { console.warn(e); } }); }
 export function onScan(fn) { scan.listeners.add(fn); return () => scan.listeners.delete(fn); }
@@ -22,7 +23,7 @@ export function startScan(mode = 'auto') {
   es.onmessage = m => {
     let ev; try { ev = JSON.parse(m.data); } catch { return; }
     got = true; scan.events++; scan.last = ev;
-    scan.peakContainers = Math.max(scan.peakContainers, ev.containers_active || 0, ev.modal_runners || 0);
+    scan.peakContainers = Math.min(MAX_CONTAINERS, Math.max(scan.peakContainers, ev.containers_active || 0));
     if (ev.kind === 'tile' || (ev.type === 'progress' && ev.thumb)) scan.tiles.push(ev);
     emit();
     if (ev.type === 'done') finish();

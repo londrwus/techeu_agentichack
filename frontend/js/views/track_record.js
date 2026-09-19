@@ -1,5 +1,5 @@
 // Track record (#/track): "How right is Orbit?" — held-out test scores, model leaderboard,
-// backtests on real history, hits & misses, calibration and the Modal compute strip.
+// backtests on real history, calibration and the Modal compute strip.
 // Data: /api/leaderboard (eval/leaderboard.json), /api/eval (eval/summary.json), /api/eval/{item} (backtests).
 import { topbar, wireScan } from './common.js';
 import { api, esc, isNum, icon, itemIcon, onResize, countAll } from '../components/ui.js';
@@ -85,10 +85,6 @@ export async function render(el) {
         <div class="tr-hist-chart" data-histchart></div>
         <div class="tr-hist-side" data-histside></div>
       </div>
-    </section>
-    <section class="tr-hm-wrap">
-      <div class="tr-sec-head"><h2>Hits &amp; misses</h2><span>Did Orbit warn before a big (&gt;15%) price jump? Green = it raised the alarm early, even when it under-called the size. Red = it missed.</span></div>
-      <div class="tr-hm">${hitsMisses(ev?.highlights || [])}</div>
     </section>
     ${footer(ev, lb)}
   </div>`;
@@ -342,31 +338,6 @@ function histSide(d, bt, id) {
     ${withBand ? `<div class="tr-side-stat"><div class="v">${hitN}<span>/${withBand}</span></div><div class="l">landed inside Orbit's 80% range</div><div class="tr-dots">${set.filter(p => p.hit != null).map(p => `<i class="${p.hit ? 'ok' : 'no'}" title="${esc(fmtMonth(p.target))}"></i>`).join('')}</div></div>` : ''}
     ${dirAll ? `<div class="tr-side-stat"><div class="v">${Math.round(dirN / dirAll * 100)}<span>%</span></div><div class="l">called the direction right</div></div>` : ''}
     ${isNum(move) ? `<div class="tr-side-stat"><div class="v ${move > 0 ? 'up' : 'down'}">${sgn(move)}</div><div class="l">biggest 6-month move in the test, ${esc(fmtMonth(worst.cutoff))} → ${esc(fmtMonth(worst.target))}</div></div>` : ''}`;
-}
-
-/* ---------- 4. hits & misses ---------- */
-function hitsMisses(list) {
-  const hs = [...list.filter(h => h.kind === 'hit'), ...list.filter(h => h.kind !== 'hit')];
-  if (!hs.length) return `<div class="empty">No highlights yet.</div>`;
-  const name = id => ITEMS.find(x => x[0] === id)?.[1] || id;
-  return hs.map((h, i) => {
-    const hit = h.kind === 'hit';
-    const said = h.predicted_change_pct, act = h.actual_change_pct;
-    const max = Math.max(Math.abs(said || 0), Math.abs(act || 0), 1);
-    const w = v => `${Math.max(2, Math.abs(v || 0) / max * 100)}%`;
-    const warn = isNum(h.prob_bigup) ? `Warned: ${Math.round(h.prob_bigup * 100)}% chance of a >15% jump${hit ? ' (well above normal)' : ''}` : hit ? 'Called the rise' : 'No big-rise warning raised';
-    return `<div class="tr-hmc ${hit ? 'hit' : 'miss'}" style="animation-delay:${i * 40}ms">
-      <div class="tr-hmc-top">${photo(h.item_id, 'lg')}
-        <div class="tr-hmc-id"><div class="tr-hmc-name">${esc(name(h.item_id))}</div><div class="tr-hmc-when">${esc(fmtMonth(h.cutoff))} → ${esc(fmtMonth(addM(h.cutoff, 6)))}</div></div>
-        <span class="tr-hmc-badge">${icon(hit ? 'check' : 'x', { size: 14, stroke: 2.5 })}${hit ? 'Rise flagged' : 'Missed'}</span>
-      </div>
-      <div class="tr-hmc-bars">
-        <div><span class="k">Expected</span><span class="bar"><i class="said" style="width:${w(said)}"></i></span><b>${sgn(said)}</b></div>
-        <div><span class="k">Actual</span><span class="bar"><i class="act" style="width:${w(act)}"></i></span><b class="up">${sgn(act)}</b></div>
-      </div>
-      <div class="tr-hmc-foot">${esc(warn)}</div>
-    </div>`;
-  }).join('');
 }
 
 /* ---------- 5. calibration ---------- */

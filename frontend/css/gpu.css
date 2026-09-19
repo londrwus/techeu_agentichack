@@ -50,17 +50,13 @@
 @keyframes gpu-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* ---- "What's driving" price bridge ---- */
-.gd-verdict { margin-top: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.gd-big { font-size: 24px; font-weight: 700; letter-spacing: -.5px; color: var(--text-1); line-height: 1.2; }
-.gd-big b.up { color: var(--up); } .gd-big b.down { color: var(--down-ink); } .gd-big b.flat { color: var(--text-2); }
-.gd-path { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 15px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.gd-path b { color: var(--text-1); font-weight: 700; }
-.gd-path svg { color: var(--text-3); }
-.gd-prob { margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border); font-size: 13px; color: var(--text-3); }
-.gd-why { display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; margin-top: 10px; font-size: 13px; color: var(--text-2); align-items: center; }
-.gd-why b { color: var(--text-1); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.gd-f { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
-.gd-f.up { color: var(--up); } .gd-f.down { color: var(--down-ink); }
+.gd-verdict { margin-top: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.gd-big { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 30px; font-weight: 800; letter-spacing: -.8px; color: var(--text-1); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.gd-big .gd-now { color: var(--text-3); font-weight: 700; }
+.gd-big svg { color: var(--text-3); }
+.gd-chg { font-size: 15px; font-weight: 700; letter-spacing: 0; border-radius: 999px; padding: 4px 10px; background: #F5F5F4; color: var(--text-2); }
+.gd-chg.up { background: var(--up-soft); color: var(--up); } .gd-chg.down { background: var(--down-soft); color: var(--down-ink); }
+.gd-cap { margin-top: 6px; font-size: 13px; color: var(--text-3); }
 
 .gd-bridge { display: flex; flex-direction: column; min-height: 0; }
 .gd-row, .gd-axis { display: grid; grid-template-columns: minmax(150px, 238px) minmax(0, 1fr) 64px; gap: 12px; align-items: center; }
@@ -108,7 +104,7 @@
   .gd-row { grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) 58px; gap: 10px; }
   .gd-n { font-size: 12.5px; }
   .gd-ic { display: none; }
-  .gd-big { font-size: 22px; }
+  .gd-big { font-size: 26px; }
 }
 @media (max-width: 700px) { .gpu-body { grid-template-columns: 1fr; } .gd-row, .gd-axis { grid-template-columns: 150px minmax(0,1fr) 60px; } }
 .gpu-prod [hidden] { display: none; }

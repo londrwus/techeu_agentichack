@@ -22,6 +22,8 @@ DATA = Path("/data/built")
 PX = 256
 GRID = 64                                        # change-detection grid (GRID x GRID cells)
 GRID_SIGNALS = ("datacenter", "fab", "built")    # regions where we track land transformation
+ACCOUNT_MAX_CONTAINERS = 100                     # Modal account limit (all apps together)
+MAX_CONTAINERS = 75                              # process_tile; live scan adds signals 20 + fetch 5 = 100
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -105,7 +107,7 @@ def _read_band(href, bbox, resampling):
                         boundless=True, fill_value=0)
 
 
-@app.function(volumes={"/data": vol}, timeout=120, max_containers=100, cpu=1.0, memory=1024,
+@app.function(volumes={"/data": vol}, timeout=120, max_containers=MAX_CONTAINERS, cpu=1.0, memory=1024,
               retries=1)
 def process_tile(region_id: str, month: str, force: bool = False, include_png: bool = False) -> dict:
     import base64
@@ -328,7 +330,7 @@ def write_outputs(results: list[dict], stats: dict) -> list[str]:
         prev = json.loads(stats_path.read_text())
         for k in ("tiles_processed", "tiles_total"):
             prev[k] = prev.get(k, 0) + stats.get("add_" + k, 0)
-        prev["containers_peak"] = max(prev.get("containers_peak", 0), stats.get("containers_peak", 0))
+        prev["containers_peak"] = min(ACCOUNT_MAX_CONTAINERS, max(prev.get("containers_peak", 0), stats.get("containers_peak", 0)))
         prev["last_subset_run"] = stats
         stats = prev
         stats_path.write_text(json.dumps(stats))
@@ -366,7 +368,9 @@ def main(force: bool = False, start: str = "", end: str = "", regions: str = "")
     secs = round(time.time() - t0, 1)
     ok = sum(1 for r in results if r.get("thumb"))
     errs = [r for r in results if r.get("error")]
-    stats = {"tiles_processed": ok, "tiles_total": len(jobs), "containers_peak": len(tasks),
+    # distinct task ids over the whole run can exceed the concurrency cap when Modal replaces a container
+    stats = {"tiles_processed": ok, "tiles_total": len(jobs), "containers_peak": min(MAX_CONTAINERS, len(tasks)),
+             "distinct_task_ids": len(tasks), "max_containers": MAX_CONTAINERS,
              "seconds": secs, "errors": len(errs),
              "fresh": sum(1 for r in results if r.get("thumb") and not r.get("cached"))}
     if keep:  # regions already on disk were counted by the full run: only add tiles of brand-new regions

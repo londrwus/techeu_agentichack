@@ -1,5 +1,5 @@
 // GPU & Gadgets screen (MODULES.md §09, AI-era edition).
-// Hero left: "What's driving GPU prices" = verdict sentence + a £ "price bridge" (today -> 6 months) of grouped
+// Hero left: "What's driving GPU prices" = one big £ now -> 6m line + a £ "price bridge" (today -> 6 months) of grouped
 //            drivers[] with evidence tooltips, + before/after tile of an AI campus (Zoom opens the lightbox).
 //            Falls back to the reservoir chart ("Water for the fabs") when drivers[] is missing.
 // Hero right: GPU | Laptop forecast card. Signal row below (shared).
@@ -174,16 +174,9 @@ function driversHero(card, data, item) {
   const when = f6?.month ? fmtMonth(f6.month) : 'six months';
   const sites = buildSites(data, item);
 
-  // Verdict sentence + push/pull summary (AI-era signals summed so the story is one line).
+  // One big number line; the evidence lives in the row tooltips.
   const dir = Math.abs(totalPct) < 1 ? 'flat' : totalPct > 0 ? 'up' : 'down';
-  const verdict = dir === 'flat' ? `${short} prices likely <b class="flat">flat</b> to ${esc(when)}`
-    : `${short} prices likely <b class="${dir}">${dir === 'up' ? 'up' : 'down'} ${Math.abs(totalPct).toFixed(1)}%</b> by ${esc(when)}`;
-  const aiSum = groups.filter(g => g.ai).reduce((a, g) => a + g.gbp, 0);
-  const trend = groups.find(g => g.k === 'trend'), mkt = groups.find(g => g.k === 'mkt');
-  const forces = [trend && { l: 'recent price trend', v: trend.gbp }, Math.abs(aiSum) >= 0.5 && { l: 'AI signals from news & satellites', v: aiSum }, mkt && { l: 'pound & energy', v: mkt.gbp }].filter(Boolean);
-  const push = forces.filter(f => f.v > 0).sort((a, b) => b.v - a.v), pull = forces.filter(f => f.v < 0).concat(
-    groups.filter(g => g.ai && g.gbp < 0 && Math.abs(aiSum) >= 0.5 && aiSum > 0).map(g => ({ l: g.k === 'water' ? 'Taiwan reservoirs above normal' : g.label.toLowerCase(), v: g.gbp })));
-  const fl = a => a.map(f => `${esc(f.l)} <b>${gbpS(f.v)}</b>`).join(', ');
+  const cap = [`by ${esc(when)}`, isNum(item.prob_up_6m) && `${Math.round(item.prob_up_6m * 100)}% chance it rises`].filter(Boolean).join(' · ');
 
   // Scale for the floating bars: cumulative £ from today (0) to the forecast.
   let cum = 0;
@@ -191,33 +184,25 @@ function driversHero(card, data, item) {
   const lo = Math.min(0, ...rows.flatMap(r => [r.a, r.b]), totalGbp), hi = Math.max(0, ...rows.flatMap(r => [r.a, r.b]), totalGbp);
   const X = v => ((v - lo) / ((hi - lo) || 1)) * 100;
   const topI = rows.reduce((bi, r, i) => (r.gbp > (rows[bi]?.gbp ?? 0) ? i : bi), -1);
-  const src = s => `<span class="gd-src" style="--c:${SRC[s].c};--bg:${SRC[s].bg}">${icon(SRC[s].ic, { size: 11, stroke: 2 })}${SRC[s].t}</span>`;
 
   card.innerHTML = `
-    <div class="card-head">
-      <div><div class="card-title">What's driving ${esc(noun)} prices</div>
-        <div class="card-sub">Where the 6-month forecast comes from, in pounds · hover a row for the evidence</div></div>
-    </div>
+    <div class="card-head"><div class="card-title">What's driving ${esc(noun)} prices</div></div>
     <div class="gd-verdict">
-      <div class="gd-big">${verdict}</div>
-      <div class="gd-path"><span>${fmtGBP(now)} today</span>${icon('arrow-right', { size: 16, stroke: 2 })}<b>${fmtGBP(later)}</b>
-        ${isNum(item.prob_up_6m) ? `<span class="gd-prob">${Math.round(item.prob_up_6m * 100)}% chance it rises</span>` : ''}</div>
-      <div class="gd-why">
-        ${push.length ? `<span class="gd-f up">${icon('arrow-up', { size: 12, stroke: 2.5 })}Pushing up</span><span>${fl(push)}</span>` : ''}
-        ${pull.length ? `<span class="gd-f down">${icon('arrow-down', { size: 12, stroke: 2.5 })}Pulling down</span><span>${fl(pull)}</span>` : ''}
-      </div>
+      <div class="gd-big"><span class="gd-now">${fmtGBP(now)}</span>${icon('arrow-right', { size: 22, stroke: 2.2 })}<b>${fmtGBP(later)}</b>
+        <span class="gd-chg ${dir}">${pct(totalPct, 1)}</span></div>
+      <div class="gd-cap">${cap}</div>
     </div>
     <div class="gpu-body">
       <div class="gd-bridge">
         ${rows.map((r, i) => `
         <div class="gd-row" data-i="${i}">
-          <div class="gd-lab"><span class="gd-ic">${icon(r.ic, { size: 16 })}</span><div><div class="gd-n" title="${esc(r.label)}">${esc(r.label)}</div><div class="gd-tags">${src(r.src)}${i === topI ? '<span class="gd-top">Biggest</span>' : ''}</div></div></div>
+          <div class="gd-lab"><span class="gd-ic">${icon(r.ic, { size: 16 })}</span><div><div class="gd-n" title="${esc(r.label)}">${esc(r.label)}</div></div></div>
           <div class="gd-track"><i class="gd-zero" style="left:${X(0)}%"></i><i class="gd-end" style="left:${X(totalGbp)}%"></i>
             <div class="gd-bar ${r.gbp < 0 ? 'down' : i === topI ? 'up top' : 'up'}" style="left:${X(Math.min(r.a, r.b))}%;--w:${Math.max(0.6, X(Math.max(r.a, r.b)) - X(Math.min(r.a, r.b)))}%;--d:${150 + i * 80}ms"></div></div>
           <div class="gd-v ${r.gbp < 0 ? 'down' : 'up'}">${gbpS(r.gbp)}</div>
         </div>`).join('')}
         <div class="gd-row total" data-i="total">
-          <div class="gd-lab"><span class="gd-ic">${icon('equal', { size: 16 })}</span><div><div class="gd-n">Forecast change</div><span class="gd-sub">${fmtGBP(now)} → ${fmtGBP(later)}</span></div></div>
+          <div class="gd-lab"><span class="gd-ic">${icon('equal', { size: 16 })}</span><div><div class="gd-n">Forecast change</div></div></div>
           <div class="gd-track"><i class="gd-zero" style="left:${X(0)}%"></i>
             <div class="gd-bar total" style="left:${X(Math.min(0, totalGbp))}%;--w:${Math.max(0.6, Math.abs(X(totalGbp) - X(0)))}%;--d:${150 + rows.length * 80}ms"></div></div>
           <div class="gd-v">${gbpS(totalGbp)}<small>${pct(totalPct, 1)}</small></div>
@@ -227,7 +212,7 @@ function driversHero(card, data, item) {
         ${sites.length ? `<div class="gd-sat-h">${icon('satellite', { size: 13, stroke: 2 })}Seen from space</div><div class="cmp-host"></div>` : ''}
         ${sites.length > 1 ? `<div class="gpu-dots">${sites.map((_, i) => `<button data-i="${i}" title="${esc(shortRegion(sites[i].r.name))}"></button>`).join('')}</div>` : ''}
         <div class="build-pill"></div>
-        <div class="gpu-cap">Sentinel-2 · 10 m · drag to compare, click Zoom to explore</div>
+        <div class="gpu-cap">Sentinel-2 · drag to compare</div>
       </div>
     </div>`;
 

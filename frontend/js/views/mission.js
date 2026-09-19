@@ -1,5 +1,5 @@
 import { api, allModules, MODULE_META, esc, fmt, isNum, tint, countUp, icons } from '../lib.js';
-import { scan, onScan, startScan, stopScan } from '../scan.js';
+import { scan, onScan, startScan, stopScan, MAX_CONTAINERS } from '../scan.js';
 import { wireBriefing } from './common.js';
 import { showTip, hideTip } from '../lib.js';
 import { tipHtml, fmtMonth } from '../components/chartTheme.js';
@@ -39,7 +39,7 @@ export async function render(page, arg) {
   <section class="mc-row">
     <div class="card">
       <div class="card-head">
-        <div><div class="card-title">Sentinel-2 tiles, arriving live</div><div class="card-sub" id="tiles-sub">16 regions · one Modal container per tile</div></div>
+        <div><div class="card-title">Sentinel-2 tiles, arriving live</div><div class="card-sub" id="tiles-sub">16 regions · fanned out on Modal</div></div>
         <div class="pct" id="pct">–</div>
       </div>
       <div class="progress"><i id="prog"></i></div>
@@ -130,15 +130,15 @@ export async function render(page, arg) {
     if (!live) icons();
 
     // counters
-    const active = Math.max(l.containers_active || 0, l.modal_runners || 0);
+    const active = Math.min(MAX_CONTAINERS, l.containers_active || 0);
     const jps = scan.jevHistory.length ? scan.jevHistory[scan.jevHistory.length - 1] : 0;
     const gpu = l.gpu_model || stats.gpu_model;
     if (live || scan.finished) {
-      setCounter('c1', live ? active : scan.peakContainers, live ? '/ 100' : 'peak');
+      setCounter('c1', live ? active : scan.peakContainers, live ? `/ ${MAX_CONTAINERS}` : 'peak');
       setCounter('c2', l.tiles_done || 0, `/ ${fmt(l.tiles_total || 0)}`);
       setCounter('c3', live ? jps : scan.peakJps, live ? '' : 'peak');
     } else {
-      setCounter('c1', stats.modal_containers_peak || 0, 'peak');
+      setCounter('c1', Math.min(MAX_CONTAINERS, stats.modal_containers_peak || 0), 'peak');
       setCounter('c2', stats.tiles_processed_total ?? stats.tiles_processed ?? 0, 'total');
       if (lastScan?.peak_jps) setCounter('c3', lastScan.peak_jps, 'last scan'); else setCounter('c3', '–', 'press Scan now');
     }
@@ -153,7 +153,7 @@ export async function render(page, arg) {
     page.querySelector('#pct').textContent = total ? p + '%' : '–';
     page.querySelector('#prog').style.width = p + '%';
     page.querySelector('#tiles-sub').textContent = live || scan.finished
-      ? `${fmt(total)} tiles · one Modal container per tile${l.month ? ' · ' + l.month : ''}`
+      ? `${fmt(total)} tiles · fanned out on up to 75 Modal containers${l.month ? ' · ' + l.month : ''}`
       : `${idleTiles.length || 16} regions · last scan · press Scan now`;
     if (live || scan.finished) {
       const cap = Math.min(45, Math.max(total, scan.tiles.length, 16));
@@ -173,7 +173,7 @@ export async function render(page, arg) {
 
     // providers
     const jevTotal = (stats.jev_judgments_total ?? stats.jev_judgments ?? 0) + (live ? (l.jev_judgments || 0) : 0);
-    page.querySelector('#pv-modal').textContent = live ? `${active} live` : `peak ${fmt(Math.max(stats.modal_containers_peak || 0, scan.peakContainers))}`;
+    page.querySelector('#pv-modal').textContent = live ? `${active} live` : `peak ${fmt(Math.min(MAX_CONTAINERS, Math.max(stats.modal_containers_peak || 0, scan.peakContainers)))}`;
     page.querySelector('#pv-modal-r').textContent = (/timesfm/i.test(gpu || '') ? 'CPU fan-out + TimesFM 3.0' : `CPU fan-out + ${gpuShort(gpu)} GPU`);
     page.querySelector('#pv-gem').textContent = `${fmt(stats.gemini_calls_total ?? stats.gemini_calls ?? 0)} calls`;
     page.querySelector('#pv-jev').textContent = `${fmt(jevTotal)} judged`;

@@ -7,6 +7,7 @@
   modal deploy modal_app/signals.py           # exposes judge_headlines / fetch_latest / judge_regions for the live scan
 """
 import json
+import os
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -157,7 +158,7 @@ def fetch_rss(module_id: str, n_windows: int = 8, queries: list[str] | None = No
     return _dedupe(rows)
 
 
-@app.function(image=image, timeout=60)
+@app.function(image=image, timeout=60, max_containers=5)  # live scan: 5 modules in parallel
 def fetch_latest(module_id: str, n: int = 40) -> list[dict]:
     """Fast: latest headlines for the live 'Scan now' demo (Google News RSS, last 7 days)."""
     import httpx
@@ -235,7 +236,7 @@ def judge_headlines(batch: list[dict], module_id: str) -> dict:
                     "severity": _dist(sev, SEVERITY_LABELS),
                     "confidence": round(min(float(eff.confidence), float(sev.confidence), float(it.confidence)), 3)})
     return {"rows": out, "n_judgments": len(qs), "input_tokens": r.usage.input_tokens,
-            "output_tokens": r.usage.output_tokens}
+            "output_tokens": r.usage.output_tokens, "task_id": os.environ.get("MODAL_TASK_ID", "local")}
 
 
 def _write(path: Path, obj):
@@ -329,7 +330,7 @@ def build(force: bool = False) -> dict:
              "seconds": round(time.time() - t0, 1), "headlines": sum(len(headlines[m]) for m in todo),
              "input_tokens": tok_in, "output_tokens": tok_out,
              "jev_cost_usd_est": round(tok_in * 0.042e-6 + tok_out * 0.042e-6, 4),
-             "containers_peak": min(20, len(jobs)) + 1 + len(need)}
+             "containers_peak": min(100, min(20, len(jobs)) + 1 + len(need))}
     old_stats = OUT / "_stats.json"
     if old_stats.exists():
         prev = json.loads(old_stats.read_text())

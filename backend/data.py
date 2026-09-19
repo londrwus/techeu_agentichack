@@ -156,7 +156,7 @@ def _stats_from_files() -> dict:
                 continue
             for k, v in s.items():
                 if k in ("modal_containers_peak", "containers_peak", "containers") and isinstance(v, (int, float)):
-                    stats["modal_containers_peak"] = max(stats["modal_containers_peak"], v)
+                    stats["modal_containers_peak"] = min(MODAL_MAX_CONTAINERS, max(stats["modal_containers_peak"], v))
                 elif k == "region_judgments" and isinstance(v, (int, float)):
                     stats["jev_judgments"] += v
                 elif k == "gpu_type" and v:
@@ -207,5 +207,12 @@ def compute_summary() -> dict:
             "modules": mods, "stats": _stats_from_files()}
 
 
+MODAL_MAX_CONTAINERS = 100  # Modal account limit: never display a peak above it
+
+
 def get_summary() -> dict:
-    return read_json("summary.json") or compute_summary()
+    s = read_json("summary.json") or compute_summary()
+    st = s.get("stats") or {}
+    if isinstance(st.get("modal_containers_peak"), (int, float)):
+        st["modal_containers_peak"] = min(MODAL_MAX_CONTAINERS, st["modal_containers_peak"])
+    return s

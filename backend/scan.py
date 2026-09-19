@@ -16,7 +16,9 @@ def _gpu_model():
     return data.get_summary().get("stats", {}).get("gpu_model") or GPU_MODEL_DEFAULT
 
 
-SCAN_MONTHS = 6  # 16 regions x 6 months = 96 tiles in parallel
+SCAN_MONTHS = 6  # 16 regions x 6 months = 96 tiles, spread over <= 75 process_tile containers
+MAX_CONTAINERS = 100  # Modal account limit: process_tile 75 + judge_headlines 20 + fetch_latest 5
+SAT_MAX = 75
 
 
 def sse(ev: dict) -> str:
@@ -42,23 +44,29 @@ async def live_events(month: str | None = None):
             y2 -= 1
         months.append(f"{y2:04d}-{m2:02d}")
     pairs = [(r["id"], m) for m in months for r in REGIONS]
-    st = {"tiles_done": 0, "tiles_total": len(pairs), "jev_judgments": 0, "inflight": 0}
+    # Containers = DISTINCT Modal task ids actually seen this scan (not in-flight call counts), capped at the limit.
+    st = {"tiles_done": 0, "tiles_total": len(pairs), "jev_judgments": 0, "fetching": 0, "runners": 0}
+    sat_tasks, sig_tasks = set(), set()
+
+    def containers():
+        sat = min(SAT_MAX, max(len(sat_tasks), st["runners"] or 0))
+        return min(MAX_CONTAINERS, sat + len(sig_tasks) + st["fetching"])
     q: asyncio.Queue = asyncio.Queue()
 
     def base(**kw):
-        return {"containers_active": st["inflight"], "tiles_done": st["tiles_done"], "tiles_total": st["tiles_total"],
-                "jev_judgments": st["jev_judgments"], "gpu_model": gpu, "elapsed_s": round(time.time() - t0, 2),
-                "modal_runners": st.get("runners"), **kw}
+        return {"containers_active": containers(), "containers_max": MAX_CONTAINERS, "tiles_done": st["tiles_done"],
+                "tiles_total": st["tiles_total"], "jev_judgments": st["jev_judgments"], "gpu_model": gpu,
+                "elapsed_s": round(time.time() - t0, 2), **kw}
 
     async def tiles():
-        st["inflight"] += len(pairs)
         async for res in process_tile.starmap.aio(pairs, kwargs={"force": True},
                                                   order_outputs=False, return_exceptions=True):
-            st["inflight"] = max(0, st["inflight"] - 1)
             st["tiles_done"] += 1
             COUNTERS["tiles_scanned"] += 1
             ev = {"type": "progress", "kind": "tile"}
             if isinstance(res, dict):
+                if res.get("task_id"):
+                    sat_tasks.add(res["task_id"])
                 rid = res.get("region_id")
                 ev.update(region_id=rid, module_id=res.get("module") or data.REGION_BY_ID.get(rid, {}).get("module"),
                           thumb=res.get("thumb"), ndvi=res.get("ndvi"), ndwi=res.get("ndwi"), month=res.get("month"))
@@ -70,15 +78,17 @@ async def live_events(month: str | None = None):
 
     async def signals(module_id: str):
         try:
-            st["inflight"] += 1
-            heads = await asyncio.wait_for(fetch_latest.remote.aio(module_id, 40), 60)
-            st["inflight"] -= 1
+            st["fetching"] += 1
+            try:
+                heads = await asyncio.wait_for(fetch_latest.remote.aio(module_id, 40), 60)
+            finally:
+                st["fetching"] -= 1
             batches = [heads[i:i + 10] for i in range(0, len(heads), 10)] or []
-            st["inflight"] += len(batches)
             async for res in judge.map.aio(batches, kwargs={"module_id": module_id},
                                            order_outputs=False, return_exceptions=True):
-                st["inflight"] = max(0, st["inflight"] - 1)
                 if isinstance(res, dict):
+                    if res.get("task_id"):
+                        sig_tasks.add(res["task_id"])
                     n = res.get("n_judgments") or len(res.get("rows") or []) * 4
                     res = res.get("rows") or []
                 else:
@@ -88,7 +98,6 @@ async def live_events(month: str | None = None):
                 top = res[0].get("title") if isinstance(res, list) and res and isinstance(res[0], dict) else None
                 await q.put(base(type="progress", kind="signals", module_id=module_id, headline=top))
         except Exception as e:
-            st["inflight"] = max(0, st["inflight"] - 1)
             await q.put(base(type="progress", kind="signals", module_id=module_id, error=str(e)[:200]))
 
     async def ticker(stop: asyncio.Event):
@@ -96,7 +105,7 @@ async def live_events(month: str | None = None):
             await asyncio.sleep(1.0)
             try:
                 s = await process_tile.get_current_stats.aio()
-                st["runners"] = s.num_total_runners
+                st["runners"] = min(SAT_MAX, s.num_total_runners or 0)
             except Exception:
                 pass
             await q.put(base(type="progress", kind="tick"))
@@ -122,9 +131,10 @@ async def live_events(month: str | None = None):
     tick.cancel()
     for t in tasks:
         t.cancel()
-    st["inflight"] = 0
+    st["fetching"] = 0
     COUNTERS["containers_active"] = 0
-    yield base(type="done", month=month)
+    yield base(type="done", month=month, containers_active=0, containers_used=containers(), sat_containers=len(sat_tasks),
+               signal_containers=len(sig_tasks))
 
 
 def synthetic_recording() -> list:
@@ -136,7 +146,7 @@ def synthetic_recording() -> list:
                 "gpu_model": gpu, "elapsed_s": 0.0, "month": data.latest_month()})
     regions = REGIONS[:]
     random.Random(7).shuffle(regions)
-    active = total + 25
+    active = min(MAX_CONTAINERS, total + 25)
     for i, r in enumerate(regions):
         t += random.Random(i).uniform(0.4, 1.3)
         done += 1
@@ -166,6 +176,9 @@ async def replay_events():
         if wait > 0:
             await asyncio.sleep(min(wait, 3))
         e = dict(ev, replay=True)
+        if isinstance(e.get("containers_active"), (int, float)):
+            e["containers_active"] = min(MAX_CONTAINERS, e["containers_active"])
+        e.pop("modal_runners", None)
         if e.get("type") == "progress":
             COUNTERS["containers_active"] = e.get("containers_active", 0)
             if e.get("kind") == "tile":
