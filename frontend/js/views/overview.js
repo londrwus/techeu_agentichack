@@ -231,7 +231,7 @@ function renderMap(page, mods) {
     p.className = 'ov-pin' + (a && a.v < -10 ? ' pulse' : '');
     p.style.setProperty('--c', MODULE_META[r.module].color);
     const tipH = regionTip(r, a);
-    p.addEventListener('mousemove', e => showTip(tipH, e.clientX, e.clientY));
+    p.addEventListener('mousemove', e => showTip(tipH, e.clientX, e.clientY, map.getBoundingClientRect()));
     p.addEventListener('mouseleave', hideTip);
     p.addEventListener('click', e => { e.stopPropagation(); hideTip(); location.hash = `#/${r.module}`; });
     return { r, p, a };
@@ -257,7 +257,7 @@ function renderMap(page, mods) {
   if (!ml || !regions.length) return fallbackMap(map, pins, callout, worst);
 
   const b = regions.reduce((acc, r) => [Math.min(acc[0], r.lon), Math.min(acc[1], r.lat), Math.max(acc[2], r.lon), Math.max(acc[3], r.lat)], [180, 90, -180, -90]);
-  const bounds = [[b[0] - 8, b[1] - 8], [b[2] + 8, b[3] + 8]];
+  const bounds = [[b[0] - 4, b[1] - 4], [b[2] + 4, b[3] + 4]];
   const fit = (duration = 0) => gl.fitBounds(bounds, { padding: 24, duration });
   let touched = false;
   const gl = new ml.Map({

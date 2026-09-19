@@ -11,7 +11,7 @@ import * as gpu from './views/gpu.js';
 import * as rent from './views/rent.js';
 import * as mission from './views/mission.js';
 import * as ask from './views/ask.js';
-import * as track from './views/track.js';
+import * as track from './views/track_record.js';
 import { watchIcons } from './components/icons.js';
 import { installLightbox } from './components/lightbox.js';
 

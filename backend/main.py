@@ -175,3 +175,5 @@ def health():
 
 from backend.extra_rent import router as _rent_router  # noqa: E402
 app.include_router(_rent_router)
+from backend.extra_mission import router as _mission_router  # noqa: E402
+app.include_router(_mission_router)

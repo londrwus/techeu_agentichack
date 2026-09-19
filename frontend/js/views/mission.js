@@ -3,6 +3,7 @@ import { scan, onScan, startScan, stopScan } from '../scan.js';
 import { wireBriefing } from './common.js';
 import { showTip, hideTip } from '../lib.js';
 import { tipHtml, fmtMonth } from '../components/chartTheme.js';
+import { shortRegion } from '../components/ui.js';
 
 function gpuShort(model) {
   const m = String(model || '').match(/(B200|H200|H100|A100|A10G|L40S|L4|T4)/i);
@@ -61,10 +62,13 @@ export async function render(page, arg) {
 
   let stats = await api('/api/stats', { fresh: true }) || {};
   const mods = await allModules();
+  // Last recorded scan: shown before any live scan so the throughput card never looks empty.
+  const lastScan = await api('/api/scan/last').catch(() => null);
+  const ghost = (() => { const j = lastScan?.jps || []; const a = j.findIndex(v => v > 0); if (a < 0) return []; const w = j.slice(Math.max(0, a - 3), Math.max(0, a - 3) + 30); return Array(30 - w.length).fill(0).concat(w); })();
   const regionName = {}, regionMod = {};
   const idleTiles = [];
   mods.forEach(m => (m.regions || []).forEach(r => {
-    regionName[r.region_id] = (r.name || r.region_id).split(',')[0].replace(/ \(.*?\)/, '');
+    regionName[r.region_id] = shortRegion(r);
     regionMod[r.region_id] = m.module?.id;
     const last = (r.series || []).filter(s => s.thumb).pop();
     if (last) idleTiles.push({ region_id: r.region_id, thumb: last.thumb, module_id: m.module?.id });
@@ -135,7 +139,7 @@ export async function render(page, arg) {
     } else {
       setCounter('c1', stats.modal_containers_peak || 0, 'peak');
       setCounter('c2', stats.tiles_processed_total ?? stats.tiles_processed ?? 0, 'total');
-      setCounter('c3', 0, 'idle');
+      if (lastScan?.peak_jps) setCounter('c3', lastScan.peak_jps, 'last scan'); else setCounter('c3', '–', 'press Scan now');
     }
     setCounter('c4', gpuShort(gpu), '');
     const gt = stats.gpu_type ? String(stats.gpu_type).replace(/\s*\(.*\)/, '') : null;
@@ -175,11 +179,16 @@ export async function render(page, arg) {
 
     // throughput
     const hist = scan.jevHistory.slice(-30);
-    const pad = Array(30 - hist.length).fill(0).concat(hist);
+    const useGhost = !live && !scan.finished && ghost.length && !hist.some(v => v > 0);
+    const pad = useGhost ? ghost : Array(30 - hist.length).fill(0).concat(hist);
     const max = Math.max(10, ...pad);
+    page.querySelector('#tput').classList.toggle('ghost', !!useGhost);
     page.querySelectorAll('#tput i').forEach((b, i) => (b.style.height = Math.max(2, (pad[i] / max) * 100) + '%'));
-    page.querySelector('#peak').textContent = `peak ${fmt(scan.peakJps)}`;
-    page.querySelector('#tput-empty').hidden = hist.some(v => v > 0);
+    page.querySelector('#peak').textContent = useGhost ? `last scan · peak ${fmt(lastScan.peak_jps)}/s` : `peak ${fmt(scan.peakJps)}/s`;
+    const empty = page.querySelector('#tput-empty');
+    empty.hidden = hist.some(v => v > 0);
+    empty.textContent = useGhost ? 'Last scan shown · press Scan now to stream live' : 'Live throughput appears here during a scan';
+    empty.classList.toggle('ghost', !!useGhost);
   };
 
   // throughput bar tooltips: seconds ago + judgments/sec
@@ -187,8 +196,15 @@ export async function render(page, arg) {
   tput.addEventListener('mousemove', e => {
     const bars = [...tput.children], i = bars.indexOf(e.target);
     if (i < 0) { hideTip(); return; }
-    const hist = scan.jevHistory.slice(-30), pad = Array(30 - hist.length).fill(null).concat(hist), v = pad[i];
+    const hist = scan.jevHistory.slice(-30), isGhost = tput.classList.contains('ghost');
+    const pad = isGhost ? ghost : Array(30 - hist.length).fill(null).concat(hist), v = pad[i];
     const ago = 29 - i;
+    if (isGhost) {
+      showTip(tipHtml({ title: `Last scan · second ${i + 1}`, tag: 'Recorded',
+        rows: [{ color: '#C7D2FE', label: 'Jev judgments / sec', value: fmt(v) }],
+        note: `${fmt(lastScan.jev_judgments)} judgments · ${fmt(lastScan.tiles)} tiles in ${Math.round(lastScan.elapsed_s || 0)}s` }), e.clientX, e.clientY);
+      return;
+    }
     showTip(tipHtml({ title: ago ? `${ago}s ago` : 'Now', tag: scan.running ? 'Live' : '',
       rows: [{ color: i === 29 ? 'var(--accent)' : '#C7D2FE', label: 'Jev judgments / sec', value: v == null ? 'no data' : fmt(v) }],
       note: v == null ? 'Press Scan now to stream live judgments.' : `Peak this scan: ${fmt(scan.peakJps)}/s` }), e.clientX, e.clientY);

@@ -1,6 +1,7 @@
 /* Orbit app styles. Tokens live in tokens.css. */
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
+html, body { margin: 0; }
+html { height: 100%; }
 body {
   font-family: var(--font); background: var(--bg); color: var(--text-1);
   display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh;
@@ -14,7 +15,7 @@ svg.lucide { width: 18px; height: 18px; stroke-width: 1.75; flex: none; }
 
 /* ---------- sidebar ---------- */
 .sidebar {
-  position: sticky; top: 0; height: 100vh; background: var(--card); border-right: 1px solid var(--border);
+  position: sticky; top: 0; align-self: start; height: 100vh; background: var(--card); border-right: 1px solid var(--border);
   padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto;
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
@@ -350,20 +351,19 @@ body.full-bleed .main { padding: 0; gap: 0; }
 .earth-title .sub { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.75); }
 
 /* ---------- forecast chart + floating callout ---------- */
-.fc { position: relative; min-height: 120px; min-width: 0; }
-.fc-plot { position: absolute; inset: 0; }
+.fc { position: relative; min-height: 120px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.fc-plot { position: relative; flex: 1; min-height: 0; order: 2; }
+/* End-value readout is docked in a strip above the plot, so it never covers a series. */
 .fc-callout {
-  position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(0,0,0,.12); white-space: nowrap;
-  opacity: 0; transition: opacity .2s ease-out;
+  order: 1; align-self: flex-end; display: flex; align-items: baseline; gap: 8px; pointer-events: none; white-space: nowrap;
+  opacity: 0; transition: opacity .2s ease-out; max-width: 100%; overflow: hidden;
 }
 .fc-callout.on { opacity: 1; }
-.fc-callout .t { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.fc-callout .v { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
-.fc-callout .v b { font-size: 24px; font-weight: 700; letter-spacing: -.5px; color: var(--text-1); font-variant-numeric: tabular-nums; }
-.fc-callout.compact { padding: 8px 12px; }
-.fc-callout.compact .t { font-size: 11px; font-weight: 500; color: var(--text-3); }
-.fc-callout.compact .v b { font-size: 18px; }
+.fc-callout .t { font-size: 12px; font-weight: 600; color: var(--text-3); }
+.fc-callout .v { display: flex; align-items: baseline; gap: 6px; }
+.fc-callout .v b { font-size: 18px; font-weight: 700; letter-spacing: -.3px; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.fc-callout.compact .t { font-size: 11px; font-weight: 500; }
+.fc-callout.compact .v b { font-size: 15px; }
 .fc-callout.compact .delta { font-size: 12px; }
 .delta { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .delta.up { color: var(--up); } .delta.down { color: var(--down); } .delta.flat { color: var(--text-3); }
@@ -400,19 +400,17 @@ body.full-bleed .main { padding: 0; gap: 0; }
 .sig-head b { font-size: 15px; font-weight: 700; }
 .sig-head span { font-size: 12px; font-weight: 500; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sig-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.sig-body.fc { display: block; }
 .sig-chart { flex: 1; min-height: 0; }
+.sig-note { font-size: 11px; font-weight: 500; color: var(--text-3); padding-top: 4px; }
 .sig-legend { display: flex; gap: 14px; font-size: 11px; font-weight: 500; color: var(--text-2); padding-top: 6px; flex-wrap: wrap; }
 .sig-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sig-legend i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
-.sig-call { transform: translate(0, 0); }
 
 /* ---------- satellite tiles ---------- */
 .sat-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; background: #1f2937; }
 .sat-missing { background: linear-gradient(135deg, #1e293b, #334155); }
 
 .delta svg.lucide { width: 1.05em; height: 1.05em; stroke-width: 2.25; }
-.fc-callout.dim { opacity: .15 !important; }
 
 /* ---------- chart tooltips (components/chartTheme.js) ---------- */
 .ct { min-width: 170px; font-family: var(--font); }
@@ -463,7 +461,7 @@ img[data-sat-region], img.sat, img[src^="/tiles/"], [data-sat-region] { cursor: 
 .lb-zoomctl { position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
 .lb-zoomctl button { width: 32px; height: 32px; border-radius: 8px; border: 0; background: rgba(255,255,255,.92); color: var(--text-1); display: grid; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
 .lb-side { padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; border-left: 1px solid var(--border);
-  --c-ndvi: #16A34A; --c-ndwi: #2563EB; }
+  --c-ndvi: #16A34A; --c-ndwi: #2563EB; --c-ndbi: #78716C; }
 .lb-month span { display: block; font-size: 12px; font-weight: 600; color: var(--text-3); }
 .lb-month b { font-size: 28px; font-weight: 700; letter-spacing: -.5px; }
 .lb-stats { display: flex; flex-direction: column; gap: 12px; }

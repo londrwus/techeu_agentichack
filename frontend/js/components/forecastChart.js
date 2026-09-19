@@ -140,43 +140,21 @@ export function forecastChart(el, opts = {}) {
     const cv = fc[ci].p50, delta = lastP ? (cv / lastP - 1) * 100 : null;
     const cls = !isNum(delta) ? '' : delta > 0.05 ? 'up' : delta < -0.05 ? 'down' : 'flat';
     call.className = `fc-callout${o.compact ? ' compact' : ''}${shown ? ' on' : ''}`;
-    call.innerHTML = `<div class="t">${o.calloutTitle ? `${o.calloutTitle} · ` : ''}${monLong(fc[ci].month)}</div>
+    call.innerHTML = `<div class="t">${o.calloutTitle ? `${o.calloutTitle} · ` : ''}${monLong(fc[ci].month)} forecast</div>
       <div class="v"><b>${fmt(cv)}</b>${isNum(delta) ? `<span class="delta ${cls}">${arrowIcon(delta)}${Math.abs(delta).toFixed(1)}%</span>` : ''}</div>`;
     pt = { x: h.length + ci, y: cv, rising: isNum(delta) && delta > 0 };
   }
 
-  function place() {
-    if (!pt) return;
-    const W = el.clientWidth, H = el.clientHeight, w = call.offsetWidth, hh = call.offsetHeight;
-    if (!W || !w) return;
-    let x, y;
-    if (o.compact) { x = 6; y = 4; }
-    else {
-      const [px, py] = chart.convertToPixel({ seriesIndex: 1 }, [pt.x, pt.y]);
-      const gap = 16;
-      // Rising lines come from lower-left → the upper-left is free; falling → lower-left is free.
-      const cands = pt.rising
-        ? [[px - w - gap, py - hh - gap], [px - w - gap, py + gap], [px - w / 2, py + gap]]
-        : [[px - w - gap, py + gap], [px - w - gap, py - hh - gap], [px - w / 2, py - hh - gap]];
-      const fits = ([cx, cy]) => cx >= 4 && cy >= 4 && cx + w <= W - 4 && cy + hh <= H - 24;
-      [x, y] = cands.find(fits) || cands[0];
-      x = Math.max(4, Math.min(W - w - 4, x)); y = Math.max(4, Math.min(H - hh - 4, y));
-    }
-    call.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-  }
+  function place() {} // callout is docked above the plot (CSS), no overlap with series
 
   function reveal() {
     place();
     if (!pt || shown) return;
     clearTimeout(timer);
-    timer = setTimeout(() => { shown = true; place(); call.classList.add('on'); }, 1400);
+    timer = setTimeout(() => { shown = true; call.classList.add('on'); }, 900);
   }
 
-  chart.on('finished', place);
-  // Fade the static callout while the user is hovering (the tooltip takes over).
-  plot.addEventListener('mouseenter', () => call.classList.add('dim'));
-  plot.addEventListener('mouseleave', () => call.classList.remove('dim'));
-  const stop = onResize(el, () => { chart.resize(); place(); });
+  const stop = onResize(el, () => chart.resize());
 
   const api = {
     chart,

@@ -109,7 +109,7 @@ function render() {
       <aside class="lb-side">
         <div class="lb-month"></div>
         <div class="lb-stats"></div>
-        ${multi ? `<div class="lb-spark-wrap"><div class="lb-spark-t">Vegetation (NDVI) over time</div><div class="lb-spark"></div></div>` : ''}
+        ${multi ? `<div class="lb-spark-wrap"><div class="lb-spark-t">${({ crop: "Crop health (NDVI)", water: "Water (NDWI)", built: "Built-up (NDBI)" })[kindOf(r)]} over time</div><div class="lb-spark"></div></div>` : ''}
         <div class="lb-anom"></div>
         <div class="lb-help">${icon('info', { size: 14 })}<span>${multi ? 'Use the slider or ← → keys to travel through time. ' : ''}Scroll on the image to zoom.</span></div>
       </aside>
@@ -138,6 +138,19 @@ function itemLabel(id) {
   return names[id] || ITEM_META[id]?.short || id;
 }
 
+// What the satellite is watching at this site decides the wording: farms -> crop health, reservoirs -> water, sites -> building.
+function kindOf(r) {
+  const k = String(r?.signal || '') + ' ' + String(r?.region_id || '');
+  if (/water|reservoir/.test(k)) return 'water';
+  if (/datacenter|fab|built|port|park|dc_/.test(k)) return 'built';
+  return 'crop';
+}
+const SPARK = {
+  crop: { key: 'ndvi', label: 'NDVI (crop health)', color: '#16A34A' },
+  water: { key: 'ndwi', label: 'NDWI (water)', color: '#2563EB' },
+  built: { key: 'ndbi', label: 'NDBI (built-up)', color: '#78716C' },
+};
+
 function show(i) {
   if (!state || !state.series.length) return;
   state.i = Math.max(0, Math.min(state.series.length - 1, i));
@@ -154,9 +167,12 @@ function show(i) {
     return `<div class="lb-stat"><div class="lb-stat-h"><span>${label}</span><b>${v.toFixed(2)}</b></div>
       <div class="lb-bar"><i style="width:${w}%;background:var(--c-${k})"></i></div><div class="lb-stat-s">${hint}</div></div>`;
   };
+  const kind = kindOf(state.r);
+  const sNdvi = stat('ndvi', 'NDVI · vegetation', kind === 'crop' ? 'Higher = greener, healthier crops' : 'Higher = more plants on the ground', -0.2, 0.9);
+  const sNdwi = stat('ndwi', 'NDWI · water', kind === 'water' ? 'Higher = fuller reservoir' : 'Higher = more surface water', -0.8, 0.6);
+  const sNdbi = stat('ndbi', 'NDBI · built-up', 'Higher = more concrete, roofs and car parks', -0.6, 0.4);
   p.querySelector('.lb-stats').innerHTML =
-    stat('ndvi', 'NDVI · vegetation', 'Higher = greener, healthier crops', -0.2, 0.9) +
-    stat('ndwi', 'NDWI · water', 'Higher = more surface water', -0.8, 0.6) +
+    (kind === 'built' ? sNdbi + sNdvi : kind === 'water' ? sNdwi + sNdvi : sNdvi + sNdwi) +
     (isNum(s.cloud_pct) ? `<div class="lb-stat"><div class="lb-stat-h"><span>Cloud cover</span><b>${Math.round(s.cloud_pct)}%</b></div>
       <div class="lb-bar"><i style="width:${Math.max(2, s.cloud_pct)}%;background:#94A3B8"></i></div></div>` : '');
   // preload neighbours for a smooth timelapse
@@ -167,13 +183,20 @@ function show(i) {
 function anomaly() {
   const a = state.r.anomaly || {};
   const chip = (v, lab) => (isNum(v) ? `<div class="lb-an ${v < -5 ? 'bad' : v > 5 ? 'good' : ''}"><b>${fmtPct(v)}</b><span>${lab}</span></div>` : '');
-  root.querySelector('.lb-anom').innerHTML = chip(a.ndvi_vs_5yr_pct, 'crop health vs 5-yr avg') + chip(a.ndwi_vs_5yr_pct, 'water vs 5-yr avg');
+  const kind = kindOf(state.r);
+  const built = a.built_frac_vs_5yr_pct ?? a.ndbi_vs_5yr_pct, water = a.water_frac_vs_5yr_pct ?? a.ndwi_vs_5yr_pct;
+  root.querySelector('.lb-anom').innerHTML = kind === 'built'
+    ? chip(built, 'built-up area vs 5-yr avg') + chip(a.ndvi_vs_5yr_pct, 'greenery vs 5-yr avg')
+    : kind === 'water'
+      ? chip(water, 'water vs 5-yr avg') + chip(a.ndvi_vs_5yr_pct, 'greenery vs 5-yr avg')
+      : chip(a.ndvi_vs_5yr_pct, 'crop health vs 5-yr avg') + chip(a.ndwi_vs_5yr_pct, 'water vs 5-yr avg');
 }
 
 function spark() {
   const el = root.querySelector('.lb-spark');
   if (!el || !window.echarts) return;
   const s = state.series;
+  const sp = SPARK[kindOf(state.r)], key = s.some(x => isNum(x[sp.key])) ? sp.key : 'ndvi', col = key === sp.key ? sp.color : '#16A34A';
   const c = echarts.init(el);
   c.setOption({
     animation: false, grid: { left: 2, right: 2, top: 6, bottom: 2 },
@@ -181,11 +204,11 @@ function spark() {
     yAxis: { type: 'value', show: false, scale: true },
     tooltip: axisTooltip(ps => {
       const i = ps?.[0]?.dataIndex, x = s[i]; if (!x) return '';
-      return tipHtml({ title: fmtMonth(x.month), rows: [{ color: '#16A34A', label: 'NDVI', value: isNum(x.ndvi) ? x.ndvi.toFixed(2) : '–' },
+      return tipHtml({ title: fmtMonth(x.month), rows: [{ color: col, label: key === sp.key ? sp.label : 'NDVI', value: isNum(x[key]) ? x[key].toFixed(2) : '–' },
         isNum(x.cloud_pct) ? { label: 'Cloud', value: Math.round(x.cloud_pct) + '%' } : null], note: 'Click to jump to this month' });
     }),
-    series: [{ type: 'line', data: s.map(x => (isNum(x.ndvi) ? x.ndvi : null)), symbol: 'none', connectNulls: true,
-      lineStyle: { color: '#16A34A', width: 1.75 }, areaStyle: { color: 'rgba(22,163,74,.10)' } }],
+    series: [{ type: 'line', data: s.map(x => (isNum(x[key]) ? x[key] : null)), symbol: 'none', connectNulls: true,
+      lineStyle: { color: col, width: 1.75 }, areaStyle: { color: col + '1A' } }],
   });
   c.getZr().on('click', ev => {
     const [x] = c.convertFromPixel({ seriesIndex: 0 }, [ev.offsetX, ev.offsetY]) || [];

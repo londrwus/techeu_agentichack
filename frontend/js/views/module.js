@@ -1,4 +1,4 @@
-import { api, MODULE_META, REGION_META, ITEM_META, esc, fmt, pct, money, isNum, tint, deltaPill, countUp, icons, monthLabel, retailMapper, headlineBucket, BUCKET_COLOR, showTip, hideTip } from '../lib.js';
+import { api, MODULE_META, REGION_META, ITEM_META, esc, fmt, pct, money, isNum, tint, deltaPill, countUp, icons, monthLabel, retailMapper, headlineBucket, BUCKET_COLOR, showTip, hideTip, plainAI } from '../lib.js';
 import { topbar, wireScan } from './common.js';
 
 const BENCH = { latte: 'arabica futures', chocolate: 'cocoa futures', olive_oil: 'olive oil benchmark', orange_juice: 'orange juice futures',
@@ -26,7 +26,7 @@ export async function render(page, moduleId) {
     <div class="card">
       <div class="card-head">
         <div><div class="card-title">12-month forecast</div><div class="card-sub" id="fc-sub"></div></div>
-        <div class="chart-legend"><span><i style="background:var(--text-1)"></i>History</span><span><i style="background:var(--accent)"></i>Forecast (p50)</span><span><i class="band"></i>p10–p90</span></div>
+        <div class="chart-legend"><span><i style="background:var(--text-1)"></i>History</span><span><i style="background:var(--accent)"></i>Forecast</span><span><i class="band"></i>Likely range</span></div>
       </div>
       <div class="chart" id="fc"></div>
     </div>
@@ -100,7 +100,7 @@ function renderChart(page, it, chart) {
   const sub = page.querySelector('#fc-sub');
   const hist = (it?.history || []).filter(h => isNum(h.price)).slice(-24);
   const fc = (it?.forecast || []).filter(f => isNum(f.p50));
-  sub.textContent = `${it?.model || 'Time-series model'} on Modal · p10–p90 band`;
+  sub.textContent = `${it?.model || 'Time-series model'} on Modal · likely-range band`;
   if (!window.echarts || (!hist.length && !fc.length)) {
     chart?.dispose();
     box.innerHTML = `<div class="empty" style="height:100%">${window.echarts ? 'Forecast is being computed on Modal…' : 'Chart library offline'}</div>`;
@@ -129,7 +129,7 @@ function renderChart(page, it, chart) {
     tooltip: { trigger: 'axis', valueFormatter: v => (isNum(v) ? unitFmt(v) : '–'), formatter: ps => {
       const i = ps[0]?.dataIndex; const lines = [];
       if (histS[i] != null) lines.push(`History <b>${unitFmt(histS[i])}</b>`);
-      if (i > ti && p50[i] != null) lines.push(`p50 <b>${unitFmt(p50[i])}</b><br><span style="color:#A8A29E">p10–p90 ${unitFmt(lo[i])} – ${unitFmt(lo[i] + band[i])}</span>`);
+      if (i > ti && p50[i] != null) lines.push(`p50 <b>${unitFmt(p50[i])}</b><br><span style="color:#A8A29E">Likely range ${unitFmt(lo[i])} – ${unitFmt(lo[i] + band[i])}</span>`);
       return `<b>${monthLabel(months[i], true)}</b><br>${lines.join('<br>')}`;
     } },
     xAxis: { type: 'category', data: months, boundaryGap: false, axisLine: { lineStyle: { color: C('--border') } }, axisTick: { show: false },
@@ -266,5 +266,5 @@ function renderInsights(page, ins) {
   const el = page.querySelector('#ins');
   const cards = (ins?.cards || []).slice(0, 3);
   if (!cards.length) { el.innerHTML = `<div class="card insight" style="grid-row: span 3"><div class="insight-head"><i data-lucide="sparkles"></i>Gemini insights</div><p>Gemini is reading the tiles and headlines…</p></div>`; return; }
-  el.innerHTML = cards.map((c, i) => `<div class="card insight"><div class="insight-head"><i data-lucide="${INSIGHT_ICONS[i]}"></i>${esc(c.title)}</div><p>${esc(c.text)}</p></div>`).join('');
+  el.innerHTML = cards.map((c, i) => `<div class="card insight"><div class="insight-head"><i data-lucide="${INSIGHT_ICONS[i]}"></i>${esc(c.title)}</div><p>${esc(plainAI(c.text))}</p></div>`).join('');
 }

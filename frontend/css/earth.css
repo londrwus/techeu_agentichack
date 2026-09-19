@@ -29,7 +29,7 @@
 .ea-scan svg.lucide { width: 18px; height: 18px; }
 
 /* markers */
-.ea-mk { position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; background: none; pointer-events: auto; cursor: pointer; }
+.ea-mk { position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; background: none; color: #fff; font-family: inherit; pointer-events: auto; cursor: pointer; }
 .ea-mk::before { content: ""; position: absolute; width: var(--s); height: var(--s); left: calc(var(--s) / -2); top: calc(var(--s) / -2); border-radius: 50%;
   background: #22C55E66; border: 1.5px solid #86EFAC; box-shadow: 0 0 18px rgba(34,197,94,.45); transition: transform .2s; }
 .ea-mk.tech::before { background: #818CF880; border-color: #C7D2FE; box-shadow: 0 0 18px rgba(129,140,248,.5); }
@@ -43,7 +43,7 @@
 .ea-mk.sel > .lbl { display: none; }
 .ea-mk.sel::before { box-shadow: 0 0 24px rgba(255,255,255,.35); }
 .ea-mk.sel .dot::after { content: ""; position: absolute; width: 68px; height: 68px; left: -31px; top: -31px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,.35); }
-.ea-mk .lbl { position: absolute; left: calc(var(--s) / 2 + 8px); top: -11px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap;
+.ea-mk .lbl { position: absolute; left: calc(var(--s) / 2 + 8px); top: -11px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8);
   background: rgba(10,15,44,.7); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(12px); opacity: 0; transform: translateX(-4px); transition: .15s; pointer-events: none; }
 .ea-mk:hover .lbl { opacity: 1; transform: none; }
 @keyframes ea-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(1.08); } }

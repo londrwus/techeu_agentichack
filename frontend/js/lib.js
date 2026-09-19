@@ -101,12 +101,18 @@ export function countUp(el, to, { dur = 900, digits = 0, prefix = '', suffix = '
 }
 
 const tip = () => document.getElementById('tooltip');
-export function showTip(html, x, y) {
+/** Hover card at the cursor. `box` (a DOMRect, optional) keeps it inside that element: it flips left/up near the edges. */
+export function showTip(html, x, y, box = null) {
   const t = tip(); if (!t) return;
   t.innerHTML = html; t.hidden = false;
   const w = t.offsetWidth, hgt = t.offsetHeight;
-  t.style.left = Math.min(window.innerWidth - w - 12, x + 14) + 'px';
-  t.style.top = Math.max(8, Math.min(window.innerHeight - hgt - 12, y + 14)) + 'px';
+  const R = box ? Math.min(window.innerWidth - 12, box.right - 8) : window.innerWidth - 12;
+  const B = box ? Math.min(window.innerHeight - 12, box.bottom - 8) : window.innerHeight - 12;
+  const L = box ? box.left + 8 : 8, T = box ? box.top + 8 : 8;
+  const left = x + 14 + w > R ? x - 14 - w : x + 14;
+  const top = y + 14 + hgt > B ? y - 14 - hgt : y + 14;
+  t.style.left = Math.max(L, left) + 'px';
+  t.style.top = Math.max(T, top) + 'px';
 }
 export function hideTip() { const t = tip(); if (t) t.hidden = true; }
 
@@ -150,3 +156,9 @@ export function headlineBucket(hd) {
   return 'none';
 }
 export const BUCKET_COLOR = { tight_hi: 'var(--up)', tight_lo: 'var(--up-light)', none: 'var(--muted)', loose: 'var(--down)' };
+
+/** Turn raw model decimals in AI prose into plain words: "supply pressure at 0.053" -> "supply pressure slightly rising". */
+export function plainAI(text) {
+  const word = v => (v >= 0.5 ? 'strongly rising' : v >= 0.2 ? 'rising' : v > 0.02 ? 'slightly rising' : v >= -0.02 ? 'flat' : v > -0.2 ? 'slightly easing' : 'easing');
+  return String(text || '').replace(/(supply pressure)\s*(?:at|of|is|=)?\s*(-?\d*\.\d+)/gi, (_, w, n) => `${w} ${word(+n)}`);
+}

@@ -47,15 +47,17 @@ export async function render(el) {
   // Hero numbers (real data)
   const hist = item?.history || [], fc = item?.forecast || [];
   const now = isNum(item?.retail_now) ? item.retail_now : hist.at(-1)?.price;
-  const end = fc.at(-1)?.p50;
-  const p6 = fc[Math.min(5, fc.length - 1)];
-  const chg12 = isNum(now) && isNum(end) ? (end / now - 1) * 100 : null;
+  // One horizon on the whole card: 6 months (same as every other module).
+  const i6 = Math.min(5, fc.length - 1);
+  const p6 = fc[i6];
+  const end = p6?.p50;
+  const chg6 = isNum(now) && isNum(end) ? (end / now - 1) * 100 : null;
   const press = sig.net_supply_pressure;
 
   const stats = [
     isNum(item?.prob_up_6m) && `<div><div class="v" data-count="${Math.round(item.prob_up_6m * 100)}" data-suffix="%">0%</div><div class="l">chance it rises in 6 mo</div></div>`,
-    isNum(press) && `<div><div class="v" style="color:var(--${press > 0.05 ? 'up' : press < -0.05 ? 'down' : 'text-1'})">${press > 0 ? '+' : press < 0 ? '−' : ''}${Math.abs(press).toFixed(2)}</div><div class="l">coffee supply pressure · Jev</div></div>`,
-    p6 && isNum(p6.p10) && isNum(p6.p90) && `<div><div class="v">p10–p90</div><div class="l">${fmtGBP(p6.p10)} – ${fmtGBP(p6.p90)} in 6 mo</div></div>`,
+    isNum(press) && `<div><div class="v" style="color:var(--${press > 0.05 ? 'up' : press < -0.05 ? 'down' : 'text-1'})">${press > 0.2 ? 'Tight' : press > 0.05 ? 'Tightening' : press < -0.05 ? 'Easing' : 'Balanced'}</div><div class="l">coffee supply, judged by Jev from news</div></div>`,
+    p6 && isNum(p6.p10) && isNum(p6.p90) && `<div><div class="v">${fmtGBP(p6.p10)} – ${fmtGBP(p6.p90)}</div><div class="l">likely range in 6 mo</div></div>`,
   ].filter(Boolean).join('');
 
   const pair = pickPair(region);
@@ -67,8 +69,8 @@ export async function render(el) {
     <section class="card lt-fc">
       <div class="lt-fc-head">
         <div><div class="k">${esc(item.name?.replace(/\s*\((.*)\)/, ', $1') || 'Latte')}</div>
-          <div class="hero-price"><b data-count="${end ?? now}" data-digits="2" data-prefix="£">£0.00</b><span>from ${fmtGBP(now)} today${isNum(chg12) ? ` · ${deltaText(chg12)} in 12 mo` : ''}</span></div></div>
-        <div class="fc-legend"><span><i></i>History</span><span><i class="dash" style="--c:${accent}"></i>Forecast (p50)</span></div>
+          <div class="hero-price"><b data-count="${end ?? now}" data-digits="2" data-prefix="£">£0.00</b><span>from ${fmtGBP(now)} today${isNum(chg6) ? ` · ${deltaText(chg6)} in 6 mo` : ''}</span></div></div>
+        <div class="fc-legend"><span><i></i>History</span><span><i class="dash" style="--c:${accent}"></i>Forecast</span></div>
       </div>
       <div class="lt-chart"></div>
       ${stats ? `<div class="stat-strip">${stats}</div>` : ''}
@@ -102,7 +104,7 @@ export async function render(el) {
   const disposers = [];
   const host = el.querySelector('.lt-chart');
   if (host) {
-    const c = forecastChart(host, { history: hist, forecast: fc, accent, unit: item.unit || '£', calloutTitle: 'Latte', months: 12 });
+    const c = forecastChart(host, { history: hist, forecast: fc, accent, unit: item.unit || '£', calloutTitle: 'Latte', months: 12, calloutIndex: i6 });
     disposers.push(() => c.dispose());
   }
 

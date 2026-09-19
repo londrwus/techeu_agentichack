@@ -164,7 +164,7 @@ export async function render(el) {
       const stats = [
         isNum(it.prob_up_6m) && `<div><div class="v">${Math.round(it.prob_up_6m * 100)}%</div><div class="l">chance it rises, 6 mo</div></div>`,
         isNum(chg12) && `<div><div class="v" style="color:${chg12 > 0 ? 'var(--up)' : 'var(--down)'}">${pct(chg12, 1)}</div><div class="l">by ${monLong(f.at(-1).month)}</div></div>`,
-        isNum(f6?.p10) && isNum(f6?.p90) && `<div><div class="v">${fmtGBP(f6.p10)} – ${fmtGBP(f6.p90)}</div><div class="l">p10–p90, 6 mo</div></div>`,
+        isNum(f6?.p10) && isNum(f6?.p90) && `<div><div class="v">${fmtGBP(f6.p10)} – ${fmtGBP(f6.p90)}</div><div class="l">likely range, 6 mo</div></div>`,
       ].filter(Boolean);
       const strip = card.querySelector('.stat-strip');
       strip.innerHTML = stats.join('');
