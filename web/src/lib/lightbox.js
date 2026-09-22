@@ -39,6 +39,8 @@ function targetOf(el) {
 // ---------- modal ----------
 let root = null, state = null;
 
+export function closeLightbox() { close(); }
+
 function close() {
   if (!root) return;
   clearInterval(state?.timer);
@@ -336,5 +338,4 @@ export function installLightbox() {
     hint.style.top = `${rc.top + 6}px`;
   });
   window.addEventListener('scroll', () => { hint.hidden = true; cur = null; }, true);
-  window.addEventListener('hashchange', close);
 }

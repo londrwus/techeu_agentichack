@@ -13,6 +13,7 @@ import { MODULE_META, ITEM_META, REGION_META } from '@/lib/meta.js';
 import { agoText, esc, isNum, pct } from '@/lib/format.js';
 import { countUp, hideTip, onResize, showTip } from '@/lib/dom.jsx';
 import { initChart } from '@/lib/echarts.js';
+import { go } from '@/lib/nav.js';
 import { watchMap } from '@/lib/motion.js';
 import { axisTooltip, fmtMoney, fmtMonth, fmtPct, tipHtml } from '@/lib/chartTheme.js';
 
@@ -201,7 +202,7 @@ function Basket({ items }) {
                   key={r.id}
                   onMouseMove={e => showTip(tipFor(r), e.clientX, e.clientY)}
                   onMouseLeave={hideTip}
-                  onClick={() => { hideTip(); location.hash = `#/${moduleOfItem(r.id)}`; }}
+                  onClick={() => { hideTip(); go(`/${moduleOfItem(r.id)}`); }}
                 >
                   <div className={`val ${hot ? 'hot' : r.v < 0 ? 'neg' : ''}`}>{pct(r.v, Math.abs(r.v) < 1 ? 1 : 0)}</div>
                   <div className="wstack">
@@ -293,7 +294,7 @@ function SatelliteWatch({ mods }) {
       const tipH = regionTip(r, a);
       p.addEventListener('mousemove', e => showTip(tipH, e.clientX, e.clientY, map.getBoundingClientRect()));
       p.addEventListener('mouseleave', hideTip);
-      p.addEventListener('click', e => { e.stopPropagation(); hideTip(); location.hash = `#/${r.module}`; });
+      p.addEventListener('click', e => { e.stopPropagation(); hideTip(); go(`/${r.module}`); });
       return { r, p, a };
     });
     pinsRef.current = pins;

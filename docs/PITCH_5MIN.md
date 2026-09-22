@@ -3,7 +3,7 @@
 About 650 spoken words at a calm pace, plus time for live actions. **Bold** = say it with weight. [CLICK] = action.
 
 **Before going on stage (2 min before):**
-- Open `/landing`, `#/news` and `#/mission` once. This caches the globe and warms up the Modal containers.
+- Open `/landing`, `/news` and `/mission` once. This caches the globe and warms up the Modal containers.
 - On Ask Orbit, have the question typed but not sent: *"Should I buy a GPU now or wait?"*
 - Tabs in order: landing → app.
 

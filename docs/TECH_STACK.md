@@ -103,7 +103,7 @@ The dashboard (`/`) and the landing page (`/landing`) are one React app in [`web
 | Vite | 8.3 | Dev server (proxies `/api`, `/tiles`, `/static` to the backend) and production build |
 | Tailwind CSS | 4.3 | Utilities + theme only — **preflight is off**, so the hand-written Orbit CSS (`web/src/styles/`) is untouched |
 | shadcn/ui (Radix) | new-york, JSX | Button, Badge, Card, Tabs, ToggleGroup, Dialog, Separator, Skeleton, Progress, Sonner — restyled with Orbit variants (`variant="orbitPrimary"` → `.btn.primary`) |
-| react-router-dom | 7 | `HashRouter`, so every existing `#/route` link and `location.hash` jump still works |
+| react-router-dom | 7 | `BrowserRouter`: clean URLs (`/earth`, `/mission/scan`); the backend serves the app for them, and old `/#/route` links redirect |
 | sonner | 2.0 | Toasts (unstyled, wearing the Orbit `.toast` class) |
 | Apache ECharts | 5.5.1 | Fan charts with p10–p90 bands, driver waterfalls, waffles, leaderboard, reliability diagram |
 | MapLibre GL JS | 4.7.1 | Earth view on EOX Sentinel-2 cloudless; Overview map; Rent Radar 2D/3D `fill-extrusion` boroughs and H3 hexes |

@@ -186,3 +186,12 @@ from backend.extra_landing import router as _landing_router  # noqa: E402
 app.include_router(_landing_router)
 from backend.extra_news import router as _news_router  # noqa: E402
 app.include_router(_news_router)
+
+
+# Client-side routes (/earth, /groceries, /mission/scan, ...): serve the React app and let its router
+# decide. Registered last, so every API route, /tiles and the static mounts above win first.
+@app.get("/{path:path}", include_in_schema=False)
+def spa(path: str):
+    if path.startswith("api/"):
+        raise HTTPException(404, "Not Found")
+    return index()

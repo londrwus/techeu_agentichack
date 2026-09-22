@@ -3,7 +3,9 @@
 // components subscribe to with useScan().
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { fmt } from './format.js';
+import { go } from './nav.js';
 
 export const MAX_CONTAINERS = 100; // Modal account limit (process_tile 75 + judge 20 + fetch 5)
 
@@ -66,7 +68,7 @@ function finish() {
   toast.custom(() => (
     <div className="toast">
       <span>Scan complete · {fmt(l.tiles_done)} tiles · {fmt(l.jev_judgments)} Jev judgments · {elapsed.toFixed(0)}s</span>
-      <a href="#/overview">Back to Overview →</a>
+      <Link to="/overview">Back to Overview →</Link>
     </div>
   ), { duration: 6000 });
 }
@@ -79,6 +81,6 @@ export function stopScan() {
 
 /** "Scan now" from any page: jump to Mission Control and start. */
 export function scanNow() {
-  location.hash = '#/mission';
+  go('/mission');
   startScan();
 }

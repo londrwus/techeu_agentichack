@@ -3,6 +3,7 @@
 // Ported from vanilla js/views/earth.js: React owns the panels and the region card, MapLibre keeps
 // the markers (they are map-projected DOM nodes, so they stay outside the React tree).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import { Icon } from '@/lib/icons.jsx';
 import { api, useAsync } from '@/lib/api.js';
@@ -262,7 +263,7 @@ export default function Earth() {
           </div>
         ))}
       </div>
-      <a className="btn primary ea-scan ea-in" href="#/mission"><Icon name="radar" />Scan now</a>
+      <Link className="btn primary ea-scan ea-in" to="/mission"><Icon name="radar" />Scan now</Link>
       <div className="glass-panel ea-card" ref={cardEl} hidden>
         {selected ? <EarthCard r={selected} data={data} /> : null}
       </div>
@@ -319,7 +320,7 @@ function EarthCard({ r, data }) {
   const [thumbOk, setThumbOk] = useState(true);
 
   return (
-    <a className="ea-card-link" href={`#/${MOD_ROUTE[r.module_id] || 'overview'}`}>
+    <Link className="ea-card-link" to={`/${MOD_ROUTE[r.module_id] || 'overview'}`}>
       <div className="ea-c-head">
         <div>
           <div className="ea-c-name">{nameShort}</div>
@@ -347,6 +348,6 @@ function EarthCard({ r, data }) {
           <b className={fut >= now ? 'up' : 'down'}>{fmtGBP(fut)}</b>
         </div>
       </>) : null}
-    </a>
+    </Link>
   );
 }

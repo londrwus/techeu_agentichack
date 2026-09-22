@@ -51,7 +51,7 @@ export default function Mission() {
   }, []);
 
   useEffect(() => { if (data?.stats) setStats(data.stats); }, [data]);
-  // #/mission/scan (or /replay) starts a scan as soon as the screen opens.
+  // /mission/scan (or /mission/replay) starts a scan as soon as the screen opens.
   useEffect(() => {
     if ((arg === 'scan' || arg === 'replay') && !scan.running) startScan(arg === 'replay' ? 'replay' : 'auto');
     // eslint-disable-next-line react-hooks/exhaustive-deps

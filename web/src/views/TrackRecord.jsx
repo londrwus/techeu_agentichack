@@ -1,4 +1,4 @@
-// Track record (#/track): "How right is Orbit?" — held-out test scores, model leaderboard,
+// Track record (/track): "How right is Orbit?" — held-out test scores, model leaderboard,
 // backtests on real history, calibration and the Modal compute strip.
 // Data: /api/leaderboard (eval/leaderboard.json), /api/eval (eval/summary.json), /api/eval/{item} (backtests).
 // Ported from vanilla js/views/track_record.js.

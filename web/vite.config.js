@@ -9,8 +9,19 @@ import tailwindcss from '@tailwindcss/vite'
 // In dev (`npm run dev`) the API and satellite tiles are proxied to the local backend.
 const API = process.env.ORBIT_API || 'http://127.0.0.1:8010'
 
+// Dev only: serve the landing entry at /landing, like the backend does in production.
+const landingRoute = {
+  name: 'orbit-landing-route',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url === '/landing' || req.url.startsWith('/landing?')) req.url = req.url.replace('/landing', '/landing.html');
+      next();
+    });
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), landingRoute],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
   build: {
     outDir: '../frontend_react',

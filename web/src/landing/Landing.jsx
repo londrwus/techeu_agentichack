@@ -91,7 +91,7 @@ export default function Landing() {
             size="lg"
             className="group h-auto gap-2.5 rounded-xl px-[26px] py-4 text-[17px] font-semibold shadow-[0_10px_30px_-8px_#F97316AA,inset_0_1px_0_#FFFFFF40] transition-[transform,box-shadow,background-color] hover:-translate-y-px hover:bg-[#FB8A3C] hover:shadow-[0_14px_36px_-8px_#F97316CC,inset_0_1px_0_#FFFFFF40]"
           >
-            <a href="/#/earth">
+            <a href="/earth">
               Open Orbit
               <ArrowRight size={18} strokeWidth={2.2} className="size-[18px] transition-transform group-hover:translate-x-[3px]" />
             </a>

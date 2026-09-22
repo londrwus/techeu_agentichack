@@ -1,12 +1,15 @@
-// Orbit SPA shell: sidebar + hash router + the shared tooltip/toast layer.
+// Orbit SPA shell: sidebar + router + the shared tooltip/toast layer.
 // Routes: /earth (default) /overview /groceries /latte /beer_wine /gpu /rent /mission /ask /news /track
-// Legacy #/module/{id} links redirect onto the per-module views.
+// Clean URLs (BrowserRouter); the backend serves index.html for them. Old /#/earth-style links and
+// bookmarks, and legacy /module/{id} paths, redirect onto the same screens.
 import { Component, Suspense, lazy, useEffect } from 'react';
-import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '@/components/orbit/Sidebar.jsx';
 import { Toaster } from '@/components/ui/sonner';
 import { hideTip } from '@/lib/dom.jsx';
 import { routeTick } from '@/lib/motion.js';
+import { closeLightbox } from '@/lib/lightbox.js';
+import { setNavigate } from '@/lib/nav.js';
 
 // Each screen is its own chunk, so the shell paints before ECharts / MapLibre are parsed.
 const Earth = lazy(() => import('@/views/Earth.jsx'));
@@ -45,6 +48,7 @@ function Page({ name }) {
   const full = FULL_BLEED.has(name);
   useEffect(() => {
     hideTip();
+    closeLightbox();
     routeTick();
     document.body.classList.toggle('full-bleed', full);
     document.body.dataset.view = name;
@@ -57,10 +61,26 @@ function Page({ name }) {
   );
 }
 
-/** Legacy #/module/{id} → #/{id} */
+/** Legacy /module/{id} → /{id} */
 function LegacyModule() {
   const { id } = useParams();
   return <Navigate to={`/${VIEWS[id] ? id : 'earth'}`} replace />;
+}
+
+/** Hands navigate() to code outside components, and turns any "#/x" (old links, bookmarks) into "/x". */
+function RouterBridge() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setNavigate(navigate);
+    const fromHash = () => {
+      const h = window.location.hash;
+      if (h.startsWith('#/')) navigate(decodeURIComponent(h.slice(1)), { replace: true });
+    };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+    return () => window.removeEventListener('hashchange', fromHash);
+  }, [navigate]);
+  return null;
 }
 
 function Shell() {
@@ -68,6 +88,7 @@ function Shell() {
   useEffect(() => { hideTip(); }, [pathname]);
   return (
     <>
+      <RouterBridge />
       <Sidebar />
       <main id="view" className="main">
         <Routes>
@@ -76,7 +97,7 @@ function Shell() {
           {Object.keys(VIEWS).map(name => (
             <Route key={name} path={`/${name}`} element={<Page name={name} />} />
           ))}
-          {/* #/mission/scan starts a scan on arrival; #/ask/<question> asks it straight away. */}
+          {/* /mission/scan starts a scan on arrival; /ask/<question> asks it straight away. */}
           <Route path="/mission/:arg" element={<Page name="mission" />} />
           <Route path="/ask/:arg" element={<Page name="ask" />} />
           <Route path="*" element={<Navigate to="/earth" replace />} />
@@ -89,5 +110,5 @@ function Shell() {
 }
 
 export default function App() {
-  return <HashRouter><Shell /></HashRouter>;
+  return <BrowserRouter><Shell /></BrowserRouter>;
 }

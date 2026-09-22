@@ -1,6 +1,7 @@
 // Latte Index screen (MODULES.md §07): hero forecast + Sul de Minas before/after, then the shared signal row.
 // Ported from vanilla js/views/latte.js.
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { ModuleHeader } from '@/components/orbit/chrome.jsx';
 import { Delta } from '@/components/orbit/bits.jsx';
@@ -45,7 +46,7 @@ export default function Latte() {
   const items = data.items || [];
   const flagged = items.find(i => i?.backtest?.orbit_signal?.flagged) || items.find(i => i?.backtest?.flagged);
   const right = flagged ? null : (
-    <a className="backtest muted" href="#/track"><Icon name="history" /><span>Backtested since 2018</span></a>
+    <Link className="backtest muted" to="/track"><Icon name="history" /><span>Backtested since 2018</span></Link>
   );
 
   // Hero numbers (real data)

@@ -3,7 +3,7 @@
 Tone: calm, confident, never pushy. About 290 spoken words, which is about 2 minutes. **Bold** = say it with weight. [CLICK] = action.
 
 **Before going on stage:**
-- Open `/landing`, `#/news` and `#/mission` once. This caches the globe and warms up the Modal containers.
+- Open `/landing`, `/news` and `/mission` once. This caches the globe and warms up the Modal containers.
 - Keep the tabs in the order used below.
 
 ---
