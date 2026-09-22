@@ -2,6 +2,7 @@
 // Renders only real /api/modules/groceries data; hides widgets without data.
 // Ported from vanilla js/views/groceries.js.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { Topbar, IconSquare, BacktestBadge } from '@/components/orbit/chrome.jsx';
 import { Photo, SatImg } from '@/components/orbit/bits.jsx';
@@ -202,7 +203,8 @@ function Shop({ items, data }) {
         </section>
       </div>
       <Cart items={items} qty={qty} setQty={setQty} onTip={setTip} />
-      {tip ? <div className="gs-tip" ref={tipEl} dangerouslySetInnerHTML={{ __html: tip.html }} /> : null}
+      {/* portal: animated (transformed) ancestors would re-anchor the fixed tooltip */}
+      {tip ? createPortal(<div className="gs-tip" ref={tipEl} dangerouslySetInnerHTML={{ __html: tip.html }} />, document.body) : null}
     </div>
   );
 }

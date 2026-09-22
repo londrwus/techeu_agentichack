@@ -5,6 +5,7 @@
 // Hero right: GPU | Laptop forecast card. Signal row below (shared).
 // Ported from vanilla js/views/gpu.js.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { graphic } from 'echarts';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ModuleHeader } from '@/components/orbit/chrome.jsx';
@@ -292,7 +293,8 @@ function DriversHero({ data, item }) {
           <div className="gpu-cap">Sentinel-2 · drag to compare</div>
         </div>
       </div>
-      {tipState ? <div className="gd-tip" ref={tip} dangerouslySetInnerHTML={{ __html: tipState.html }} /> : null}
+      {/* portal: the animated card (transform) would otherwise become the fixed tooltip's containing block */}
+      {tipState ? createPortal(<div className="gd-tip" ref={tip} dangerouslySetInnerHTML={{ __html: tipState.html }} />, document.body) : null}
     </>
   );
 }
