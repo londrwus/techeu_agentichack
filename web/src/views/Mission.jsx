@@ -1,6 +1,8 @@
 // Mission Control: the live-scan screen. Counters, the Sentinel-2 tile grid, providers and Jev throughput.
 // Ported from vanilla js/views/mission.js — the scan store (lib/scan.jsx) now drives React state directly.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ShowcaseNotice from '@/components/orbit/ShowcaseNotice.jsx';
+import { useMode } from '@/lib/mode.js';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +30,7 @@ const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.
 export default function Mission() {
   const { arg } = useParams();
   const scan = useScan();
+  const { showcase } = useMode();
   const [stats, setStats] = useState({});
   const { data } = useAsync(async () => {
     const [s, mods, lastScan] = await Promise.all([
@@ -134,9 +137,18 @@ export default function Mission() {
             : <BriefingButton className="btn" />}
           {live
             ? <Button variant="orbitPrimary" size="orbit" className="running"><Icon name="loader" className="spin" />Scanning…</Button>
-            : <Button variant="orbitPrimary" size="orbit" onClick={() => startScan()}><Icon name="satellite-dish" />Scan now</Button>}
+            : showcase
+              ? <>
+                  <Button variant="orbit" size="orbit" onClick={() => startScan('replay')}><Icon name="rotate-ccw" />Replay on-stage scan</Button>
+                  <Button variant="orbitPrimary" size="orbit" className="locked" disabled title="Live scans are off on the public demo. Run Orbit locally to scan live.">
+                    <Icon name="lock" />Scan now
+                  </Button>
+                </>
+              : <Button variant="orbitPrimary" size="orbit" onClick={() => startScan()}><Icon name="satellite-dish" />Scan now</Button>}
         </div>
       </header>
+
+      <ShowcaseNotice />
 
       <section className="counter-row">
         <Counter icon="boxes" label="Modal containers" cap="Parallel containers on Modal"
@@ -178,6 +190,8 @@ export default function Mission() {
                   stat={live ? `${active} live` : `peak ${fmt(Math.min(MAX_CONTAINERS, Math.max(stats.modal_containers_peak || 0, scan.peakContainers)))}`} />
             <Prov icon="eye" name="Google Gemini" role="3.8-flash · vision + TTS"
                   stat={`${fmt(stats.gemini_calls_total ?? stats.gemini_calls ?? 0)} calls`} />
+            <Prov icon="brain-circuit" name="DeepSeek" role="deepseek-flash · Ask Orbit agent"
+                  stat={`${fmt(stats.deepseek_calls_total ?? 0)} calls`} />
             <Prov icon="scale" name="TypeSafe Jev" role="jev-latest · typed judgments" stat={`${fmt(jevTotal)} judged`} />
           </div>
           <div className="card" style={{ padding: 20, flex: 1 }}>

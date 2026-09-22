@@ -60,7 +60,6 @@ More diagrams (live scan sequence, Ask Orbit sequence, build order): **[docs/ARC
 | 🌍 | **EOX Sentinel-2 cloudless**, MapLibre GL, ECharts | Earth view and landing globe; 3D Rent Radar; fan charts and waterfalls | – |
 | ⚛️ | **React 19 + Vite 8**, **Tailwind v4**, **shadcn/ui**, react-router, lucide-react, sonner | The dashboard (11 routed screens, shadcn primitives wearing the Orbit design system) and the landing page (a WebGL2 globe shader on a baked Sentinel-2 texture) | 11 lazy route chunks; landing paints in ~0.3 s |
 | 📊 | Nixtla statsforecast, LightGBM, scikit-learn, NumPy | Model zoo, stacking, split-conformal intervals | up to 100 CPU containers per fit |
-| 🎨 | **Pencil (pen.dev) via MCP** | UI designed in `design/orbit.pen`, then implemented | 1440×900 frames |
 | 🐍 | FastAPI, Pydantic 2, Uvicorn | Backend, SSE streaming, request models | 18 routes |
 
 Deep dives: **[Jev](docs/JEV.md)** · **[Modal](docs/MODAL.md)** · **[Gemini & TimesFM](docs/GEMINI.md)** · **[Full tech stack and data licences](docs/TECH_STACK.md)**
@@ -232,7 +231,7 @@ web/                       React UI: views/ (one per screen), landing/ (splash +
                            public/ (product photos, baked globe texture)
 frontend_react/            built React app (npm run build): / (dashboard) and /landing
 data/built/                the data contract the UI reads (JSON, committed; tiles/ on the Volume only)
-design/                    orbit.pen (Pencil), mock-ups, screenshots
+design/                    design spec, mock-ups, screenshots
 docs/                      architecture, API, tech stack, Jev, Modal, Gemini, model, demo script
 ```
 

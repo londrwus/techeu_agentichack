@@ -124,7 +124,7 @@ its 60 fps counter lerp and feed slide-in on refs so a live firehose never re-re
 
 | Tool | Use |
 |---|---|
-| **Pencil (pen.dev) via its MCP server** | The screens were designed in [`design/orbit.pen`](../design/orbit.pen) at 1440×900 through the Pencil MCP, then implemented. The spec is in [`design/DESIGN.md`](../design/DESIGN.md), [`design/MODULES.md`](../design/MODULES.md) and [`design/NEWS_HUB.md`](../design/NEWS_HUB.md). Mock-ups: `design/0*.png`, `design/modules/*.png`. |
+| Design spec | The screens were designed at 1440×900, then implemented. The spec is in [`design/DESIGN.md`](../design/DESIGN.md), [`design/MODULES.md`](../design/MODULES.md) and [`design/NEWS_HUB.md`](../design/NEWS_HUB.md). Mock-ups: `design/0*.png`, `design/modules/*.png`. |
 | Playwright (optional) | Headless screenshots for visual QA (`design/shots/*.png`) |
 
 ## External data sources

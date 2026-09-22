@@ -1,6 +1,6 @@
 # Orbit module screens: design spec
 
-Source: `design/orbit.pen` (Pencil). Frames: `00 Earth` (TCxlm), `06 Groceries` (A1odYJ), `07 Latte Index` (cT8Bd), `08 Beer & Wine` (NPxet), `09 GPU & Gadgets` (gFcLd).
+Screens: `00 Earth`, `06 Groceries`, `07 Latte Index`, `08 Beer & Wine`, `09 GPU & Gadgets`.
 Screenshots: `design/modules/{earth,groceries,latte,beer_wine,gpu}.png`. These screens replace section 2 ("Module detail") of `DESIGN.md`. Tokens: `web/src/styles/tokens.css`.
 
 **Direction:** restrained and premium, closer to Stripe or Linear than to a toy. Each screen has one hero, at most 4–5 elements, calm neutrals and one accent per module. There are no illustrations or emoji-heavy UI. Modules differ in **content and layout**, not in metaphor. Every module uses the same chart language (below).
@@ -171,7 +171,7 @@ Signal row: Price = laptop ("Laptop · Mar 2027 £1,205 ↑ 4.8%"). Risk = Hsinc
 ---
 
 ## 06b Groceries: Shop (`#module/groceries`), which replaces the 06 map+table hero
-Frame `06b Groceries — Shop` (Np3zh) in the Pencil doc. Screenshot: `design/modules/groceries_shop.png`. The goal is an Amazon-style shop page where you see the real products; it keeps the same sidebar, top bar, tokens and chart language. The design numbers are MOCK, so always render from the API.
+Screen `06b Groceries — Shop`. Screenshot: `design/modules/groceries_shop.png`. The goal is an Amazon-style shop page where you see the real products; it keeps the same sidebar, top bar, tokens and chart language. The design numbers are MOCK, so always render from the API.
 
 Product photos (Gemini `gemini-3.1-flash-image`, white studio background, no text or logos, 800×800 JPG <100 KB) live at `web/public/products/{item_id}.jpg` (served at `/products/{item_id}.jpg`) for **every** item in `orbit/config.py` (`chocolate, olive_oil, orange_juice, bread, latte, pint, wine, gpu, laptop, rent_1bed`), so other modules can reuse them. If an image is missing, show a neutral `#F5F5F4` square with the module emoji.
 

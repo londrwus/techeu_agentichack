@@ -157,3 +157,7 @@
   .nh-item.new, .nh-item.major.new, .nh-done { animation: none; }
   .nh.live .nh-dot::after { animation: none; }
 }
+
+/* idle: the feed is a browsable, scrollable list (the firehose animation only runs during a scan) */
+.page.nh:not(.live) .nh-feed { overflow-y: auto; -webkit-mask-image: none; mask-image: none; scrollbar-width: thin; }
+.nh-more { font-size: 12px; color: var(--text-3); text-align: center; padding: 10px 0 14px; flex: none; }

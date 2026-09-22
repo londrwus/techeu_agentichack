@@ -1,4 +1,4 @@
-// Ask Orbit: Jev routes the question, Gemini answers with the evidence.
+// Ask Orbit: Jev routes the question, DeepSeek answers with the evidence.
 // Ported from vanilla js/views/ask.js — the chat transcript lives in module state so it survives route changes.
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -13,7 +13,7 @@ import { fmtMonth, fmtPct, tipHtml } from '@/lib/chartTheme.js';
 const SUGGEST = [['candy', 'Why is chocolate so expensive?'], ['cpu', 'Will GPUs get cheaper next year?'], ['building-2', 'Where will rents rise most?'], ['beer', 'Is a pint going to hit £8?']];
 const STEPS = [
   ['git-branch', 'var(--p-jev)', 'var(--p-jev-soft)', 'Jev routes the question'],
-  ['eye', 'var(--p-gemini)', '#DBEAFE', 'Gemini reads the evidence'],
+  ['brain-circuit', 'var(--p-gemini)', '#DBEAFE', 'DeepSeek reads the evidence'],
   ['server', 'var(--p-modal)', 'var(--down-soft)', 'Forecast from Modal'],
   ['volume-2', 'var(--accent)', 'var(--accent-soft)', 'Spoken briefing'],
 ];
@@ -60,7 +60,7 @@ export default function Ask() {
       busy = false;
       return;
     }
-    const label = res.route?.label, conf = res.route?.confidence;
+    const label = res.route?.label, conf = res.route?.confidence, engine = res.route?.engine;
     const mMeta = MODULE_META[label];
     const focus = res.focus || {};
     const mods = await allModules();
@@ -70,14 +70,14 @@ export default function Ask() {
 
     const calls = res.tool_calls || [];
     const detail = [
-      `${mMeta ? mMeta.name : 'General'}${isNum(conf) ? ` · ${Math.round(conf * 100)}%` : ''}${res.route?.item && res.route.item !== 'none' ? ` · ${res.route.item.replace(/_/g, ' ')}` : ''}`,
-      calls.length ? `${calls.length} tool call${calls.length > 1 ? 's' : ''} · ${[...new Set(calls.map(c => c.name))].slice(0, 2).join(', ')}` : `answered in ${(ms / 1000).toFixed(1)} s`,
+      `${engine === 'keywords' ? 'Keyword route · ' : ''}${mMeta ? mMeta.name : 'General'}${isNum(conf) && engine !== 'keywords' ? ` · ${Math.round(conf * 100)}%` : ''}${res.route?.item && res.route.item !== 'none' ? ` · ${res.route.item.replace(/_/g, ' ')}` : ''}`,
+      calls.length ? `${res.llm || 'DeepSeek'} · ${calls.length} tool call${calls.length > 1 ? 's' : ''} · ${[...new Set(calls.map(c => c.name))].slice(0, 2).join(', ')}` : `answered in ${(ms / 1000).toFixed(1)} s`,
       item ? `${item.model || 'Forecast'} · 6 mo ${money(item.retail_6m ?? item.retail_now)}` : mod ? `${mod.module?.name} forecasts` : 'No forecast needed',
       'Gemini TTS · ready to play',
     ];
     detail.forEach((d, i) => setTimeout(() => setStep(i, true, d), 150 + i * 280));
 
-    setMsgs(m => [...m.slice(0, -1), { id: nextId++, role: 'answer', q, label, conf, text: res.answer || '…', item, mod, focus }]);
+    setMsgs(m => [...m.slice(0, -1), { id: nextId++, role: 'answer', q, label, conf, engine, text: res.answer || '…', item, mod, focus }]);
     busy = false;
   };
 
@@ -93,7 +93,7 @@ export default function Ask() {
       <header className="topbar">
         <div>
           <div className="title-row"><h1>Ask Orbit</h1></div>
-          <div className="tagline">Ask about any price. Jev routes it, Gemini answers with the evidence.</div>
+          <div className="tagline">Ask about any price. Jev routes it, DeepSeek answers with the evidence.</div>
         </div>
       </header>
       <section className="ask-row">
@@ -180,13 +180,14 @@ const Message = memo(function Message({ m, onGrow }) {
     );
   }
   const mMeta = MODULE_META[m.label];
-  const confTxt = isNum(m.conf) ? `${Math.round(m.conf * 100)}% confident` : '';
+  const kw = m.engine === 'keywords';
+  const confTxt = isNum(m.conf) && !kw ? `${Math.round(m.conf * 100)}% confident` : '';
   return (
     <div className="amsg">
       <div className="avatar"><Icon name="orbit" /></div>
       <div className="abody">
         <span className="route">
-          <Icon name="git-branch" />Jev routed <Icon name="arrow-right" size={13} />{' '}
+          <Icon name="git-branch" />{kw ? 'Routed' : 'Jev routed'} <Icon name="arrow-right" size={13} />{' '}
           {mMeta ? <><ModuleIcon id={m.label} size={14} />{mMeta.name}</> : 'General'}{confTxt ? ' · ' + confTxt : ''}
         </span>
         <Typed id={m.id} text={m.text} onGrow={onGrow} />

@@ -1,6 +1,6 @@
 # News hub: design spec
 
-Pencil frames: `10 News hub` (A9jTF, 1440x900) and `10b News hub · Done banner` (vfXXe).
+Screens: `10 News hub` (1440x900) and `10b News hub · Done banner`.
 PNGs: `design/modules/news_hub.png`, `design/modules/news_hub_done.png`.
 This is the demo moment where Jev reads about 1.3k headlines in about 12 s on Modal. It has to look fast and read from the back of the room, so keep text to a minimum.
 

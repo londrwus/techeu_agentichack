@@ -12,15 +12,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend import data
-from backend.live import COUNTERS
+from backend.live import COUNTERS, SHOWCASE
 
 @asynccontextmanager
 async def lifespan(app):
     async def warm():  # pre-import SDKs/clients so the first /api/ask on stage is fast
         try:
-            from backend.agent import gemini
+            import httpx  # noqa: F401
             import typesafe_sdk  # noqa: F401
-            await asyncio.to_thread(gemini)
         except Exception as e:
             print("[warmup]", e)
     async def reload_volume():  # on Modal: pick up new data other apps wrote to the Volume
@@ -131,9 +130,18 @@ async def ask(body: AskIn):
     return await run_ask(body.question)
 
 
+@app.get("/api/mode")
+def mode():
+    """Tells the UI whether live scans are allowed (local) or locked to the recording (public showcase)."""
+    from backend.agent import LLM
+    return {"showcase": SHOWCASE, "llm": LLM}
+
+
 @app.get("/api/scan")
 async def scan(mode: str = "auto"):
     from backend.scan import scan_stream
+    if SHOWCASE:
+        mode = "replay"  # no live Modal / Jev fan-out on the public deploy
     return StreamingResponse(scan_stream(mode), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
@@ -141,8 +149,10 @@ async def scan(mode: str = "auto"):
 @app.get("/api/briefing")
 async def briefing(force: bool = False):
     p = data.DATA / "briefing.wav"
-    if p.exists() and not force:
+    if p.exists() and (not force or SHOWCASE):
         return FileResponse(p, media_type="audio/wav")
+    if SHOWCASE:
+        return JSONResponse({"error": "briefing is only regenerated when Orbit runs locally"}, status_code=503)
     try:
         from backend.briefing import build_briefing
         wav = await build_briefing()
@@ -165,6 +175,8 @@ def stats():
     live = {k: v for k, v in COUNTERS.items() if k != "started_at"}
     s["jev_judgments_total"] = (s.get("jev_judgments") or 0) + COUNTERS["jev_judgments"]
     s["gemini_calls_total"] = (s.get("gemini_calls") or 0) + COUNTERS["gemini_calls"]
+    s["deepseek_calls_total"] = COUNTERS["deepseek_calls"]
+    s["showcase"] = SHOWCASE
     s["tiles_processed_total"] = (s.get("tiles_processed") or 0) + COUNTERS["tiles_scanned"]
     s["live"] = live
     s["uptime_s"] = round(time.time() - COUNTERS["started_at"])

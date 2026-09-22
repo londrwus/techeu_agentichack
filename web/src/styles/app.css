@@ -89,7 +89,11 @@ nav { display: flex; flex-direction: column; gap: 2px; }
 .tooltip { position: fixed; z-index: 50; pointer-events: none; background: var(--card); border-radius: 12px; box-shadow: var(--shadow-tooltip); padding: 12px 14px; max-width: 320px; font-size: 13px; line-height: 1.4; }
 .tooltip b { display: block; font-size: 14px; margin-bottom: 4px; }
 .tooltip .muted { color: var(--text-3); font-size: 12px; }
-.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 60; background: var(--ink); color: #fff; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 600; display: flex; gap: 14px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: fade .2s; }
+/* Toasts: sonner owns placement/stacking; .toast-slot (its <li>) only centres the chip, .toast is the chip itself. */
+.toast-slot { display: flex; justify-content: center; width: 100%; left: 0; right: 0; }
+.toast { width: max-content; max-width: min(560px, calc(100vw - 32px)); box-sizing: border-box; background: var(--ink); color: #fff; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 600; line-height: 1.35; display: flex; gap: 14px; align-items: center; white-space: normal; overflow-wrap: break-word; box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: fade .2s; }
+.toast svg.lucide { flex: none; width: 18px; height: 18px; }
+.toast a { flex: none; white-space: nowrap; }
 .toast a { color: var(--accent-light); }
 
 /* ---------- overview ---------- */
@@ -495,3 +499,9 @@ img[data-sat-region], img.sat, img[src^="/tiles/"], [data-sat-region] { cursor: 
   .lb-head { flex-wrap: wrap; } .lb-tabs { order: 3; }
 }
 /* components/lightbox.js end */
+
+/* Public showcase: live scans locked to the on-stage recording */
+.showcase-note { display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--accent-ink) 25%, transparent); border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.45; margin: 0 0 16px; }
+.showcase-note svg.lucide { flex: none; margin-top: 2px; }
+.showcase-note b { font-weight: 700; }
+button.locked, .btn.locked { opacity: 0.55; cursor: not-allowed; }

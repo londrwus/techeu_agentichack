@@ -103,7 +103,7 @@ function Shell() {
           <Route path="*" element={<Navigate to="/earth" replace />} />
         </Routes>
       </main>
-      <Toaster position="bottom-center" toastOptions={{ unstyled: true, classNames: { toast: 'toast' } }} />
+      <Toaster position="bottom-center" toastOptions={{ unstyled: true, classNames: { toast: 'toast-slot' } }} />
       <div id="tooltip" className="tooltip" hidden />
     </>
   );

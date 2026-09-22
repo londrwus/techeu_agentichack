@@ -27,7 +27,7 @@ Hackathon project for the {Tech: Europe} Agentic AI Hack in London (co-hosted wi
 - Fast calibrated judgments: **Jev** (TypeSafe, `typesafe-sdk`, model `jev-latest`). Jev reads text/JSON only (no images) and returns typed answers (`Noul` yes/no, `Choice`, `Score`) with probabilities and confidence. It's very cheap ($0.042 per 1M input tokens; balance $5), with limits of 1,200 requests/min and a 64k context. Batch many questions into one `system_one` call. Docs: https://docs.typesafe.ai/llms.txt, skill: `C:\Users\Lenovo\.claude\plugins\cache\typesafe-ai\typesafe\0.5.7\skills\typesafe-ai\SKILL.md`.
 - Frontend: **React 19 + Vite + Tailwind v4 + shadcn/ui** in `web/`: two pages, the dashboard (`/`) and the landing splash
   (`/landing`), built to `frontend_react/` and served by FastAPI.
-  Designed in **Pencil (pen.dev) via its MCP**; the design system is the original hand-written CSS (`web/src/styles/`,
+  The design system is the original hand-written CSS (`web/src/styles/`,
   verbatim from the vanilla build) — Tailwind ships utilities + theme only (preflight is off so nothing is reset).
   Libraries are npm, not CDN: `echarts` (charts), `maplibre-gl` (Earth / Overview / Rent maps), `lucide-react` (icons),
   `react-router-dom` (hash routing), `sonner` (toasts). `npm run dev` proxies /api, /tiles and /static to port 8010.
@@ -35,7 +35,9 @@ Hackathon project for the {Tech: Europe} Agentic AI Hack in London (co-hosted wi
   - The landing globe is a small WebGL2 shader (`web/src/landing/globe-gl.js`) on a baked Sentinel-2 texture
     (`web/public/globe/`, rebuilt by `scripts/build_globe_texture.py`): no map library, no tile server, first frame in ~0.3 s.
   - Static files the pages use: `web/public/products/` (Gemini product photos) → `/products`, `web/public/globe/` → `/globe`.
-- Secrets: `.env` locally (git-ignored: `TYPESAFE_API_KEY`, `GEMINI_API_KEY`). On Modal, the secret is `orbit-secrets` with the same keys. **Never commit keys.**
+- Ask Orbit's agent runs on **DeepSeek** (`deepseek-flash`, OpenAI-compatible API, key `DEEPSEEK_API_KEY`); no key → template answer.
+- `ORBIT_SHOWCASE=1` (set on the Modal deploy): live scans replay the on-stage recording (no Modal/Jev fan-out), briefing is cache-only; Ask stays live (Jev routing + DeepSeek, keyword fallback). Local runs stay fully live.
+- Secrets: `.env` locally (git-ignored: `TYPESAFE_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`). On Modal, the secret is `orbit-secrets` with the same keys. **Never commit keys.**
 
 ## Architecture
 ```

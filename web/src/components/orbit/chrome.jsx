@@ -7,10 +7,19 @@ import { Icon, MODULE_ICON } from '@/lib/icons.jsx';
 import { scanNow, useScan } from '@/lib/scan.jsx';
 import { isNum, monthLabel, tint } from '@/lib/format.js';
 import { ACCENT, MODULE_META } from '@/lib/meta.js';
+import { useMode } from '@/lib/mode.js';
 
 /** Primary "Scan now" button; shows the running state while the SSE scan streams. */
 export function ScanButton() {
   const { running } = useScan();
+  const { showcase } = useMode();
+  if (showcase && !running) {
+    return (
+      <Button variant="orbitPrimary" size="orbit" onClick={scanNow} title="Live scans are off on the public demo: replays the on-stage scan">
+        <Icon name="rotate-ccw" />Replay scan
+      </Button>
+    );
+  }
   return running ? (
     <Button variant="orbitPrimary" size="orbit" className="running" onClick={scanNow}>
       <Icon name="loader" className="spin" />Scanning…

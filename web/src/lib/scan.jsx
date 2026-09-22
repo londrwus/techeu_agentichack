@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { fmt } from './format.js';
 import { go } from './nav.js';
+import { isShowcase } from './mode.js';
 
 export const MAX_CONTAINERS = 100; // Modal account limit (process_tile 75 + judge 20 + fetch 5)
 
@@ -30,6 +31,7 @@ export const useScan = () => useSyncExternalStore(subscribe, getScan, getScan);
 
 export function startScan(mode = 'auto') {
   if (state.running) return;
+  if (isShowcase()) mode = 'replay'; // public demo: play back the on-stage recording, never a live fan-out
   set({ ...EMPTY, running: true, t0: performance.now() });
   lastJev = 0;
   let got = false;

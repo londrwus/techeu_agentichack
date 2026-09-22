@@ -1,4 +1,4 @@
-"""/api/ask: Jev routes intent (calibrated), Gemini function-calling agent answers over Orbit data."""
+"""/api/ask: Jev routes intent (calibrated), a DeepSeek function-calling agent answers over Orbit data."""
 import asyncio
 import json
 import os
@@ -7,7 +7,9 @@ from backend import data
 from backend.data import ITEMS, MODULES, REGIONS, ITEM_BY_ID, MODULE_BY_ID, REGION_BY_ID
 from backend.live import COUNTERS
 
-MODEL = "gemini-3.8-flash"
+MODEL = "gemini-3.8-flash"  # Ask fallback when no DeepSeek key, and the (cached) spoken briefing
+LLM = "deepseek-flash"  # Ask Orbit agent (DeepSeek-V4.1-Flash, OpenAI-compatible API)
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 _gclient = None
 
 
@@ -51,6 +53,22 @@ async def jev_route(question: str) -> dict:
             "item": (c["item"].choice, c["item"].confidence),
             "region": (c["region"].choice, c["region"].confidence),
             "buy_now": r.nouls["buy_now"].noul}
+
+
+def keyword_route(question: str) -> dict:
+    """Free local fallback when Jev is unreachable: first module/item/region whose words appear."""
+    q = question.lower()
+    def hit(words):
+        return any(w and w in q for w in words)
+    mod = next((m for m, t in MODULE_TOPICS.items()
+                if hit([w.strip() for w in t.replace(":", ",").split(",")[1:]] + [MODULE_BY_ID[m]["name"].lower()])), "general")
+    item = next((i["id"] for i in ITEMS if hit([i["name"].lower(), i["id"].split("_")[0]])), "none")
+    region = next((r["id"] for r in REGIONS if hit([r["name"].split(",")[0].lower()])), "none")
+    if mod == "general" and item != "none":
+        mod = ITEM_BY_ID[item]["module"]
+    buy = 0.9 if hit(["buy", "wait", "stock up", "cheaper"]) else 0.1
+    return {"module": (mod, 0.8 if mod != "general" else 0.5), "item": (item, 0.8 if item != "none" else 0.5),
+            "region": (region, 0.8 if region != "none" else 0.5), "buy_now": buy, "engine": "keywords"}
 
 
 # ---------------- tools ----------------
@@ -115,8 +133,8 @@ def _decl(name, desc, param, enum=None):
     p = {"type": "string", "description": desc}
     if enum:
         p["enum"] = enum
-    return {"type": "function", "name": name, "description": f"{name}: {desc}",
-            "parameters": {"type": "object", "properties": {param: p}, "required": [param]}}
+    return {"type": "function", "function": {"name": name, "description": desc,
+            "parameters": {"type": "object", "properties": {param: p}, "required": [param]}}}
 
 
 TOOLS = [
@@ -131,14 +149,63 @@ SYSTEM = ("You are Orbit, an AI that forecasts tomorrow's consumer prices in Lon
           "Call all tools you need in ONE parallel batch (max 3), then answer. If data is missing, give your best estimate from general market knowledge. "
           "Answer in at most 3 short sentences, plain text, concrete numbers in GBP and %, and a clear buy-now-or-wait tip when relevant.")
 
+_http = None
+
+
+async def deepseek_answer(question: str, hint: str) -> tuple[str, list]:
+    global _http
+    import httpx
+    key = os.environ.get("DEEPSEEK_API_KEY")
+    if not key:
+        raise RuntimeError("DEEPSEEK_API_KEY not set")
+    _http = _http or httpx.AsyncClient(timeout=25, headers={"Authorization": f"Bearer {key}"})
+    msgs = [{"role": "system", "content": SYSTEM},
+            {"role": "user", "content": f"{question}\n\n(router hint: {hint})"}]
+    calls = []
+    for rnd in range(2):
+        last = rnd == 1
+        if last:
+            msgs.append({"role": "system", "content": "Tools are no longer available: answer now from what you have."})
+        body = {"model": LLM, "messages": msgs, "max_tokens": 600, "tools": TOOLS}
+        if last:
+            body["tool_choice"] = "none"
+        r = await _http.post(DEEPSEEK_URL, json=body)
+        COUNTERS["deepseek_calls"] += 1
+        r.raise_for_status()
+        msg = r.json()["choices"][0]["message"]
+        fcs = msg.get("tool_calls") or []
+        if not fcs:
+            return (msg.get("content") or "").strip(), calls
+        msgs.append({k: v for k, v in msg.items() if v is not None})
+        for fc in fcs:
+            name = fc["function"]["name"]
+            try:
+                args = json.loads(fc["function"].get("arguments") or "{}")
+            except ValueError:
+                args = {}
+            calls.append({"name": name, "args": args})
+            try:
+                res = TOOLS_IMPL[name](**args)
+            except Exception as e:
+                res = {"error": str(e)}
+            msgs.append({"role": "tool", "tool_call_id": fc["id"], "content": json.dumps(res, default=str)[:6000]})
+    return "I looked at the data but couldn't finish the analysis in time.", calls
+
+
+def _gemini_tools():
+    """Same tools in the Gemini Interactions API shape."""
+    return [{"type": "function", "name": t["function"]["name"], "description": t["function"]["description"],
+             "parameters": t["function"]["parameters"]} for t in TOOLS]
+
 
 async def gemini_answer(question: str, hint: str) -> tuple[str, list]:
+    """Fallback agent when no DeepSeek key is configured."""
     client = gemini()
     history = [{"type": "user_input", "content": [{"type": "text", "text": f"{question}\n\n(router hint: {hint})"}]}]
     calls = []
     for rnd in range(2):
         last = rnd == 1
-        kw = {} if last else {"tools": TOOLS}
+        kw = {} if last else {"tools": _gemini_tools()}
         sysmsg = SYSTEM + (" Tools are no longer available: answer now from what you have." if last else "")
         it = await asyncio.wait_for(client.aio.interactions.create(
             model=MODEL, store=False, input=history, system_instruction=sysmsg,
@@ -178,18 +245,24 @@ def _template_answer(route: dict) -> str:
 async def ask(question: str) -> dict:
     question = (question or "").strip()[:500]
     COUNTERS["asks"] += 1
-    jev_task = asyncio.create_task(jev_route(question))
-    try:
-        route = await jev_task
+    try:  # Jev stays on even in the public showcase: a routing call costs a fraction of a cent
+        route = await jev_route(question) | {"engine": "jev"}
     except Exception as e:
-        route = {"module": ("general", 0.0), "item": ("none", 0.0), "region": ("none", 0.0), "buy_now": 0.5, "error": str(e)}
+        route = keyword_route(question) | {"error": str(e)}
     hint = f"module={route['module'][0]} ({route['module'][1]:.2f}), item={route['item'][0]}, region={route['region'][0]}, buy_now_question_p={route['buy_now']:.2f}"
     try:
-        answer, calls = await gemini_answer(question, hint)
+        # DeepSeek when its key is set, else the Gemini agent; the template answer only if both fail.
+        if os.environ.get("DEEPSEEK_API_KEY"):
+            answer, calls = await deepseek_answer(question, hint)
+            llm = LLM
+        else:
+            answer, calls = await gemini_answer(question, hint)
+            llm = MODEL
         if not answer:
             raise ValueError("empty answer")
-    except Exception:
-        answer, calls = _template_answer(route), []
+    except Exception as e:
+        print("[ask] LLM unavailable:", type(e).__name__, str(e)[:200])
+        answer, calls, llm = _template_answer(route), [], None
 
     focus = {}
     for c in calls:
@@ -214,5 +287,6 @@ async def ask(question: str) -> dict:
     return {"answer": answer,
             "route": {"label": route["module"][0], "confidence": round(route["module"][1], 3),
                       "buy_now_question_p": round(route["buy_now"], 3),
-                      "item": route["item"][0], "region": route["region"][0]},
+                      "item": route["item"][0], "region": route["region"][0], "engine": route.get("engine")},
+            "llm": llm,
             "tool_calls": calls, "focus": {k: v for k, v in focus.items() if v}}

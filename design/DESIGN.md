@@ -1,6 +1,6 @@
 # Orbit frontend design spec
 
-Source of truth: `design/orbit.pen` (Pencil). Screenshots: `design/01-overview.png`, `02-module-latte.png`, `03-rent-radar.png`, `04-mission-control.png`, `05-ask-orbit.png`. Tokens: `web/src/styles/tokens.css` (Inter from Google Fonts). All frames are 1440×900. Build for 1440×900 first; below 1280 px it may stack.
+Screenshots: `design/01-overview.png`, `02-module-latte.png`, `03-rent-radar.png`, `04-mission-control.png`, `05-ask-orbit.png`. Tokens: `web/src/styles/tokens.css` (Inter from Google Fonts). All frames are 1440×900. Build for 1440×900 first; below 1280 px it may stack.
 
 Principles: light, calm, **big numbers, few elements per card**, readable from the back of a room. Orange (`--accent`) means "rising / act". Red means price up, green means price down. AI prose only appears in 1–3 sentence cards. If data is missing, hide the widget.
 

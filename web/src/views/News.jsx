@@ -1,4 +1,4 @@
-// News hub: Jev reads the world's commodity news live (design: design/NEWS_HUB.md, Pencil "10 News hub").
+// News hub: Jev reads the world's commodity news live (design: design/NEWS_HUB.md).
 // Idle: latest judged headlines from /api/news/latest. "Scan the news": SSE /api/news/scan?mode=live
 // (auto-fallback to mode=replay, the server's recorded scan) streams judged headlines into a firehose feed.
 //
@@ -6,6 +6,8 @@
 // done banner; the 60 fps bits that must not re-render the tree — the counter lerp, the feed's slide-in
 // offset and the FLIP re-order — stay on refs, exactly as they did before.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import ShowcaseNotice from '@/components/orbit/ShowcaseNotice.jsx';
+import { isShowcase, useMode } from '@/lib/mode.js';
 import { graphic } from 'echarts';
 import { Icon } from '@/lib/icons.jsx';
 import { api } from '@/lib/api.js';
@@ -14,7 +16,7 @@ import { hideTip, showTip } from '@/lib/dom.jsx';
 import { initChart } from '@/lib/echarts.js';
 import { axisTooltip, tipHtml } from '@/lib/chartTheme.js';
 
-const MAX_DOM = 60, KEEP = 600, ROW_H = 64; // .nh-item height 58 + gap 6
+const MAX_DOM = 60, KEEP = 1000, ROW_H = 64, PAGE = 60; // idle feed grows by PAGE rows on scroll // .nh-item height 58 + gap 6
 const MODS = [['all', 'All'], ['groceries', 'Groceries'], ['latte', 'Coffee'], ['beer_wine', 'Beer & Wine'], ['gpu', 'GPU'], ['rent', 'Rent']];
 // item id -> [commodity name, lucide icon, colour, module]
 const ITEMS = {
@@ -60,6 +62,7 @@ function localPressure(items) {
 
 export default function News() {
   const [rows, setRows] = useState([]);
+  const { showcase } = useMode();
   const [filter, setFilter] = useState('all');
   const [movingOnly, setMovingOnly] = useState(false);
   const [sub, setSub] = useState('newest on top');
@@ -114,12 +117,27 @@ export default function News() {
   const setK = (k, v) => { if (isNum(v)) K.current[k].t = v; };
   const setJps = v => { setK('jps', v); setK('thru', v); };
 
+  // Idle: the feed is a scrollable list that grows a page at a time; during a scan it is the capped firehose.
+  const shown = useRef(MAX_DOM);
+  const [matchN, setMatchN] = useState(0);
   const rebuild = useCallback(() => {
     queue.current = [];
     offset.current = 0;
-    if (list.current) list.current.style.transform = '';
-    setRows(buffer.current.filter(passes).slice(0, MAX_DOM).map(it => ({ it, fresh: false })));
+    shown.current = MAX_DOM;
+    if (list.current) { list.current.style.transform = ''; if (list.current.parentElement) list.current.parentElement.scrollTop = 0; }
+    const all = buffer.current.filter(passes);
+    setMatchN(all.length);
+    setRows(all.slice(0, MAX_DOM).map(it => ({ it, fresh: false })));
   }, [passes]);
+  const showMore = e => {
+    const el = e.currentTarget;
+    if (running || el.scrollTop + el.clientHeight < el.scrollHeight - ROW_H * 4) return;
+    const all = buffer.current.filter(passes);
+    if (shown.current >= all.length) return;
+    shown.current += PAGE;
+    setMatchN(all.length);
+    setRows(all.slice(0, shown.current).map(it => ({ it, fresh: false })));
+  };
 
   useEffect(() => { rebuild(); }, [filter, movingOnly, rebuild]);
 
@@ -300,7 +318,7 @@ export default function News() {
   }, [finish]);
 
   const loadIdle = useCallback(async (force = false) => {
-    const d = await api('/api/news/latest?limit=300&module=all');
+    const d = await api(`/api/news/latest?limit=${KEEP}&module=all`);
     let items = d?.items || [];
     const totals = d?.totals;
     if (!alive.current || (run.current && !force)) return;
@@ -310,7 +328,7 @@ export default function News() {
     setK('head', totals?.headlines); setK('judg', totals?.judgments);
     const allTime = Object.assign({}, ...Object.values(d?.by_module || {}).map(m => m?.item_pressure || {}));
     setPressure(Object.keys(allTime).length ? allTime : localPressure(items));
-    if (!run.current) setSub('newest on top · latest judged');
+    if (!run.current) setSub('newest on top · scroll to browse');
   }, [rebuild]);
 
   const connect = useCallback(mode => {
@@ -345,6 +363,7 @@ export default function News() {
 
   const startScan = mode => {
     if (run.current && !run.current.done) return;
+    if (mode === 'live' && isShowcase()) return; // public demo: live Jev scans are locked
     es.current?.close();
     clearTimeout(run.current?.flushT);
     run.current = { t0: performance.now(), mode, judged: 0, judgments: 0, calls: 0, contSum: 0, contN: 0, hist: [], fetched: 0, target: 0 };
@@ -364,7 +383,7 @@ export default function News() {
 
   // Pre-start Modal containers (fetch + judge) so the live scan has no cold start; refreshed on hover.
   const warmT = useRef(0);
-  const warm = () => { if (Date.now() - warmT.current > 60000) { warmT.current = Date.now(); fetch('/api/news/warm').catch(() => {}); } };
+  const warm = () => { if (isShowcase()) return; if (Date.now() - warmT.current > 60000) { warmT.current = Date.now(); fetch('/api/news/warm').catch(() => {}); } };
 
   useEffect(() => {
     warm();
@@ -394,13 +413,17 @@ export default function News() {
             <Icon name="rotate-ccw" size={13} />Replay
           </button>
           <div className="nh-engine"><Icon name="zap" size={16} /><b>Jev</b><span>on Modal · jev-latest</span></div>
-          <button className={`btn primary nh-scan${running ? ' running' : ''}`} onMouseEnter={warm} onClick={() => startScan('live')}>
-            <span className="ic">{running ? <Icon name="loader" size={18} className="spin" /> : <Icon name="radar" size={18} />}</span>
+          <button className={`btn primary nh-scan${running ? ' running' : ''}${showcase ? ' locked' : ''}`} onMouseEnter={warm}
+                  disabled={showcase && !running} title={showcase ? 'Live scans are off on the public demo. Run Orbit locally to scan live.' : undefined}
+                  onClick={() => startScan('live')}>
+            <span className="ic">{running ? <Icon name="loader" size={18} className="spin" /> : <Icon name={showcase ? 'lock' : 'radar'} size={18} />}</span>
             <span className="nh-lb">{running ? 'Scanning…' : 'Scan the news'}</span>
             <span className="tm" ref={kTm} />
           </button>
         </div>
       </header>
+
+      <ShowcaseNotice what="Live news scans" />
 
       <section className="nh-kpis">
         <Kpi icon="newspaper" label="Headlines read" vref={kHead} init="–" />
@@ -425,11 +448,14 @@ export default function News() {
               <button key={id} className={`nh-chip${id === filter ? ' on' : ''}`} onClick={() => setFilter(id)}>{nm}</button>
             ))}
           </div>
-          <div className="nh-feed">
+          <div className="nh-feed" onScroll={showMore}>
             <div className="nh-list" ref={list}>
               {rows.length
                 ? rows.map(({ it, fresh }, i) => <Row key={it.id ?? i} it={it} fresh={fresh} newest={i === 0 && fresh} />)
                 : <div className="nh-empty">No headlines match this filter yet.</div>}
+              {!running && rows.length ? (
+                <div className="nh-more">{rows.length < matchN ? `Showing ${fmtInt(rows.length)} of ${fmtInt(matchN)} · scroll for more` : `All ${fmtInt(matchN)} headlines shown`}</div>
+              ) : null}
             </div>
           </div>
         </div>
