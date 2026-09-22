@@ -25,7 +25,15 @@ Hackathon project for the {Tech: Europe} Agentic AI Hack in London (co-hosted wi
   - `gemini-3.1-flash-tts-preview`: spoken briefing
   - `gemini-3.1-flash-image` / `nano-banana-pro-preview`: image generation
 - Fast calibrated judgments: **Jev** (TypeSafe, `typesafe-sdk`, model `jev-latest`). Jev reads text/JSON only (no images) and returns typed answers (`Noul` yes/no, `Choice`, `Score`) with probabilities and confidence. It's very cheap ($0.042 per 1M input tokens; balance $5), with limits of 1,200 requests/min and a 64k context. Batch many questions into one `system_one` call. Docs: https://docs.typesafe.ai/llms.txt, skill: `C:\Users\Lenovo\.claude\plugins\cache\typesafe-ai\typesafe\0.5.7\skills\typesafe-ai\SKILL.md`.
-- Frontend: static HTML/CSS/vanilla-JS served by FastAPI from `frontend/` (no build step). Designed in **Pencil (pen.dev) via its MCP**, then implemented. Libraries come from CDN (jsdelivr): Tailwind (optional), ECharts (charts), deck.gl + MapLibre GL (3D London map).
+- Frontend: **React 19 + Vite + Tailwind v4 + shadcn/ui** in `web/`, built to `frontend_react/` and served by FastAPI at `/`.
+  Designed in **Pencil (pen.dev) via its MCP**; the design system is the original hand-written CSS (`web/src/styles/`,
+  verbatim from the vanilla build) — Tailwind ships utilities + theme only (preflight is off so nothing is reset).
+  Libraries are npm, not CDN: `echarts` (charts), `maplibre-gl` (Earth / Overview / Rent maps), `lucide-react` (icons),
+  `react-router-dom` (hash routing), `sonner` (toasts). `npm run dev` proxies /api, /tiles and /static to port 8010.
+  - Build the UI with `cd web && npm install && npm run build` (output `frontend_react/`, committed so the demo runs without npm).
+  - `frontend/` is the pre-React vanilla build, kept byte-for-byte as a stage fallback at `/legacy`.
+  - `/landing` still serves `frontend/landing.html`: a standalone splash that needs MapLibre **5** (globe projection) from CDN,
+    so it deliberately stays outside the React app.
 - Secrets: `.env` locally (git-ignored: `TYPESAFE_API_KEY`, `GEMINI_API_KEY`). On Modal, the secret is `orbit-secrets` with the same keys. **Never commit keys.**
 
 ## Architecture
@@ -40,8 +48,10 @@ Modal (heavy work, writes to Volume "orbit-data" at /data)
 Local
   orbit/config.py          SINGLE SOURCE OF TRUTH: modules, regions, items, prices, series ids
   scripts/pull_data.py     modal volume get → data/built/
-  backend/ (FastAPI)       serves data/built/*.json, Gemini agent chat, SSE live scan, TTS briefing; serves frontend/
-  frontend/                dashboard UI
+  backend/ (FastAPI)       serves data/built/*.json, Gemini agent chat, SSE live scan, TTS briefing; serves the UI
+  web/                     React front-end source (views/, components/ui = shadcn, components/orbit, lib/, styles/)
+  frontend_react/          built React app (npm run build) — served at /
+  frontend/                pre-React vanilla build — served at /legacy, plus the /landing splash
 ```
 
 ### Modules (see `orbit/config.py`)

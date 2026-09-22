@@ -1,0 +1,90 @@
+/* Orbit · React entry stylesheet.
+   Order matters: Tailwind (theme + utilities, no preflight) first, then the Orbit design system
+   unlayered so every existing rule keeps winning exactly as it did in the vanilla build. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Design system (verbatim from the vanilla app, same load order). */
+@import "./styles/tokens.css";
+@import "./styles/app.css";
+@import "./styles/css/motion.css";
+@import "./styles/css/overview.css";
+@import "./styles/css/earth.css";
+@import "./styles/css/groceries.css";
+@import "./styles/css/latte.css";
+@import "./styles/css/beer_wine.css";
+@import "./styles/css/gpu.css";
+@import "./styles/css/rent.css";
+@import "./styles/css/news.css";
+@import "./styles/css/track_record.css";
+@import "./styles/css/views_misc.css";
+
+/* shadcn/ui tokens, mapped onto the Orbit palette so the primitives inherit the design system. */
+:root {
+  --radius: 0.75rem;
+  --background: var(--bg);
+  --foreground: var(--text-1);
+  --card-foreground: var(--text-1);
+  --popover: #fff;
+  --popover-foreground: var(--text-1);
+  --primary: var(--accent);
+  --primary-foreground: #fff;
+  --secondary: var(--bg);
+  --secondary-foreground: var(--text-1);
+  --muted-foreground: var(--text-3);
+  --accent-foreground: var(--accent-ink);
+  --destructive: var(--up);
+  --input: var(--border);
+  --ring: var(--accent);
+}
+
+@theme inline {
+  --font-sans: var(--font);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Minimal slice of Tailwind preflight: only what the shadcn primitives need.
+   Full preflight is intentionally off — it would reset the Orbit stylesheet. */
+@layer base {
+  [data-slot], [data-slot] * { border-width: 0; border-style: solid; border-color: var(--border); }
+  [data-slot]:focus-visible { outline: none; }
+}
+
+/* React shell: #root must not become the body grid cell — the sidebar and <main> stay grid items. */
+#root { display: contents; }
+
+/* Orbit <-> shadcn bridge.
+   When a Radix primitive wears an Orbit class, the Orbit stylesheet owns its box. These rules drop the
+   few shadcn utility defaults Orbit has no counterpart for (fixed control heights, Tailwind's type-scale
+   line-heights), so a <Button variant="orbit"> or <Badge variant="up"> measures exactly like the
+   hand-written .btn / .pill did. */
+[data-slot="button"],
+[data-slot="badge"],
+[data-slot="toggle-group-item"],
+[data-slot="tabs-trigger"] { line-height: normal; }
+
+.seg [data-slot="toggle-group-item"],
+.seg [data-slot="tabs-trigger"] { height: auto; min-width: 0; }
+[data-slot="toggle-group"].seg { width: auto; gap: 2px; }

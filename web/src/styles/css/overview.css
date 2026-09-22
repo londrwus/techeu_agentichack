@@ -1,0 +1,80 @@
+/* Overview (views/overview.js). Restrained KPI cards + MapLibre satellite watch map. */
+
+/* ---------- KPI cards ---------- */
+.ov-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; flex: none; }
+.kc {
+  display: grid; grid-template-rows: auto auto auto 48px auto; row-gap: 0;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 18px 14px; min-width: 0; color: inherit; text-decoration: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.kc.skeleton { height: 206px; border: 0; }
+.kc:hover { border-color: #D6D3D1; box-shadow: 0 1px 2px rgba(12,10,9,.04), 0 4px 12px rgba(12,10,9,.04); }
+.kc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.kc-name { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kc-name svg { color: var(--text-3); flex: none; }
+.kc-press { flex: none; font-size: 11px; color: var(--text-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kc-press b { color: var(--text-1); font-weight: 600; }
+.kc-big { margin-top: 14px; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.kc-big small { font-size: 12px; font-weight: 500; color: var(--text-3); letter-spacing: 0; margin-left: 6px; }
+.kc-sub { margin-top: 6px; font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kc-spark { height: 48px; margin: 10px -4px 0; min-width: 0; }
+.kc-spark.empty { background: none; min-height: 0; }
+.kc-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; }
+.kc-trend { display: inline-flex; flex: none; }
+.kc-prob { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kc-trend.up { color: var(--up); }
+.kc-trend.down { color: var(--down); }
+
+.ov-bottom { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+#basket .waffle-cols { min-height: 330px; }
+#watch .card-head { flex-wrap: wrap; }
+#basket .basket-total .l { white-space: nowrap; }
+@media (max-width: 1360px) { .kc-lu { display: none; } .kc { padding-inline: 16px; } }
+
+/* ---------- Basket waffle (hover + click) ---------- */
+#basket .wcol { cursor: pointer; border-radius: 8px; padding: 4px 2px; transition: background .15s; }
+#basket .wcol:hover { background: var(--bg); }
+#basket .wcol .emo { color: var(--text-2); display: grid; place-items: center; height: 20px; }
+
+/* ---------- Satellite watch map ---------- */
+.ov-map { position: relative; flex: 1; border-radius: 12px; background: var(--map-light); overflow: hidden; margin-top: 16px; min-height: 240px; }
+.ov-map .maplibregl-ctrl-group { border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.ov-map .maplibregl-ctrl-attrib { font-size: 10px; }
+.ov-map img.world { position: absolute; max-width: none; pointer-events: none; user-select: none; opacity: .9; }
+.ov-fit {
+  position: absolute; z-index: 3; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+  font: 500 12px var(--font); color: var(--text-2); cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.ov-fit:hover { color: var(--text-1); border-color: #D6D3D1; }
+
+.ov-pin { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: opacity .2s; }
+.ov-pin::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 2px solid #fff; box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,.25); position: relative; transition: transform .15s; }
+.ov-pin::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--c); opacity: .18; }
+.ov-pin:hover::after { transform: scale(1.35); }
+.ov-pin.pulse::before { animation: halo 1.6s infinite; }
+.ov-pin.dim { opacity: .15; pointer-events: none; }
+.ov-pin.abs, .ov-callout.abs { position: absolute; }
+.ov-pin.abs { margin: -11px 0 0 -11px; }
+.ov-callout.abs { transform: translate(-50%, -100%); }
+
+.ov-callout {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 9px; font-size: 12px; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.ov-callout svg { display: block; }
+.ov-callout b { font-weight: 600; color: var(--text-1); }
+.ov-callout .red { color: var(--up); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Region tooltip (rendered inside the shared #tooltip) */
+.ov-tip { display: flex; gap: 12px; align-items: flex-start; }
+.ov-tip img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex: none; background: #222; }
+.ov-tip-b { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ov-tip-m { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.ov-tip-n { font-size: 14px; font-weight: 600; color: var(--text-1); }
+.ov-tip-v { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1200px) { .ov-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .ov-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

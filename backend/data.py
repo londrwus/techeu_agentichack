@@ -13,6 +13,8 @@ from orbit.config import ITEMS, MODULES, MODULE_BY_ID, ITEM_BY_ID, REGIONS, REGI
 
 DATA = Path(os.environ.get("ORBIT_DATA") or ROOT / "data" / "built").resolve()
 FRONTEND = Path(os.environ.get("ORBIT_FRONTEND") or ROOT / "frontend").resolve()
+# React build (web/ -> frontend_react/). Served at "/" when present; the vanilla build stays at "/legacy".
+FRONTEND_REACT = Path(os.environ.get("ORBIT_FRONTEND_REACT") or ROOT / "frontend_react").resolve()
 
 
 def read_json(rel: str):

@@ -2,7 +2,7 @@
 
 [← back to README](../README.md) · [Architecture](ARCHITECTURE.md) · [Jev](JEV.md) · [Modal](MODAL.md) · [Gemini](GEMINI.md)
 
-The versions below are taken from [`requirements.txt`](../requirements.txt), from the `pip_install` / `uv_pip_install` calls of the Modal images, and from the CDN `<script>` tags in [`frontend/index.html`](../frontend/index.html) and [`frontend/landing.html`](../frontend/landing.html).
+The versions below are taken from [`requirements.txt`](../requirements.txt), from the `pip_install` / `uv_pip_install` calls of the Modal images, from [`web/package.json`](../web/package.json), and from the CDN `<script>` tags in [`frontend/landing.html`](../frontend/landing.html).
 
 ## At a glance
 
@@ -27,7 +27,7 @@ flowchart LR
   end
   subgraph Web
     FA[FastAPI 0.141 · Uvicorn · Pydantic 2]
-    FE[Vanilla JS · ECharts 5.5 · MapLibre GL 4.7/5.6<br/>Lucide · Inter]
+    FE[React 19 · Tailwind v4 · shadcn/ui<br/>ECharts 5.5 · MapLibre GL 4.7/5.6 · Lucide · Inter]
   end
   AI --> M --> Web
   ML --> M
@@ -94,15 +94,31 @@ Details in [MODEL.md](MODEL.md).
 
 ## Frontend
 
-| Library | Version (CDN: jsdelivr) | Use |
+The dashboard is a React app in [`web/`](../web) (`npm run build` → `frontend_react/`, which FastAPI serves at `/`).
+Versions come from [`web/package.json`](../web/package.json). The pre-React vanilla build is still in `frontend/`
+and is served at `/legacy`; `/landing` is a standalone page that keeps its CDN scripts.
+
+| Library | Version (npm) | Use |
 |---|---|---|
-| Vanilla JS (ES modules) | – | Hash router SPA, no build step (`frontend/js/app.js`) |
+| React + React DOM | 19.2 | The whole UI: 11 routed screens, each lazily imported as its own chunk |
+| Vite | 8.3 | Dev server (proxies `/api`, `/tiles`, `/static` to the backend) and production build |
+| Tailwind CSS | 4.3 | Utilities + theme only — **preflight is off**, so the hand-written Orbit CSS (`web/src/styles/`) is untouched |
+| shadcn/ui (Radix) | new-york, JSX | Button, Badge, Card, Tabs, ToggleGroup, Dialog, Separator, Skeleton, Progress, Sonner — restyled with Orbit variants (`variant="orbitPrimary"` → `.btn.primary`) |
+| react-router-dom | 7 | `HashRouter`, so every existing `#/route` link and `location.hash` jump still works |
+| sonner | 2.0 | Toasts (unstyled, wearing the Orbit `.toast` class) |
 | Apache ECharts | 5.5.1 | Fan charts with p10–p90 bands, driver waterfalls, waffles, leaderboard, reliability diagram |
-| MapLibre GL JS | 4.7.1 (app), 5.6.0 (landing globe) | Earth view on EOX Sentinel-2 cloudless; Rent Radar 2D/3D `fill-extrusion` boroughs and H3 hexes; the landing page's rotating globe |
-| deck.gl | 9.0.38 | Loaded in `index.html`. The current 3D is done with MapLibre `fill-extrusion`, so no view uses deck.gl today. |
-| Lucide icons | 0.460.0 | UI icons |
+| MapLibre GL JS | 4.7.1 (app), 5.6.0 via CDN (landing globe) | Earth view on EOX Sentinel-2 cloudless; Rent Radar 2D/3D `fill-extrusion` boroughs and H3 hexes; the landing page's rotating globe |
+| lucide-react | 0.460.0 | UI icons, through an explicit registry (`web/src/lib/lucide-icons.js`) so only the ~100 icons in use are bundled |
 | Inter (Google Fonts) | – | Typeface |
 | Web Speech API | browser | Voice input in Ask Orbit (`SpeechRecognition`) |
+
+deck.gl is gone: it was loaded by the old `index.html` but no view ever used it — the 3D Rent Radar is
+MapLibre `fill-extrusion`.
+
+**Where the imperative code lives.** React owns markup, state and composition; ECharts, MapLibre and the
+drag-compare sliders run in `useEffect` with refs (`web/src/lib/forecastChart.js`, `signalCards.js`,
+`echarts.js`, `motion.js`, `lightbox.js`), which is the same code as the vanilla build. The News hub keeps
+its 60 fps counter lerp and feed slide-in on refs so a live firehose never re-renders the tree.
 
 ## Design tooling
 

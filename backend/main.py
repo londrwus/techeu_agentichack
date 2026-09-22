@@ -48,6 +48,16 @@ display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:ce
 
 @app.get("/", response_class=HTMLResponse)
 def index():
+    """React build (frontend_react/) when it exists, else the vanilla build, else a placeholder."""
+    for p in (data.FRONTEND_REACT / "index.html", data.FRONTEND / "index.html"):
+        if p.exists():
+            return FileResponse(p, headers={"Cache-Control": "no-cache"})
+    return HTMLResponse(PLACEHOLDER)
+
+
+@app.get("/legacy", response_class=HTMLResponse)
+def legacy_index():
+    """The pre-React vanilla-JS build, kept as a stage fallback."""
     p = data.FRONTEND / "index.html"
     return FileResponse(p) if p.exists() else HTMLResponse(PLACEHOLDER)
 
@@ -64,6 +74,7 @@ class _LazyStatic(StaticFiles):
 
 
 app.mount("/static", _LazyStatic(data.FRONTEND), name="static")
+app.mount("/assets", _LazyStatic(data.FRONTEND_REACT / "assets"), name="assets")
 
 _SAFE = re.compile(r"^[A-Za-z0-9_\-]+$")
 
@@ -170,7 +181,8 @@ def stats():
 @app.get("/api/health")
 def health():
     return {"ok": True, "data_dir": str(data.DATA), "data_exists": data.DATA.exists(),
-            "frontend": (data.FRONTEND / "index.html").exists()}
+            "frontend": (data.FRONTEND / "index.html").exists(),
+            "frontend_react": (data.FRONTEND_REACT / "index.html").exists()}
 
 
 from backend.extra_rent import router as _rent_router  # noqa: E402
