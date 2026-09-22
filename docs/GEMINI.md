@@ -17,7 +17,7 @@
 
 All calls use the `google-genai` SDK 2.24.0 and the **Interactions API** (`client.aio.interactions.create`) with `thinking_level: "low"` for latency. The key is read from `GEMINI_API_KEY` (in `.env` locally, and in the Modal secret `orbit-secrets` in production).
 
-Our key was also verified with `gemini-3.1-pro-preview` and `gemini-3.5-flash-lite` (listed in [`CLAUDE.md`](../CLAUDE.md)). We kept them off the runtime path: 3.8 Flash handled every task within the latency budget of a live demo.
+Our key was also verified with `gemini-3.1-pro-preview` and `gemini-3.5-flash-lite`. We kept them off the runtime path: 3.8 Flash handled every task within the latency budget of a live demo.
 
 ## 1. Gemini sees: satellite vision notes
 

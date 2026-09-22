@@ -44,7 +44,7 @@ flowchart LR
 | **TypeSafe Jev** via `typesafe-sdk` | SDK `0.7.0`; model `jev-latest` | Typed, calibrated judgments (`Noul`, `Choice`, `Score`) on 24,390 headlines, 20 satellite regions and every Ask Orbit question. 142,016 judgments in total. | [`modal_app/signals.py`](../modal_app/signals.py), [`backend/agent.py`](../backend/agent.py). See [JEV.md](JEV.md). |
 | **Google Research TimesFM 3.0** | `timesfm[torch]==3.0.2`, weights `google/timesfm-3.0-pytorch` (falls back to TimesFM 2.5 200M) | Zero-shot probabilistic time-series forecasts (9 quantiles, 12 months) on NVIDIA L4 | [`modal_app/forecast.py`](../modal_app/forecast.py), [`evaluate.py`](../modal_app/evaluate.py), [`train.py`](../modal_app/train.py) |
 
-Our Google AI Studio key was also verified with `gemini-3.1-pro-preview` and `gemini-3.5-flash-lite` (see [`CLAUDE.md`](../CLAUDE.md)). Neither is on the runtime path today: Flash was fast enough and good enough for every step.
+Our Google AI Studio key was also verified with `gemini-3.1-pro-preview` and `gemini-3.5-flash-lite`. Neither is on the runtime path today: Flash was fast enough and good enough for every step.
 
 ## Compute and infrastructure
 

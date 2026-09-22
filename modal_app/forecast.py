@@ -6,7 +6,7 @@ r"""orbit-forecast: price history -> GPU time-series foundation model -> 12-mont
     .\.venv\Scripts\modal deploy modal_app/forecast.py
     $env:ORBIT_GPU="L4"; ...   # default L4 GPU; set "cpu" to run without GPU
 
-Writes /data/built/forecast/{item_id}.json + _stats.json (see CLAUDE.md contracts).
+Writes /data/built/forecast/{item_id}.json + _stats.json (see docs/ARCHITECTURE.md data contracts).
 Model: Google TimesFM 3.0 (fallback TimesFM 2.5) on an L4 GPU; weights cached in Volume "orbit-models".
 """
 import json

@@ -9,3 +9,9 @@ node_modules/
 
 # large: restore with `python scripts/pull_data.py tiles`
 data/built/tiles/
+
+# local AI-assistant / design-tool files (not part of the project)
+CLAUDE.md
+.claude/
+skills-lock.json
+*.pen
