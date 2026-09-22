@@ -1,4 +1,4 @@
-// Fetch-with-cache + React data hooks. Ported from frontend/js/lib.js api().
+// Fetch-with-cache + React data hooks. Ported from vanilla js/lib.js api().
 import { useEffect, useState } from 'react';
 import { MODULE_IDS } from './meta.js';
 

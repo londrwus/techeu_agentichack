@@ -1,11 +1,11 @@
 # Orbit front-end (React)
 
-React 19 + Vite + Tailwind v4 + shadcn/ui. Builds to `../frontend_react/`, which FastAPI serves at `/`.
-The pre-React vanilla build still lives in `../frontend/` and is served at `/legacy`.
+React 19 + Vite + Tailwind v4 + shadcn/ui. Two pages — the dashboard (`index.html`, served at `/`) and the
+landing splash (`landing.html`, served at `/landing`) — built to `../frontend_react/`.
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173, proxies /api /tiles /static to the backend on :8010
+npm run dev     # http://localhost:5173 (dashboard) and /landing.html; proxies /api and /tiles to the backend on :8010
 npm run build   # -> ../frontend_react (committed, so the demo runs without npm)
 ```
 
@@ -37,7 +37,8 @@ shadcn/ui primitives wear Orbit classes (`<Button variant="orbitPrimary">` rende
 
 ```
 src/
-  main.jsx                 entry: motion layer + lightbox + <App/>
+  main.jsx                 dashboard entry: motion layer + lightbox + <App/>
+  landing/                 landing entry: Landing.jsx (Tailwind-first, preflight on), Globe.jsx, globe-gl.js (WebGL2 shader)
   App.jsx                  shell: sidebar, hash router (react-router), error boundary, toaster, tooltip node
   index.css                Tailwind (no preflight) + Orbit design system + shadcn token mapping
   views/                   one component per screen, lazily imported so each is its own chunk
@@ -46,7 +47,19 @@ src/
   lib/                     api + hooks, formatting, meta, icons, chart theme, forecast chart, signal cards,
                            scan store (useSyncExternalStore), motion, echarts bootstrap, lightbox
   styles/                  the design system, verbatim from the vanilla build
+public/
+  products/                Gemini product photos        -> /products/*.jpg
+  globe/                   baked Sentinel-2 globe texture -> /globe/*.jpg  (scripts/build_globe_texture.py)
 ```
+
+## The landing globe
+
+The old splash streamed MapLibre 5 from a CDN plus ~40 live tiles from the EOX tile server (single
+tiles took up to 15 s), so the globe sat half-empty while it spun. Now `scripts/build_globe_texture.py`
+bakes the same Sentinel-2 cloudless imagery once into an equirectangular texture (15 KB preview +
+253 KB full), and `landing/globe-gl.js` renders it with one fragment shader: ray-cast sphere, lighting,
+atmosphere rim, seam-free mipmapping. Arcs, particles and pulses are a 2D canvas overlay using the same
+projection on the CPU. Without WebGL2 it falls back to the texture scrolling behind a shaded disc.
 
 **Charts and maps stay imperative.** ECharts, MapLibre and the drag-compare sliders live in
 `useEffect` with refs — the option builders are the same code as before. React owns the markup,

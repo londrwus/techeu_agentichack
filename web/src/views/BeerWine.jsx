@@ -1,5 +1,5 @@
 // Beer & Wine screen (MODULES.md §08): crop-health heatmap (region × year, summer NDVI vs region mean)
-// + Pint | Wine forecast card, signal row below. Ported from frontend/js/views/beer_wine.js.
+// + Pint | Wine forecast card, signal row below. Ported from vanilla js/views/beer_wine.js.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ModuleHeader } from '@/components/orbit/chrome.jsx';

@@ -12,7 +12,7 @@
 |---|---|---|
 | `gemini-3.8-flash` | [`backend/agent.py`](../backend/agent.py) (`MODEL`), [`scripts/build_insights.py`](../scripts/build_insights.py), [`backend/briefing.py`](../backend/briefing.py) | Vision on satellite tiles, structured JSON insight cards, function-calling agent, briefing script |
 | `gemini-3.1-flash-tts-preview` | [`backend/briefing.py`](../backend/briefing.py) | Text-to-speech, voice "Charon", 24 kHz PCM → WAV |
-| `gemini-3.1-flash-image` | assets in `frontend/assets/products/` | 10 studio product photos (chocolate, olive oil, …, GPU, laptop, flat), 800×800 |
+| `gemini-3.1-flash-image` | assets in `web/public/products/` | 10 studio product photos (chocolate, olive oil, …, GPU, laptop, flat), 800×800 |
 | **TimesFM 3.0** (Google Research) | `modal_app/forecast.py`, `evaluate.py`, `train.py` | Zero-shot quantile forecasts on NVIDIA L4 (see [MODEL.md](MODEL.md)) |
 
 All calls use the `google-genai` SDK 2.24.0 and the **Interactions API** (`client.aio.interactions.create`) with `thinking_level: "low"` for latency. The key is read from `GEMINI_API_KEY` (in `.env` locally, and in the Modal secret `orbit-secrets` in production).
@@ -97,7 +97,7 @@ Current script (`data/built/briefing.txt`):
 
 ## 5. Image generation
 
-Every consumer item has a product photo generated with `gemini-3.1-flash-image`: white studio background, no text or logos, 800×800 JPEG under 100 KB (spec in [`frontend/MODULES.md`](../frontend/MODULES.md)). They live in [`frontend/assets/products/`](../frontend/assets/products). Early UI mock-ups in `design/images/` were also generated. **No generated image is ever shown as satellite data.** Every tile in the app is real Sentinel-2.
+Every consumer item has a product photo generated with `gemini-3.1-flash-image`: white studio background, no text or logos, 800×800 JPEG under 100 KB (spec in [`design/MODULES.md`](../design/MODULES.md)). They live in [`web/public/products/`](../web/public/products). Early UI mock-ups in `design/images/` were also generated. **No generated image is ever shown as satellite data.** Every tile in the app is real Sentinel-2.
 
 ## 6. TimesFM 3.0 (Google Research)
 
@@ -118,6 +118,6 @@ How it scores against the naive "no change" benchmark is in [MODEL.md](MODEL.md)
 | Live calls per Ask | 1–2 (tool round + answer round) | `backend/agent.py` |
 | Live calls per new briefing | 2 (script + TTS) | `backend/briefing.py` |
 | Vision notes | 16 | `data/built/insights/*.json` |
-| Product images | 10 | `frontend/assets/products/` |
+| Product images | 10 | `web/public/products/` |
 
 Mission Control shows the running total (`gemini_calls_total` in `/api/stats`).

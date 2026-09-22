@@ -1,7 +1,7 @@
 // Rent Radar: London rents × new building seen from orbit.
 // MapLibre (CARTO streets) with borough polygons at city zoom and H3 neighbourhood hexagons (~0.7 km²) from zoom 11.
 // 2D / 3D toggle, metric toggle (recolours map + legend + ranking), hover tooltip, click for details, search.
-// Ported from frontend/js/views/rent.js: React owns every panel, MapLibre keeps the map and its layers.
+// Ported from vanilla js/views/rent.js: React owns every panel, MapLibre keeps the map and its layers.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';

@@ -1,4 +1,4 @@
-"""Landing page: /landing serves frontend/landing.html (a 5-10 s demo opener)."""
+"""Landing page: /landing serves frontend_react/landing.html (the React splash, a 5-10 s demo opener)."""
 from fastapi import APIRouter
 from fastapi.responses import FileResponse, RedirectResponse
 

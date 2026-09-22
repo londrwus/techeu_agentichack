@@ -58,7 +58,7 @@ export function Photo({ id, wrapClass, fallbackClass, fallbackSize = 28, lightbo
     <span className={wrapClass} data-no-lightbox={lightbox ? undefined : ''}>
       {failed
         ? <span className={fallbackClass}><ItemIcon id={id} size={fallbackSize} /></span>
-        : <img src={`/static/assets/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />}
+        : <img src={`/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />}
     </span>
   );
 }

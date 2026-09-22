@@ -1,6 +1,6 @@
 // Ask Orbit: Jev routes the question, Gemini answers with the evidence.
-// Ported from frontend/js/views/ask.js — the chat transcript lives in module state so it survives route changes.
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+// Ported from vanilla js/views/ask.js — the chat transcript lives in module state so it survives route changes.
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { BriefingButton } from '@/components/orbit/chrome.jsx';
 import { Icon, ModuleIcon } from '@/lib/icons.jsx';
@@ -19,22 +19,24 @@ const STEPS = [
 ];
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12, christmas: 12, xmas: 12, summer: 7, spring: 4, winter: 1 };
 
-const INTRO = { role: 'intro' };
+const INTRO = { id: 0, role: 'intro' };
 // Chat history survives route changes, like the detached .msgs node in the vanilla build.
 let saved = null;
 let busy = false;
+let nextId = 1;
+// How many words of each answer are already on screen, by message id. Lives outside React so a
+// re-render (a trace step lighting up, a keystroke, a route change) can never restart the reveal.
+const revealed = new Map();
 
 export default function Ask() {
   const { arg } = useParams();
   const [msgs, setMsgs] = useState(() => saved || [INTRO]);
   const [steps, setSteps] = useState(() => STEPS.map(() => ({ on: false, detail: 'Waiting for a question' })));
-  const [value, setValue] = useState('');
   const box = useRef(null);
-  const input = useRef(null);
 
   useEffect(() => { saved = msgs; }, [msgs]);
   useLayoutEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight; }, [msgs]);
-  useEffect(() => { input.current?.focus(); }, []);
+  const stickToBottom = useCallback(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight; }, []);
 
   const setStep = (i, on, detail) => setSteps(s => s.map((x, k) => (k === i ? { on, detail: detail ?? x.detail } : x)));
 
@@ -42,7 +44,7 @@ export default function Ask() {
     q = (q || '').trim();
     if (!q || busy) return;
     busy = true;
-    setMsgs(m => [...m, { role: 'user', text: q }, { role: 'pending' }]);
+    setMsgs(m => [...m, { id: nextId++, role: 'user', text: q }, { id: nextId++, role: 'pending' }]);
     setSteps(STEPS.map((_, i) => ({ on: false, detail: i === 0 ? 'Routing with calibrated confidence…' : 'Waiting' })));
 
     const t0 = performance.now();
@@ -54,7 +56,7 @@ export default function Ask() {
     const ms = Math.round(performance.now() - t0);
 
     if (!res) {
-      setMsgs(m => [...m.slice(0, -1), { role: 'error' }]);
+      setMsgs(m => [...m.slice(0, -1), { id: nextId++, role: 'error' }]);
       busy = false;
       return;
     }
@@ -75,7 +77,7 @@ export default function Ask() {
     ];
     detail.forEach((d, i) => setTimeout(() => setStep(i, true, d), 150 + i * 280));
 
-    setMsgs(m => [...m.slice(0, -1), { role: 'answer', q, label, conf, text: res.answer || '…', item, mod, focus }]);
+    setMsgs(m => [...m.slice(0, -1), { id: nextId++, role: 'answer', q, label, conf, text: res.answer || '…', item, mod, focus }]);
     busy = false;
   };
 
@@ -97,14 +99,9 @@ export default function Ask() {
       <section className="ask-row">
         <div className="card chat">
           <div className="msgs" ref={box}>
-            {msgs.map((m, i) => <Message key={i} m={m} onGrow={() => { if (box.current) box.current.scrollTop = box.current.scrollHeight; }} />)}
+            {msgs.map(m => <Message key={m.id} m={m} onGrow={stickToBottom} />)}
           </div>
-          <form className="ask-input" autoComplete="off" onSubmit={e => { e.preventDefault(); send(value); setValue(''); }}>
-            <input ref={input} value={value} onChange={e => setValue(e.target.value)}
-                   placeholder="Ask about olive oil, GPUs, rent in Hackney…" aria-label="Ask Orbit" />
-            <Mic onFinal={q => { send(q); setValue(''); }} setValue={setValue} />
-            <button type="submit" className="ibtn send" title="Send"><Icon name="arrow-up" /></button>
-          </form>
+          <Composer onSend={send} />
         </div>
         <div className="side">
           <div className="card" style={{ padding: 20 }}>
@@ -124,7 +121,7 @@ export default function Ask() {
             <div style={{ fontSize: 16, fontWeight: 700 }}>Try asking</div>
             <div className="sugg">
               {SUGGEST.map(([ic, s]) => (
-                <button key={s} onClick={() => { setValue(''); send(s); }}><Icon name={ic} size={16} /><span>{s}</span></button>
+                <button key={s} onClick={() => send(s)}><Icon name={ic} size={16} /><span>{s}</span></button>
               ))}
             </div>
           </div>
@@ -134,7 +131,22 @@ export default function Ask() {
   );
 }
 
-function Message({ m, onGrow }) {
+/** The input row. Owns its own value so a keystroke never re-renders the chat or the trace. */
+function Composer({ onSend }) {
+  const [value, setValue] = useState('');
+  const input = useRef(null);
+  useEffect(() => { input.current?.focus(); }, []);
+  return (
+    <form className="ask-input" autoComplete="off" onSubmit={e => { e.preventDefault(); onSend(value); setValue(''); }}>
+      <input ref={input} value={value} onChange={e => setValue(e.target.value)}
+             placeholder="Ask about olive oil, GPUs, rent in Hackney…" aria-label="Ask Orbit" />
+      <Mic onFinal={q => { onSend(q); setValue(''); }} setValue={setValue} />
+      <button type="submit" className="ibtn send" title="Send"><Icon name="arrow-up" /></button>
+    </form>
+  );
+}
+
+const Message = memo(function Message({ m, onGrow }) {
   if (m.role === 'user') return <div className="umsg">{m.text}</div>;
   if (m.role === 'intro') {
     return (
@@ -177,35 +189,39 @@ function Message({ m, onGrow }) {
           <Icon name="git-branch" />Jev routed <Icon name="arrow-right" size={13} />{' '}
           {mMeta ? <><ModuleIcon id={m.label} size={14} />{mMeta.name}</> : 'General'}{confTxt ? ' · ' + confTxt : ''}
         </span>
-        <Typed text={m.text} onGrow={onGrow} />
+        <Typed id={m.id} text={m.text} onGrow={onGrow} />
         {m.item ? <AnswerChart item={m.item} q={m.q} /> : null}
         <Sources mod={m.mod} item={m.item} focus={m.focus} />
       </div>
     </div>
   );
-}
+});
 
-/** Word-by-word reveal of the answer, like the vanilla typeText(). */
-function Typed({ text, onGrow }) {
-  const [n, setN] = useState(() => (typedOnce.has(text) ? Infinity : 0));
+/** Word-by-word reveal of the answer, like the vanilla typeText().
+ *  Progress is kept per message id in `revealed`, and the effect depends only on the message, so
+ *  parent re-renders pick up where the reveal is instead of starting it again. */
+function Typed({ id, text, onGrow }) {
+  const words = String(text).split(/(\s+)/);
+  const [n, setN] = useState(() => revealed.get(id) ?? 0);
+
   useEffect(() => {
-    if (typedOnce.has(text)) return undefined;
-    const words = String(text).split(/(\s+)/);
-    let i = 0, timer = 0;
+    let i = revealed.get(id) ?? 0;
+    if (i >= words.length) return undefined;
+    let timer = 0;
     const tick = () => {
-      i += 2;
+      i = Math.min(words.length, i + 2);
+      revealed.set(id, i);
       setN(i);
       onGrow?.();
       if (i < words.length) timer = setTimeout(tick, 18);
-      else typedOnce.add(text);
     };
     timer = setTimeout(tick, 18);
     return () => clearTimeout(timer);
-  }, [text, onGrow]);
-  const words = String(text).split(/(\s+)/);
-  return <p className="atext">{n === Infinity ? text : words.slice(0, n).join('')}</p>;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- words is derived from text
+  }, [id, text, onGrow]);
+
+  return <p className="atext">{words.slice(0, n).join('')}</p>;
 }
-const typedOnce = new Set();
 
 function AnswerChart({ item, q }) {
   const map = retailMapper(item) || (() => null);

@@ -1,7 +1,7 @@
 // Track record (#/track): "How right is Orbit?" — held-out test scores, model leaderboard,
 // backtests on real history, calibration and the Modal compute strip.
 // Data: /api/leaderboard (eval/leaderboard.json), /api/eval (eval/summary.json), /api/eval/{item} (backtests).
-// Ported from frontend/js/views/track_record.js.
+// Ported from vanilla js/views/track_record.js.
 import { useMemo, useState } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Topbar } from '@/components/orbit/chrome.jsx';

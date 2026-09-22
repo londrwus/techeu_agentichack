@@ -12,8 +12,8 @@ CORS is open (`*`). There is no authentication: every endpoint is read-only over
 
 | Method | Path | Purpose | Source |
 |---|---|---|---|
-| GET | `/` | Dashboard SPA (`frontend/index.html`) | `main.py` |
-| GET | `/landing` | 5–10 s animated opener (`frontend/landing.html`); redirects to `/` if missing | `extra_landing.py` |
+| GET | `/` | Dashboard SPA (`frontend_react/index.html`, built from `web/`) | `main.py` |
+| GET | `/landing` | 5–10 s animated opener (`frontend_react/landing.html`); redirects to `/` if missing | `extra_landing.py` |
 | GET | `/static/{path}` | Frontend assets (JS, CSS, product images) | `main.py` |
 | GET | `/tiles/{region_id}/{YYYY-MM}.png` | Sentinel-2 RGB thumbnail | `main.py` |
 | GET | `/api/summary` | Module pressure scores and global stats | `main.py` |
@@ -200,7 +200,7 @@ data: {"type": "done", "containers_active": 0, "tiles_done": 120, "tiles_total":
 
 The scan stops after 240 s. A successful live scan (at least half the regions returned) overwrites `scan_replay.json`, so the next offline replay uses the newest recording.
 
-Browser usage ([`frontend/js/scan.js`](../frontend/js/scan.js)):
+Browser usage ([`web/src/lib/scan.jsx`](../web/src/lib/scan.jsx)):
 
 ```js
 const es = new EventSource('/api/scan');          // or '/api/scan?mode=replay'

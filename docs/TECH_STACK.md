@@ -2,7 +2,7 @@
 
 [← back to README](../README.md) · [Architecture](ARCHITECTURE.md) · [Jev](JEV.md) · [Modal](MODAL.md) · [Gemini](GEMINI.md)
 
-The versions below are taken from [`requirements.txt`](../requirements.txt), from the `pip_install` / `uv_pip_install` calls of the Modal images, from [`web/package.json`](../web/package.json), and from the CDN `<script>` tags in [`frontend/landing.html`](../frontend/landing.html).
+The versions below are taken from [`requirements.txt`](../requirements.txt), from the `pip_install` / `uv_pip_install` calls of the Modal images and from [`web/package.json`](../web/package.json).
 
 ## At a glance
 
@@ -40,7 +40,7 @@ flowchart LR
 |---|---|---|---|
 | **Google Gemini** via `google-genai` | SDK `2.24.0`; model `gemini-3.8-flash` | Ask Orbit agent with function calling (Interactions API); multimodal vision on then-vs-now Sentinel-2 tiles; module headline and 3 insight cards as JSON-schema structured output; the briefing script | [`backend/agent.py`](../backend/agent.py), [`scripts/build_insights.py`](../scripts/build_insights.py), [`backend/briefing.py`](../backend/briefing.py) |
 | Gemini TTS | `gemini-3.1-flash-tts-preview`, voice "Charon" | ~30-second spoken "Tomorrow's Prices" briefing (WAV) | [`backend/briefing.py`](../backend/briefing.py) |
-| Gemini image generation | `gemini-3.1-flash-image` | Product photos for all 10 items (`frontend/assets/products/*.jpg`) and early UI mock-ups (`design/images/`) | assets; spec in [`frontend/MODULES.md`](../frontend/MODULES.md) |
+| Gemini image generation | `gemini-3.1-flash-image` | Product photos for all 10 items (`web/public/products/*.jpg`) and early UI mock-ups (`design/images/`) | assets; spec in [`design/MODULES.md`](../design/MODULES.md) |
 | **TypeSafe Jev** via `typesafe-sdk` | SDK `0.7.0`; model `jev-latest` | Typed, calibrated judgments (`Noul`, `Choice`, `Score`) on 24,390 headlines, 20 satellite regions and every Ask Orbit question. 142,016 judgments in total. | [`modal_app/signals.py`](../modal_app/signals.py), [`backend/agent.py`](../backend/agent.py). See [JEV.md](JEV.md). |
 | **Google Research TimesFM 3.0** | `timesfm[torch]==3.0.2`, weights `google/timesfm-3.0-pytorch` (falls back to TimesFM 2.5 200M) | Zero-shot probabilistic time-series forecasts (9 quantiles, 12 months) on NVIDIA L4 | [`modal_app/forecast.py`](../modal_app/forecast.py), [`evaluate.py`](../modal_app/evaluate.py), [`train.py`](../modal_app/train.py) |
 
@@ -94,9 +94,8 @@ Details in [MODEL.md](MODEL.md).
 
 ## Frontend
 
-The dashboard is a React app in [`web/`](../web) (`npm run build` → `frontend_react/`, which FastAPI serves at `/`).
-Versions come from [`web/package.json`](../web/package.json). The pre-React vanilla build is still in `frontend/`
-and is served at `/legacy`; `/landing` is a standalone page that keeps its CDN scripts.
+The dashboard (`/`) and the landing page (`/landing`) are one React app in [`web/`](../web), built to
+`frontend_react/`. Versions come from [`web/package.json`](../web/package.json).
 
 | Library | Version (npm) | Use |
 |---|---|---|
@@ -107,7 +106,8 @@ and is served at `/legacy`; `/landing` is a standalone page that keeps its CDN s
 | react-router-dom | 7 | `HashRouter`, so every existing `#/route` link and `location.hash` jump still works |
 | sonner | 2.0 | Toasts (unstyled, wearing the Orbit `.toast` class) |
 | Apache ECharts | 5.5.1 | Fan charts with p10–p90 bands, driver waterfalls, waffles, leaderboard, reliability diagram |
-| MapLibre GL JS | 4.7.1 (app), 5.6.0 via CDN (landing globe) | Earth view on EOX Sentinel-2 cloudless; Rent Radar 2D/3D `fill-extrusion` boroughs and H3 hexes; the landing page's rotating globe |
+| MapLibre GL JS | 4.7.1 | Earth view on EOX Sentinel-2 cloudless; Overview map; Rent Radar 2D/3D `fill-extrusion` boroughs and H3 hexes |
+| WebGL2 (no library) | browser | The landing globe: one fragment shader on a baked Sentinel-2 cloudless texture (`web/src/landing/globe-gl.js`, texture from `scripts/build_globe_texture.py`) |
 | lucide-react | 0.460.0 | UI icons, through an explicit registry (`web/src/lib/lucide-icons.js`) so only the ~100 icons in use are bundled |
 | Inter (Google Fonts) | – | Typeface |
 | Web Speech API | browser | Voice input in Ask Orbit (`SpeechRecognition`) |
@@ -124,7 +124,7 @@ its 60 fps counter lerp and feed slide-in on refs so a live firehose never re-re
 
 | Tool | Use |
 |---|---|
-| **Pencil (pen.dev) via its MCP server** | The screens were designed in [`design/orbit.pen`](../design/orbit.pen) at 1440×900 through the Pencil MCP, then implemented. The spec is in [`frontend/DESIGN.md`](../frontend/DESIGN.md) and [`frontend/MODULES.md`](../frontend/MODULES.md). Mock-ups: `design/0*.png`, `design/modules/*.png`. |
+| **Pencil (pen.dev) via its MCP server** | The screens were designed in [`design/orbit.pen`](../design/orbit.pen) at 1440×900 through the Pencil MCP, then implemented. The spec is in [`design/DESIGN.md`](../design/DESIGN.md), [`design/MODULES.md`](../design/MODULES.md) and [`design/NEWS_HUB.md`](../design/NEWS_HUB.md). Mock-ups: `design/0*.png`, `design/modules/*.png`. |
 | Playwright (optional) | Headless screenshots for visual QA (`design/shots/*.png`) |
 
 ## External data sources

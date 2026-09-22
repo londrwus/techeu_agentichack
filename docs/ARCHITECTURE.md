@@ -70,7 +70,7 @@ flowchart LR
 | Rent Radar | [`modal_app/rent.py`](../modal_app/rent.py), [`modal_app/rent_detail.py`](../modal_app/rent_detail.py) | Sentinel-2 built-up change for 33 London boroughs and 2,406 H3 hexagons (res 8, about 0.7 km²), combined with synthetic rents. |
 | Backend | [`backend/`](../backend) | FastAPI: JSON endpoints, SSE live scan, Ask Orbit agent, TTS briefing, tile server, static frontend. |
 | Web deploy | [`modal_app/web.py`](../modal_app/web.py) | The same FastAPI app as a Modal ASGI function, reading the Volume directly. It reloads the Volume every 60 s. |
-| Frontend | [`frontend/`](../frontend) | Hash-routed SPA (`#/earth`, `#/overview`, `#/groceries`, `#/latte`, `#/beer_wine`, `#/gpu`, `#/rent`, `#/mission`, `#/ask`, `#/track`) plus `/landing`. |
+| Frontend | [`web/`](../web) (React, built to `frontend_react/`) | Hash-routed SPA (`#/earth`, `#/overview`, `#/groceries`, `#/latte`, `#/beer_wine`, `#/gpu`, `#/rent`, `#/mission`, `#/ask`, `#/track`) plus `/landing`. |
 
 ---
 
@@ -145,7 +145,7 @@ sequenceDiagram
   Note over FE,BE: If Modal is unreachable before the first event,<br/>the backend replays scan_replay.json with the original timing.
 ```
 
-Code: [`backend/scan.py`](../backend/scan.py), [`frontend/js/scan.js`](../frontend/js/scan.js), [`frontend/js/views/mission.js`](../frontend/js/views/mission.js).
+Code: [`backend/scan.py`](../backend/scan.py), [`web/src/lib/scan.jsx`](../web/src/lib/scan.jsx), [`web/src/views/Mission.jsx`](../web/src/views/Mission.jsx).
 
 **Safety nets:**
 - `mode=replay` (or `#/mission/replay` in the UI) always plays the recording.

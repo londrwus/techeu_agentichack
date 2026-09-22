@@ -1,4 +1,4 @@
-// Formatting + small data helpers, ported 1:1 from the vanilla frontend/js/lib.js.
+// Formatting + small data helpers, ported 1:1 from the vanilla build's js/lib.js (git 92e4057).
 export const isNum = v => typeof v === 'number' && isFinite(v);
 
 export function esc(s) {

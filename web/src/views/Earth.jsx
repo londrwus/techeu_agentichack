@@ -1,6 +1,6 @@
 // 00 Earth: full-bleed Sentinel-2 basemap with the regions that set tomorrow's prices.
 // The shell adds body.full-bleed (same sidebar as every page; this view fills the content area).
-// Ported from frontend/js/views/earth.js: React owns the panels and the region card, MapLibre keeps
+// Ported from vanilla js/views/earth.js: React owns the panels and the region card, MapLibre keeps
 // the markers (they are map-projected DOM nodes, so they stay outside the React tree).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
@@ -299,7 +299,7 @@ function ChipPhoto({ id, icon }) {
   const [failed, setFailed] = useState(false);
   return (
     <span className="ea-ph">
-      {failed ? <Icon name={icon} /> : <img src={`/static/assets/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />}
+      {failed ? <Icon name={icon} /> : <img src={`/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />}
     </span>
   );
 }

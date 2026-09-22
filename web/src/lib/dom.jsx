@@ -1,5 +1,5 @@
 // Imperative DOM helpers shared by the chart/map layers: count-up, resize observer, hover tooltip.
-// Ported from frontend/js/lib.js + components/ui.js. React owns the markup; these drive the bits
+// Ported from vanilla js/lib.js + components/ui.js. React owns the markup; these drive the bits
 // that live outside React's render loop (ECharts, MapLibre overlays).
 import { useEffect, useRef } from 'react';
 import { isNum } from './format.js';

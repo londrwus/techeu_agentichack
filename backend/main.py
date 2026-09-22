@@ -48,18 +48,9 @@ display:grid;place-items:center;height:100vh;margin:0"><div style="text-align:ce
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    """React build (frontend_react/) when it exists, else the vanilla build, else a placeholder."""
-    for p in (data.FRONTEND_REACT / "index.html", data.FRONTEND / "index.html"):
-        if p.exists():
-            return FileResponse(p, headers={"Cache-Control": "no-cache"})
-    return HTMLResponse(PLACEHOLDER)
-
-
-@app.get("/legacy", response_class=HTMLResponse)
-def legacy_index():
-    """The pre-React vanilla-JS build, kept as a stage fallback."""
+    """The React dashboard (frontend_react/index.html), or a placeholder before the first build."""
     p = data.FRONTEND / "index.html"
-    return FileResponse(p) if p.exists() else HTMLResponse(PLACEHOLDER)
+    return FileResponse(p, headers={"Cache-Control": "no-cache"}) if p.exists() else HTMLResponse(PLACEHOLDER)
 
 
 class _LazyStatic(StaticFiles):
@@ -73,8 +64,10 @@ class _LazyStatic(StaticFiles):
         return await super().__call__(scope, receive, send)
 
 
-app.mount("/static", _LazyStatic(data.FRONTEND), name="static")
-app.mount("/assets", _LazyStatic(data.FRONTEND_REACT / "assets"), name="assets")
+# Built front-end files: hashed JS/CSS chunks, product photos, the landing globe texture.
+app.mount("/assets", _LazyStatic(data.FRONTEND / "assets"), name="assets")
+app.mount("/products", _LazyStatic(data.FRONTEND / "products"), name="products")
+app.mount("/globe", _LazyStatic(data.FRONTEND / "globe"), name="globe")
 
 _SAFE = re.compile(r"^[A-Za-z0-9_\-]+$")
 
@@ -182,7 +175,7 @@ def stats():
 def health():
     return {"ok": True, "data_dir": str(data.DATA), "data_exists": data.DATA.exists(),
             "frontend": (data.FRONTEND / "index.html").exists(),
-            "frontend_react": (data.FRONTEND_REACT / "index.html").exists()}
+            "landing": (data.FRONTEND / "landing.html").exists()}
 
 
 from backend.extra_rent import router as _rent_router  # noqa: E402

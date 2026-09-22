@@ -1,5 +1,5 @@
 // Mission Control: the live-scan screen. Counters, the Sentinel-2 tile grid, providers and Jev throughput.
-// Ported from frontend/js/views/mission.js — the scan store (lib/scan.jsx) now drives React state directly.
+// Ported from vanilla js/views/mission.js — the scan store (lib/scan.jsx) now drives React state directly.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';

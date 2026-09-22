@@ -3,7 +3,7 @@
 //            drivers[] with evidence tooltips, + before/after tile of an AI campus (Zoom opens the lightbox).
 //            Falls back to the reservoir chart ("Water for the fabs") when drivers[] is missing.
 // Hero right: GPU | Laptop forecast card. Signal row below (shared).
-// Ported from frontend/js/views/gpu.js.
+// Ported from vanilla js/views/gpu.js.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { graphic } from 'echarts';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -463,7 +463,7 @@ function ProdImg({ id }) {
   const [failed, setFailed] = useState(false);
   return failed
     ? <div className="ph"><ItemIcon id={id} size={20} /></div>
-    : <img src={`/static/assets/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />;
+    : <img src={`/products/${id}.jpg`} alt="" onError={() => setFailed(true)} />;
 }
 
 /* ---------------- right: GPU | Laptop forecast card ---------------- */

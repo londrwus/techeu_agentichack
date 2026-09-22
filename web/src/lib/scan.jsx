@@ -1,5 +1,5 @@
 // Live scan controller shared by every page: SSE /api/scan -> store -> React.
-// Ported from frontend/js/scan.js; the listener Set is now an external store that
+// Ported from vanilla js/scan.js; the listener Set is now an external store that
 // components subscribe to with useScan().
 import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';

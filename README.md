@@ -58,7 +58,7 @@ More diagrams (live scan sequence, Ask Orbit sequence, build order): **[docs/ARC
 | ☁️ | **Modal** (1.5.5) | CPU fan-out, L4 GPUs, Volumes, Secrets, retries, `Function.from_name` live calls, ASGI web hosting | **100 containers** at peak; 1,840 tiles in 673 s; live scan of 120 tiles + 800 judgments in **45.8 s** |
 | 🛰️ | **Sentinel-2 via Microsoft Planetary Computer** | 10 m imagery, 5 bands + cloud mask, 2019-01 → 2026-08 | 20 regions × 92 months; 33 boroughs; 2,406 H3 hexes |
 | 🌍 | **EOX Sentinel-2 cloudless**, MapLibre GL, ECharts | Earth view and landing globe; 3D Rent Radar; fan charts and waterfalls | – |
-| ⚛️ | **React 19 + Vite 8**, **Tailwind v4**, **shadcn/ui**, react-router, lucide-react, sonner | The whole dashboard: 11 routed screens, shadcn primitives wearing the Orbit design system | 11 lazily-loaded route chunks |
+| ⚛️ | **React 19 + Vite 8**, **Tailwind v4**, **shadcn/ui**, react-router, lucide-react, sonner | The dashboard (11 routed screens, shadcn primitives wearing the Orbit design system) and the landing page (a WebGL2 globe shader on a baked Sentinel-2 texture) | 11 lazy route chunks; landing paints in ~0.3 s |
 | 📊 | Nixtla statsforecast, LightGBM, scikit-learn, NumPy | Model zoo, stacking, split-conformal intervals | up to 100 CPU containers per fit |
 | 🎨 | **Pencil (pen.dev) via MCP** | UI designed in `design/orbit.pen`, then implemented | 1440×900 frames |
 | 🐍 | FastAPI, Pydantic 2, Uvicorn | Backend, SSE streaming, request models | 18 routes |
@@ -181,8 +181,6 @@ cd web; npm install; npm run build      # -> ../frontend_react, served at /
 cd web; npm run dev                     # http://localhost:5173, proxies /api /tiles /static to :8010
 ```
 
-The pre-React vanilla build is still in `frontend/` and is served at `/legacy` as a stage fallback.
-
 **5. Deploy.** Deploy the live-scan functions and the web app, and push locally built files to the Volume:
 
 ```powershell
@@ -229,10 +227,10 @@ modal_app/
 backend/                   FastAPI: main.py (routes), agent.py (Jev + Gemini), scan.py (SSE fan-out),
                            briefing.py (Gemini TTS), data.py (readers, pressure), extra_*.py (routers)
 scripts/                   pull_data, build_eval, build_zoo, zoo_meta, build_orbit_signal, build_insights, build_summary
-web/                       React UI source: views/ (one per screen), components/ui (shadcn), components/orbit,
-                           lib/ (api, charts, scan store, lightbox), styles/ (the design system, verbatim)
-frontend_react/            built React app (npm run build), served at /
-frontend/                  pre-React vanilla build, served at /legacy; landing.html is the /landing splash
+web/                       React UI: views/ (one per screen), landing/ (splash + WebGL globe), components/ui (shadcn),
+                           components/orbit, lib/ (api, charts, scan store, lightbox), styles/ (the design system),
+                           public/ (product photos, baked globe texture)
+frontend_react/            built React app (npm run build): / (dashboard) and /landing
 data/built/                the data contract the UI reads (JSON, committed; tiles/ on the Volume only)
 design/                    orbit.pen (Pencil), mock-ups, screenshots
 docs/                      architecture, API, tech stack, Jev, Modal, Gemini, model, demo script

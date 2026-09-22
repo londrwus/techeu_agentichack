@@ -2,7 +2,7 @@
 // image blur-up reveal, chart/map skeleton-until-rendered, smoother ECharts defaults.
 // Every hidden state has a 1.5 s safety reveal.
 //
-// Ported from frontend/js/components/motion.js. The two global monkey-patches (window.echarts /
+// Ported from vanilla js/components/motion.js. The two global monkey-patches (window.echarts /
 // window.maplibregl) are gone: with npm modules the same behaviour ships as watchMap() below and
 // initChart() in ./echarts.js, which every map and chart in the app goes through.
 

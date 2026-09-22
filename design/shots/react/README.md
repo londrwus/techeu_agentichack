@@ -1,8 +1,8 @@
 # React port — visual check
 
 Every screen of the React build (`/`) at 1440×900, captured 5 s after the route opened.
-Taken with Playwright against the same backend as the vanilla build (`/legacy`), then diffed
-pixel-by-pixel against it.
+Taken with Playwright against the same backend as the vanilla build (served at `/legacy` at the time of the
+port, commit a93fae9; the vanilla build has since been removed), then diffed pixel-by-pixel against it.
 
 | Screen | Pixels differing by >40/255 | What differs |
 |---|---|---|

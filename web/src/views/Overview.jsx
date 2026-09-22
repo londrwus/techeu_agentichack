@@ -1,5 +1,5 @@
 // 01 Overview: five KPI cards, Tomorrow's Basket waffle and the satellite watch map.
-// Ported from frontend/js/views/overview.js.
+// Ported from vanilla js/views/overview.js.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';

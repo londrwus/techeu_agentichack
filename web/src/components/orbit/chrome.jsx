@@ -1,5 +1,5 @@
 // Shared page chrome: the top bar, the Scan-now button, module headers and the briefing button.
-// Ported from frontend/js/views/common.js + components/moduleHeader.js.
+// Ported from vanilla js/views/common.js + components/moduleHeader.js.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

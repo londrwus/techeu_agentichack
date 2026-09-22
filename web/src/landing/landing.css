@@ -1,0 +1,135 @@
+/* Orbit landing. Unlike the dashboard, this page is Tailwind-first (preflight on): layout and type
+   live in Landing.jsx as utilities; this file keeps only the stage effects Tailwind can't express. */
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-primary: #F97316;
+  --color-primary-foreground: #fff;
+  --color-background: #050814;
+  --color-foreground: #F8FAFC;
+  --color-border: rgb(255 255 255 / 0.12);
+  --color-ring: #F97316;
+  --color-accent: rgb(255 255 255 / 0.08);
+  --color-accent-foreground: #fff;
+}
+
+:root {
+  --gs: min(90vh, 56vw);  /* globe stage size (square) */
+  --gx: 71vw;             /* globe centre x */
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  color: #F8FAFC;
+  background:
+    radial-gradient(60vw 70vh at var(--gx) 50%, #13244A 0%, #0A1330 38%, transparent 70%),
+    radial-gradient(40vw 40vh at 8% 110%, #F9731614 0%, transparent 70%),
+    #050814;
+}
+
+/* ---------- star field: two static layers ----------
+   (The old 1.5 px/s drift re-rasterised two 2x-viewport gradient layers every frame and was the single
+   most expensive thing on the page; the globe, particles and satellite carry the motion instead.) */
+.ld-stars, .ld-stars::after {
+  position: fixed; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff9, transparent 60%),
+    radial-gradient(1px 1px at 140px 90px, #fff6, transparent 60%),
+    radial-gradient(1.4px 1.4px at 260px 190px, #fffa, transparent 60%),
+    radial-gradient(1px 1px at 330px 40px, #fff5, transparent 60%),
+    radial-gradient(1px 1px at 90px 250px, #fff7, transparent 60%);
+  background-size: 360px 300px; opacity: .55;
+}
+.ld-stars::after { content: ""; background-size: 520px 460px; background-position: 170px 90px; opacity: .6; }
+
+/* ---------- globe stage ---------- */
+.ld-globe {
+  position: fixed; width: var(--gs); height: var(--gs);
+  left: calc(var(--gx) - var(--gs) / 2); top: calc(50vh - var(--gs) / 2);
+  animation: ld-in 1.2s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes ld-in { from { opacity: 0; transform: scale(.94); } }
+.ld-halo {
+  position: absolute; inset: 6%; border-radius: 50%;
+  background: radial-gradient(circle, #3B82F633 50%, #3B82F610 60%, transparent 70%);
+  filter: blur(18px);
+}
+.ld-halo::after { /* warm rim light */
+  content: ""; position: absolute; inset: 9%; border-radius: 50%;
+  box-shadow: -18px 14px 70px -10px #F9731640, 0 0 90px 0 #60A5FA30;
+}
+.ld-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s ease; }
+.ld-canvas.on { opacity: 1; }
+
+/* No WebGL2: the same texture scrolling behind a shaded disc. */
+.ld-fallback {
+  position: absolute; inset: 13%; border-radius: 50%; overflow: hidden;
+  background: url(/globe/earth-2k.jpg) 0 50% / 200% 100% repeat-x, radial-gradient(circle at 40% 35%, #1F3B6E, #0B1630 70%);
+  box-shadow: 0 0 60px #3B82F633;
+  animation: ld-spin 60s linear infinite;
+}
+.ld-fallback::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 36% 32%, #ffffff26, transparent 40%), radial-gradient(circle at 50% 50%, transparent 55%, #000000b0 100%);
+}
+@keyframes ld-spin { to { background-position: -200% 50%, 0 0; } }
+
+.ld-rings { position: absolute; inset: -4%; width: 108%; height: 108%; overflow: visible; pointer-events: none; }
+.ld-rings path { fill: none; stroke-linecap: round; }
+.ld-rings .r1 { stroke: #F97316; stroke-width: 1.6; opacity: .85; }
+.ld-rings .r2 { stroke: #CBD5E1; stroke-width: 1; opacity: .28; stroke-dasharray: 2 7; }
+.ld-rings.back .r1 { opacity: .3; }
+.ld-rings.back .r2 { opacity: .14; }
+.ld-sat { fill: #fff; filter: drop-shadow(0 0 6px #F97316) drop-shadow(0 0 14px #F97316); }
+
+/* ---------- floating satellite tiles ---------- */
+.ld-links { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; }
+.ld-links line { stroke: #FDBA74; stroke-width: 1; stroke-dasharray: 3 4; opacity: 0; }
+.ld-links circle { fill: #F97316; opacity: 0; }
+.ld-cards { position: fixed; inset: 0; pointer-events: none; }
+.ld-card {
+  position: absolute; margin: 0; width: clamp(96px, 8.4vw, 132px);
+  padding: 5px; border-radius: 12px;
+  background: #0F172ACC; border: 1px solid #FFFFFF22;
+  box-shadow: 0 20px 40px -12px #000C, 0 0 0 1px #00000040;
+  backdrop-filter: blur(8px);
+  opacity: 0; transform: translateY(10px) scale(.96);
+  transition: opacity .7s ease, transform .7s ease;
+  animation: ld-float 7s ease-in-out infinite;
+}
+.ld-card.on { opacity: 1; transform: none; }
+.ld-card img, .ld-card-ph { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+.ld-card-ph { background: #1E293B; }
+.ld-card figcaption {
+  display: flex; align-items: center; gap: 6px; padding: 6px 3px 2px; min-height: 22px;
+  font-size: 11px; font-weight: 600; color: #E2E8F0; letter-spacing: .01em; white-space: nowrap;
+}
+.ld-card figcaption i { width: 6px; height: 6px; border-radius: 50%; background: var(--c, #F97316); box-shadow: 0 0 8px var(--c, #F97316); flex: none; }
+.ld-card .scan {
+  position: absolute; left: 5px; right: 5px; top: 5px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #F97316, transparent); opacity: .9;
+  animation: ld-scan 2.6s ease-in-out infinite;
+}
+@keyframes ld-scan { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: .9; } 85% { opacity: .9; } 100% { transform: translateY(calc(clamp(96px, 8.4vw, 132px) - 12px)); opacity: 0; } }
+@keyframes ld-float { 50% { translate: 0 -8px; } }
+
+/* ---------- copy entrance ---------- */
+.ld-copy > * { animation: ld-up .9s cubic-bezier(.2, .8, .2, 1) both; }
+.ld-copy > :nth-child(2) { animation-delay: .08s; }
+.ld-copy > :nth-child(3) { animation-delay: .18s; }
+.ld-copy > :nth-child(4) { animation-delay: .28s; }
+.ld-copy > :nth-child(5) { animation-delay: .38s; }
+@keyframes ld-up { from { opacity: 0; transform: translateY(14px); } }
+
+@media (max-width: 760px) {
+  :root { --gs: 110vw; --gx: 60vw; }
+  .ld-globe { top: auto; bottom: -30vw; opacity: .7; }
+  .ld-cards, .ld-links { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-card, .ld-card .scan, .ld-fallback { animation: none; }
+}

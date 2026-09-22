@@ -1,6 +1,6 @@
 // Groceries — Shop (MODULES.md 06b): Amazon-style product grid, Keepa-style detail, weekly basket.
 // Renders only real /api/modules/groceries data; hides widgets without data.
-// Ported from frontend/js/views/groceries.js.
+// Ported from vanilla js/views/groceries.js.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Topbar, IconSquare, BacktestBadge } from '@/components/orbit/chrome.jsx';

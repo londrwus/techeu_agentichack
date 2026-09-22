@@ -1,4 +1,4 @@
-// Module / item / region metadata, mirroring orbit/config.py (ported from frontend/js/lib.js).
+// Module / item / region metadata, mirroring orbit/config.py (ported from vanilla js/lib.js).
 import { MODULE_ICON, ITEM_ICON } from './icons.jsx';
 
 export const MODULE_IDS = ['groceries', 'latte', 'beer_wine', 'gpu'];
@@ -34,7 +34,7 @@ export const ACCENT = { groceries: '#F97316', latte: '#A16207', beer_wine: '#CA8
 /** Commodity word for a region, e.g. "Wine" / "Latte" (Earth card sub-line, supply-risk tooltips).
  *
  *  The vanilla build tried a regex over the region name first, but its source carried a stray U+0008
- *  (frontend/js/components/ui.js:72: `.match(/<BS>(coffee|...)/i)`), so the pattern could never match
+ *  (vanilla js/components/ui.js:72 at git 92e4057: `.match(/<BS>(coffee|...)/i)`), so the pattern could never match
  *  and every region fell through to its item name. That fallback is the copy that shipped and is on
  *  every screenshot, so it is what this port does — deliberately, not by accident.
  */

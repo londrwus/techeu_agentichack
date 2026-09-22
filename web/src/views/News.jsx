@@ -1,8 +1,8 @@
-// News hub: Jev reads the world's commodity news live (design: frontend/NEWS_HUB.md, Pencil "10 News hub").
+// News hub: Jev reads the world's commodity news live (design: design/NEWS_HUB.md, Pencil "10 News hub").
 // Idle: latest judged headlines from /api/news/latest. "Scan the news": SSE /api/news/scan?mode=live
 // (auto-fallback to mode=replay, the server's recorded scan) streams judged headlines into a firehose feed.
 //
-// Ported from frontend/js/views/news.js. React renders the shell, the feed rows, the pressure bars and the
+// Ported from vanilla js/views/news.js. React renders the shell, the feed rows, the pressure bars and the
 // done banner; the 60 fps bits that must not re-render the tree — the counter lerp, the feed's slide-in
 // offset and the FLIP re-order — stay on refs, exactly as they did before.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
